@@ -1,0 +1,17 @@
+# A single package rather than a workspace. `etheram-core` splits `core/` from
+# `xtask/` because its gate runner walked the sibling's test tree; there is no
+# second member here yet, so there is nothing to scope apart.
+[package]
+name = "beggar"
+version = "0.0.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Protocol-agnostic recovery for replicated logs: a node that fell behind asks a peer for what it missed, may be refused, retries, and falls back to a snapshot. This version reserves the name; there is no implementation yet."
+readme = "README.md"
+keywords = ["recovery", "consensus", "state-machine", "no-std", "replication"]
+
+# `repository` is deliberately absent. The repository is private, so the link
+# would resolve to a 404 for every reader of the crates.io page. It goes in
+# when the repository goes public.
+
+[dependencies]
