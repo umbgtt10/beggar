@@ -1,17 +1,34 @@
-# A single package rather than a workspace. `etheram-core` splits `core/` from
-# `xtask/` because its gate runner walked the sibling's test tree; there is no
-# second member here yet, so there is nothing to scope apart.
+# A single package rather than a workspace. `faction` splits `core/` from its
+# validation and protocol crates because it has them; there is no second member
+# here yet, so there is nothing to scope apart.
+#
+# The metadata shape is faction's, deliberately: same licence, same edition,
+# same MSRV, same category set. These two crates are siblings -- a protocol-
+# independent state machine a host drives -- and the one place they differ is
+# noted below.
 [package]
 name = "beggar"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
-license = "Apache-2.0"
-description = "Protocol-agnostic recovery for replicated logs: a node that fell behind asks a peer for what it missed, may be refused, retries, and falls back to a snapshot. This version reserves the name; there is no implementation yet."
+rust-version = "1.85"
+license = "MIT"
+description = "A no_std, protocol-independent recovery state machine: a node that fell behind asks a peer for what it missed, may be refused, retries, and falls back to a snapshot. This version reserves the name; there is no implementation yet."
+documentation = "https://docs.rs/beggar"
 readme = "README.md"
-keywords = ["recovery", "consensus", "state-machine", "no-std", "replication"]
+keywords = ["recovery", "consensus", "distributed", "state-machine", "no-std"]
+categories = ["no-std", "algorithms", "network-programming"]
 
-# `repository` is deliberately absent. The repository is private, so the link
-# would resolve to a 404 for every reader of the crates.io page. It goes in
-# when the repository goes public.
+# `repository` and `homepage` are the one departure from faction's manifest, and
+# not a stylistic one: faction's repository is public, this one is private, so
+# both links would resolve to a 404 on the crates.io page. They go in when the
+# repository goes public.
+#
+# `rust-version` is inherited from faction rather than measured. For a crate with
+# no code and no dependencies it is trivially true; it needs re-verifying once
+# there is something to compile.
 
 [dependencies]
+
+[lib]
+name = "beggar"
+path = "src/lib.rs"
