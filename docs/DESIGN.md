@@ -20,6 +20,52 @@ candidate causes it cannot separate.
 So the order is: the extraction, then beggar behind the seam it created. Beggar's own validation runs in
 parallel with all of it.
 
+## 0. The stance, and why it forces the architecture
+
+**Initiating a recovery is begging for help.** Not a metaphor for the name — a statement about what the asking
+node can know, and the whole design follows from it.
+
+A node that has fallen behind faces three irreducible uncertainties:
+
+| | |
+|---|---|
+| **Is the peer ahead?** | It may or may not know. A status may have arrived; it may not have |
+| **Will the peer serve?** | It may or may not know. Willingness is discovered only by asking, and silence and refusal look identical from outside |
+| **Ask one peer, or several at once?** | It may or may not be willing to fan out. That is a choice, not a fact about the world |
+
+**These are negative requirements — things the design refuses to assume** — and each is a place where beggar
+deliberately holds *less* knowledge than the recovery it replaces:
+
+| uncertainty | as-built recovery | beggar |
+|---|---|---|
+| peer ahead? | `InFlightSlot` distinguishes `targeted` from `blind`, and `P1-ADR-KnowingItIsBehindIsEnoughToAsk` ratifies asking without evidence | **cannot know** — there are no heights. The ignorance is structural, not tolerated |
+| peer willing? | refusal is distinct from timeout and excludes a peer at that height | **no refusal command exists.** An unwilling peer simply never produces a partial |
+| one or many? | a **single** in-flight slot, ever | many concurrent sessions; beggar neither requires nor prevents fan-out |
+
+### Why this makes it a registry rather than a state machine
+
+**You cannot build a state machine over uncertainties you refuse to resolve.** A machine would need a label
+distinguishing *waiting on a willing peer* from *waiting on an unwilling one* — and that distinction is
+unknowable from inside, because the two produce identical observations. Any such label would be a guess encoded
+as structure.
+
+A registry does not need it. It records what actually arrived and says nothing about what a silence means. So
+the epistemic humility is not a gloss on the design; **it is the reason the design is accounting**, and §3's
+argument about state labels is this argument in mechanical form.
+
+### Two consequences
+
+**`CancelRecovery`'s `reason` carries more weight than it appears to.** Because beggar cannot express refusal,
+*"the peer said no"* and *"the peer said nothing"* collapse into the same absence — and they warrant different
+responses, since only one of them should exclude that peer next time. The tag is the **only** place willingness
+survives in the ledger. That makes it load-bearing rather than a convenience.
+
+**The stance is about not assuming, not about not acting.** "Begging" reads as passive, and one of the as-built
+open issues is precisely *"reactive only, never probes"*. If the stance were taken to endorse passivity, that
+defect would quietly become a feature. It does not: **a beggar may ask repeatedly, and ask several peers at
+once — what it may not do is presume the answer.** The design permits the first and refuses the second, and the
+two must not be conflated.
+
 ## 1. What beggar is
 
 **A pure accountant driving a registry of ongoing operations**, with a configurable retention policy, full
