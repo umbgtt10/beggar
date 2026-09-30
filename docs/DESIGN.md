@@ -7,11 +7,18 @@ of beggar, including the framing in `README.md` — see the last section for wha
 issues and extraction plan are `etheram-ibft/docs/RECOVERY-AS-BUILT.md`.
 
 **Beggar itself can be built and validated with no dependency on that work and without touching firmware**, so
-nothing here waits on it. What the integration should be preceded by is **under review**: the extraction plan
-(§9 there) was designed around validating the replacement via a hardware sweep, and a three-tier validation
-apparatus — deterministic core, protocol-level fault injection, multi-process system tests — supersedes that
-strategy by moving the evidence *before* integration rather than after. §9 is expected to shrink substantially as
-a result.
+nothing here waits on it.
+
+**The integration is sequenced step-by-step behind that extraction — decided 2026-09-30.** A single-change
+integration was argued and rejected, and the reason is not beggar's correctness: three-tier validation settles
+that independently. It is that the extraction produces two things nothing else does — **the line-by-line reading
+of what recovery actually does**, which the IBFT-side half must reproduce and which the as-built document
+explicitly is not; and **a seam proven with known-good logic behind it**, so that beggar afterwards changes only
+one side. Without it, beggar, a new driver and the rewiring land together and a failed hardware sweep has three
+candidate causes it cannot separate.
+
+So the order is: the extraction, then beggar behind the seam it created. Beggar's own validation runs in
+parallel with all of it.
 
 ## 1. What beggar is
 
