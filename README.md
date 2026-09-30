@@ -33,9 +33,25 @@ Those are the caller's, and keeping them out is what makes the rest of the prope
 Because there is no vocabulary in which a protocol-specific type could be expressed. Session ids, chunk counts
 and peer ids mean the same thing everywhere.
 
-What does **not** generalise is **admission** — whether an entry is valid and who is entitled to serve it. In
-IBFT that is chain continuation from a validator; in Raft it is term and log-index matching. So admission is an
-**injected trait**, asked and never inspected.
+**And there is nothing to inject.** An earlier draft made **admission** — whether an entry is valid and who may
+serve it — a trait boundary. It is not one: beggar never sees an entry. The caller validates, and only then
+reports that a chunk arrived; a rejected entry is simply never reported. No clock either, and emission is
+returned rather than pushed to a sink.
+
+**Zero injected dependencies**, which is why a conformance suite can be run against any implementation in any
+language without stubbing anything.
+
+## The spec is the artefact; this crate is a sample
+
+The intent is a **programming-language-independent specification** of beggar, with this Rust crate as one
+conforming implementation rather than the definition. That is practical here for reasons specific to the design:
+no wire types means no encoding to specify, no clock means no temporal logic, and a registry rather than a state
+machine means the normative core is a data model plus one total function — the ten-cell matrix in
+[`docs/DESIGN.md`](docs/DESIGN.md) §4.
+
+What will make it a specification rather than prose is a **committed, machine-readable conformance suite**:
+vectors of `(initial state, command sequence) → (expected output sequence, final state)`, consumed by this
+crate's tests and by any other implementation's.
 
 ## Sibling to `faction`, and the difference is load-bearing
 

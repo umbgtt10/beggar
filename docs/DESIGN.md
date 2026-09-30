@@ -3,10 +3,15 @@
 **Status: design settled 2026-09-30. No implementation.** This document supersedes every earlier description
 of beggar, including the framing in `README.md` — see the last section for what changed and why.
 
-**Precondition.** Beggar replaces the block-recovery path in `etheram-ibft`, and it cannot start until that
-path has been extracted into its own crate behind a single trait, unchanged and fully observable. That work is
-§9 of `etheram-ibft/docs/RECOVERY-AS-BUILT.md` and it is **step 0** — a replacement needs a seam to replace at,
-and today recovery has five scattered entrances and no single surface to swap.
+**Sequencing.** Beggar replaces the block-recovery path in `etheram-ibft`, whose as-built behaviour, six open
+issues and extraction plan are `etheram-ibft/docs/RECOVERY-AS-BUILT.md`.
+
+**Beggar itself can be built and validated with no dependency on that work and without touching firmware**, so
+nothing here waits on it. What the integration should be preceded by is **under review**: the extraction plan
+(§9 there) was designed around validating the replacement via a hardware sweep, and a three-tier validation
+apparatus — deterministic core, protocol-level fault injection, multi-process system tests — supersedes that
+strategy by moving the evidence *before* integration rather than after. §9 is expected to shrink substantially as
+a result.
 
 ## 1. What beggar is
 
@@ -37,10 +42,17 @@ the other's strategy.
 | 6 | **query without side effect**: `(output) = process(command:query, <internal state>)` |
 
 **Property 1 is true by construction, not by discipline.** There is no vocabulary in which a protocol-specific
-type could be expressed. What does *not* generalise is **admission** — whether an entry is valid and who may
-serve it. In IBFT that is chain continuation from a validator; in Raft, term and log-index matching. Admission
-is therefore an **injected trait**, asked and never inspected: a beggar that parsed a quorum certificate would
-stop being protocol-independent.
+type could be expressed.
+
+**Beggar has zero injected dependencies — settled 2026-09-30.** An earlier draft made **admission** a trait
+boundary, on the reasoning that whether an entry is valid and who may serve it does not generalise. That was
+inherited from a broader conception in which beggar fetched and validated. It does not apply: **beggar never
+sees an entry.** The caller validates, and only then reports that a chunk arrived; a rejected entry is simply
+never reported. Nothing is left to inject — no clock (property 4 forbids it), no transport, and emission is
+*returned* rather than pushed to a sink.
+
+That is a result rather than a gap. A type with no injection points is trivially implementable in any language
+and needs no stubs to test, which is what makes a cross-language conformance suite practical.
 
 **Property 2 has an API consequence.** Beggar cannot ask whether it is a member and cannot be told the
 validator set changed. The peer set is **supplied per call** and never cached, which costs nothing while
@@ -82,7 +94,7 @@ cannot be confused at a call site.
 | `StartRecovery` | — | `session_id`, `chunks`, `sender`, `receiver`. `sender` defaults to this node's id when set at instantiation |
 | `SendRecoveryPartial` | sending | `session_id`, `chunk_id`, `sender`, `receiver` |
 | `ReceiveRecoveryPartial` | receiving | `session_id`, `chunk_id`, `sender`, `receiver` |
-| `CancelRecovery` | either | `session_id` |
+| `CancelRecovery` | either | `session_id`, `reason` — an **opaque caller-defined tag**, recorded and emitted, never interpreted |
 
 | output | meaning |
 |---|---|
@@ -98,6 +110,18 @@ cannot be confused at a call site.
 **`chunks` is mode-agnostic, and that is the point.** Under `etheram-ibft`'s deployed profile a block request
 carries 8; a chunked snapshot would carry of the order of 100. Beggar does not know which it is accounting for,
 which is property 1 paying for itself.
+
+**`sender` and `receiver` on the partials are redundant, and kept anyway — the rule is "nothing redundant,
+except where the redundancy is the only witness".** `StartRecovery` binds both to the `session_id`, which is the
+key, so on an *open* session they are derivable. But a partial arriving for a session that is **not** open has no
+record to derive them from, and without them the ledger cannot attribute that rejection to a peer — a hole
+exactly where a misbehaving or buggy peer would appear. One case, principled, and written down rather than
+quietly violated.
+
+**Why `CancelRecovery` carries a reason.** Beggar cannot know *why* a session was abandoned — "superseded by a
+larger one" and "the peer has pruned past what I need" are height-and-retention facts it has no vocabulary for.
+Without the tag those two are indistinguishable in the forensic record, and they call for completely different
+responses. Beggar records and emits it and never reads it, so protocol independence is intact.
 
 **One registry, two roles, many sessions.** The same type runs on both ends; the role follows from which
 commands arrive and from `sender`/`receiver` against this node's id. A node receiving from one peer while
@@ -193,16 +217,32 @@ is two distinct questions — *which are open* and *which ever existed* — and 
 
 ## 7. Observability and forensics
 
-**Every call emits the whole tuple:** `(output) = process(command, <internal state>)`. Because the outcome is a
-pure function of command and record, those tuples are **replayable offline** — a capture becomes a corpus of
-beggar's own decisions, and the crate can be validated decision by decision rather than against aggregates.
+**`process` takes `&mut self` and returns the output tag only — settled 2026-09-30.** It does not return the new
+state, and the reason is worth stating because it decides what gets logged: **if the function is total and
+deterministic, the posterior state is derivable from the prior state and the command.** A replay does not need
+it.
 
-**A caller-supplied monotonic ordinal on every command is required, not optional.** At retention 0 it is the
-only thing that makes the forensic claim checkable: without it a replay built from a lossy capture silently omits
-events and looks self-consistent. With it, gaps are detectable. It also yields a completeness metric that can
-fail — *reconstructed X of Y events*. A replay that cannot say how much it is missing is not evidence.
+**So the emission per call is `(ordinal, command, output)` — not the full internal state.** An earlier draft had
+every call emit its whole state, which is what made observability expensive: a multi-field dump on a board with a
+small transmit ring competes with the very lines it exists to be correlated against. Commands and outputs are
+small and bounded; state is reconstructed by replaying them.
+
+**Plus a periodic full-state checkpoint, and its purpose is precise.** Not debugging — **resynchronisation.**
+Replay from an initial state only works while the command sequence is complete, and on a severed node it will not
+be. A checkpoint lets replay recover after a gap instead of diverging from it forever, which bounds the damage a
+gap does rather than letting one loss invalidate everything after it. Cadence is a configuration value.
+
+**A caller-supplied monotonic ordinal on every command is required, not optional.** It is the only thing that
+makes the forensic claim checkable: without it a replay built from a lossy capture silently omits events and
+looks self-consistent. With it, gaps are **detectable** — which is also what makes the checkpoint above usable,
+since you must know a gap happened to know you need to resynchronise. It yields a completeness metric that can
+fail: *reconstructed X of Y events*. A replay that cannot say how much it is missing is not evidence.
 
 **Beggar owns no clock, so it cannot supply the ordinal itself.** It comes in with the command.
+
+**The in-memory record therefore carries membership, not order.** The bitmap answers *which* chunks arrived;
+*when* is a log question, answered by the ordinals. An ordered structure in the registry would duplicate what the
+log already holds.
 
 ### The guarantee is majority-side, and the vocabulary is why that works
 
@@ -289,19 +329,34 @@ compile error. A registry over identifiers and sets has no motive for it.
 into a core that property 4 requires to be platform-neutral — worse than the problem it solves, and §8 shows
 the problem is not there.
 
-## 10. Open questions
+## 10. Closed questions, and what remains
 
-- **The return shape of `process`.** With `admissible commands` gone, does it return the output tag, the new
-  state, or both? Forensic replay needs command, prior state, tag and posterior state to be recoverable.
-- **Ordered ledger or membership only.** A bitmap answers *which* chunks arrived; ordering answers *when*, which
-  is what makes a stall diagnosable. Ordering requires the caller's ordinal. Both are affordable.
-- **Where "unservable" lives.** Past a peer's retention horizon a node cannot be served by chunks at all. That is
-  a third answer beyond behind and caught-up, and it currently means "reflash". It needs naming.
-- **`sender`/`receiver` on the partial commands are redundant** given `session_id` — except for a partial
-  arriving for an unopened session, where there is no record to derive them from and without them the by-node
-  query has a hole exactly where a misbehaving peer would appear. Keeping them is probably right, but then the
-  "nothing redundant" rule needs its exception written down.
-- **The shape of the injected admission policy.**
+**All five open questions were closed on 2026-09-30, because a specification cannot have any.** Recorded here
+with where each landed, so the reasoning is not lost in the sections that now state the conclusions flatly.
+
+| question | closed as | where |
+|---|---|---|
+| return shape of `process` | `&mut self`, returns the output tag only — posterior state is derivable, so nothing else is needed | §7 |
+| ordered ledger or membership | **membership** in the registry; order lives in the log, via the ordinals | §7 |
+| where "unservable" lives | **not in beggar** — it is a height-and-retention fact. `CancelRecovery` gains an opaque caller-defined `reason` instead | §4, §5 |
+| `sender`/`receiver` redundancy | **kept**, under the rule *"nothing redundant, except where the redundancy is the only witness"* | §4 |
+| shape of the injected admission policy | **deleted, not closed.** There is no admission policy and no trait boundary — beggar never sees an entry, so there is nothing to admit. Zero injected dependencies | §2 |
+
+The first two turned out to be one decision: answering the return shape made the ordered-ledger question
+disappear, because once commands and outputs are the emitted record, order is already in the log and duplicating
+it in memory buys nothing.
+
+The last was an error rather than a question, carried forward from a conception in which beggar fetched and
+validated. It is the largest single simplification in this document.
+
+### What remains genuinely open
+
+- **The checkpoint cadence** — a configuration value, but nobody has proposed a default.
+- **Whether `chunks` may be zero.** A zero-chunk session would complete on creation. Probably forbidden, but the
+  matrix in §4 does not currently say.
+- **Whether `session_id` uniqueness is beggar's to enforce** or the caller's to guarantee. `RecoveryConflicted`
+  handles a *collision with different parameters*, but not a caller that reuses an id after eviction — which is
+  indistinguishable from a fresh session, and may well be fine.
 
 ## 11. What this supersedes in `README.md`
 
@@ -314,6 +369,11 @@ self-contradictory, and so nobody reintroduces them:
 | "the set of **admissible commands** returned on every result" | **dropped** — it presupposes states — §3 |
 | transitions emitted as `(from, event, to, epoch)` | `(output) = process(command, state)` plus a caller-supplied ordinal — §7 |
 | a control layer that detects lag, chooses a peer, retries on timeout and falls back to a snapshot | **out of scope.** Beggar accounts; it does not detect, choose or time. It has no heights and no clock — §1, §2 |
+| "admission is the trait boundary" | **also superseded.** Beggar never sees an entry, so there is nothing to admit: the caller validates and only then reports. **Zero injected dependencies** — §2 |
 
-Two README points survive intact and are kept above: **admission is the trait boundary**, and **a monotonic
-counter is what makes a gap prove loss** — absence of a log line otherwise proving nothing.
+**One README point survives intact**, and it is kept in both files: **a monotonic counter is what makes a gap
+prove loss** — absence of a log line otherwise proving nothing.
+
+The admission row was itself a correction. An earlier revision of this document listed admission as one of *two*
+surviving points, which was wrong for the same reason the control layer was: it belonged to a beggar that fetched
+and validated.
