@@ -1,10 +1,12 @@
 # beggar — design
 
 **Status: design settled 2026-09-30. No implementation.** This document supersedes every earlier description
-of beggar, including the framing in `README.md` — see the last section for what changed and why.
+of beggar, including the framing in `README.md` — see §11 for what changed and why. **Amended 2026-10-12** with
+where beggar sits among the layers of the integration — §12. Nothing settled here changed.
 
-**Sequencing.** Beggar replaces the block-recovery path in `etheram-ibft`, whose as-built behaviour, six open
-issues and extraction plan are `etheram-ibft/docs/RECOVERY-AS-BUILT.md`.
+**Sequencing.** Beggar takes over one part of the block-recovery path in `etheram-ibft` — the bookkeeping of
+the request in flight — beneath the control layer the extraction carved out of it (§12). The path's as-built
+behaviour, known issues and extraction plan are `etheram-ibft/docs/RECOVERY-AS-BUILT.md`.
 
 **Beggar itself can be built and validated with no dependency on that work and without touching firmware**, so
 nothing here waits on it.
@@ -12,10 +14,10 @@ nothing here waits on it.
 **The integration is sequenced step-by-step behind that extraction — decided 2026-09-30.** A single-change
 integration was argued and rejected, and the reason is not beggar's correctness: three-tier validation settles
 that independently. It is that the extraction produces two things nothing else does — **the line-by-line reading
-of what recovery actually does**, which the IBFT-side half must reproduce and which the as-built document
-explicitly is not; and **a seam proven with known-good logic behind it**, so that beggar afterwards changes only
-one side. Without it, beggar, a new driver and the rewiring land together and a failed hardware sweep has three
-candidate causes it cannot separate.
+of what recovery actually does**, which the as-built document explicitly is not, and which the layers above beggar
+must reproduce — most of it the consensus-unaware control layer, not the IBFT side (§12); and **a seam proven
+with known-good logic behind it**, so that beggar afterwards changes only one side. Without it, beggar, a new
+driver and the rewiring land together and a failed hardware sweep has three candidate causes it cannot separate.
 
 So the order is: the extraction, then beggar behind the seam it created. Beggar's own validation runs in
 parallel with all of it.
@@ -421,7 +423,7 @@ self-contradictory, and so nobody reintroduces them:
 | "recovery **state machine**" | a **registry**; there are no states — §3 |
 | "the set of **admissible commands** returned on every result" | **dropped** — it presupposes states — §3 |
 | transitions emitted as `(from, event, to, epoch)` | `(output) = process(command, state)` plus a caller-supplied ordinal — §7 |
-| a control layer that detects lag, chooses a peer, retries on timeout and falls back to a snapshot | **out of scope.** Beggar accounts; it does not detect, choose or time. It has no heights and no clock — §1, §2 |
+| a control layer that detects lag, chooses a peer, retries on timeout and falls back to a snapshot | **out of scope.** Beggar accounts; it does not detect, choose or time. It has no heights and no clock — §1, §2. That layer exists, above beggar — §12 |
 | "admission is the trait boundary" | **also superseded.** Beggar never sees an entry, so there is nothing to admit: the caller validates and only then reports. **Zero injected dependencies** — §2 |
 
 **One README point survives intact**, and it is kept in both files: **a monotonic counter is what makes a gap
@@ -430,3 +432,44 @@ prove loss** — absence of a log line otherwise proving nothing.
 The admission row was itself a correction. An earlier revision of this document listed admission as one of *two*
 surviving points, which was wrong for the same reason the control layer was: it belonged to a beggar that fetched
 and validated.
+
+## 12. Where beggar sits: three layers — decided 2026-10-11
+
+**The extraction in `etheram-ibft` split recovery along the line §11 draws, and found a layer on each side of
+it.** What it measured as consensus-unaware is not beggar: it detects lag, chooses a peer from the statuses it has
+seen, retries on timeout and excludes a peer that refuses — the control layer §11 puts out of scope. Folding it
+into beggar would reverse four settled decisions: no heights (§0, §1); a registry and not a state machine (§3 —
+the control layer has genuine states: an episode open or closed, a request targeted or blind); no refusal command
+(§0); and the control layer out of scope (§11). The reading the owner decided is the one under which nothing here
+is reversed:
+
+| layer | knows | where |
+|---|---|---|
+| **beggar** — accounting | sessions, chunks, partials, node ids | this repository; designed, not built |
+| **control** — consensus-unaware, chain-aware | heights, peer statuses, episodes, the request in flight, retries, refusals | `etheram-ibft`, `recovery/control/`, package `recovery-control` |
+| **IBFT** | wire, certificates, validator membership and schedule, the execution payload, consensus's reactions, snapshot | `etheram-ibft`, `recovery/ibft/` and the node |
+
+**Beggar takes over one thing from the control layer: the bookkeeping of the request in flight.** A block request
+is a session of `chunks` blocks — 8 under the deployed profile, as §4 says. The control layer keeps everything
+beggar refuses to know — which heights a request covers, which peer is ahead, why a request was abandoned, which
+travels as `CancelRecovery`'s opaque `reason` — and it is the driver that, per §5, owns the cancellation policy.
+
+**The dependency runs one way.** The control layer will depend on beggar; beggar depends on nothing, and property 1
+holds by construction as before. The control layer's own independence is mechanical too, at a different line: its
+manifest names `etheram-core` and nothing else of the ecosystem, and a check in `etheram-ibft`'s first gate refuses
+consensus vocabulary in its source, comments included. It may know a chain; it may not know a consensus protocol.
+
+**Three of this document's conclusions were adopted above it, unchanged in substance:**
+
+- **the emission shape** (§7): `(ordinal, command, output)` plus a periodic checkpoint becomes `(ordinal, event,
+  facts, outcome)` there, because the control layer's input includes the facts its caller supplies. Where it is
+  emitted is still open in `etheram-ibft`;
+- **"the caller validates, and only then reports"** (§2): the IBFT side validates a response and reports a verdict,
+  so no block and no certificate enters the control layer;
+- **the peer set supplied per call and never cached** (§2): the control layer borrows it from its caller on every
+  call.
+
+**Status, 2026-10-12.** The control layer exists on `etheram-ibft`'s branch `extract-recovery-crate`, as `(outcome)
+= process(event, facts)` behind one trait. Beggar does not exist yet, so nothing depends on it. **Not decided:**
+whether the control layer ever moves into this repository. If it does, it arrives as a second crate that depends
+on beggar, never the reverse.
