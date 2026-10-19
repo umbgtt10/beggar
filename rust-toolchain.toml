@@ -1,0 +1,10 @@
+# The compiler this repository's gates pass with, pinned so that neither a machine's default nor CI's `stable` can
+# change it unannounced: a release can add a lint that `-D warnings` turns into a failure, or move what
+# `cargo fmt --check` accepts. Every gate was measured green on 1.99.1 on 2026-10-19. Bump it in its own commit,
+# with the gates.
+#
+# It pins the compiler that builds and gates this repository, not the one its users need: `cargo install` builds
+# with the user's own toolchain, and `rust-version` states the minimum.
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy", "llvm-tools"]
