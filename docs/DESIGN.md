@@ -103,8 +103,8 @@ first being 1 (§7).
 | query | answers |
 |---|---|
 | `ListRecoveries` | the names of the open sessions |
-| `ShowRecovery` | one session's record — `chunks`, `sender`, `receiver`, the chunk ids received — open or retained (§6) |
-| `ListMissingChunks` | one session's chunk ids not yet received |
+| `ShowRecovery` | one session's record — `chunks`, `sender`, `receiver`, the chunks received (§8) — open or retained (§6) |
+| `ListMissingChunks` | one session's chunks not yet received, as maximal runs (§8) |
 | `ShowRegistry` | the whole registry: every open and retained record, the name count, the next receipt's number — **the checkpoint** (§7) |
 
 | output | meaning |
@@ -229,6 +229,12 @@ majority side's, because the sending node witnesses every transfer — [`P1-ADR-
 
 **The received set is ranges of chunk ids** — `3..=7`, `9..=12` — merged as chunks arrive; never a bitmap
 ([`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md)).
+
+**A caller sees it as `ReceivedChunks`**, beggar's own type, through behaviour and never its fields: `count`,
+`contains`, `ids`, and `runs` — the maximal runs of consecutive ids, `1..=3`, `5..=6`, `9..=9` for chunks 1, 2, 3, 5,
+6 and 9. A set has exactly one list of maximal runs, so they are a property of the set, not of how beggar stores
+it, and any implementation gives the same. They keep the checkpoint small: chunks 1 to 1,000,000 received in order
+are one run, and a session that has received nothing is missing one run, whatever its `chunks`.
 
 | field | holds |
 |---|---|

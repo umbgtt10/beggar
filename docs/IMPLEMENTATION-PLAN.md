@@ -97,15 +97,12 @@ Pull: the node behind opens the session and receives.
   ([`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md)).
 - **Pull first:** slice 2 receives, because IBFT's control layer already exists to integrate against; Raft's
   catch-up has yet to be split into a control layer and beggar.
-- **Vectors hold one instance each.** Two-ended transfers are host tests of two registries, from slice 3.
-
-## Proposed
-
 - **The chunks received are a type of beggar's own, `ReceivedChunks`**, showing behaviour, never its fields:
   `count`, `contains`, `ids`, and `runs` — the maximal runs of consecutive ids. A set has exactly one set of
   maximal runs, so they are a property of the set and not of a representation, and they keep a checkpoint small:
   a session holding chunks 1 to 1,000,000 is one run. `ListMissingChunks` answers in runs too. The vectors still
-  give ids.
+  give ids. Its shape is laid down with the checkpoint in slice 1, and holds its first chunk in slice 2.
+- **Vectors hold one instance each.** Two-ended transfers are host tests of two registries, from slice 3.
 
 ## After the slices
 
