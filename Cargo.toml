@@ -3,19 +3,20 @@
 # here yet, so there is nothing to scope apart.
 #
 # The metadata shape is faction's, deliberately: same licence, same edition,
-# same MSRV, same category set. These two crates are siblings -- a protocol-
-# independent state machine a host drives -- and the one place they differ is
-# noted below.
+# same MSRV, same category set. These two crates are siblings -- protocol-
+# independent, driven by a host through one entry point, though faction is a
+# state machine and beggar a registry -- and the one place their manifests
+# differ is noted below.
 [package]
 name = "beggar"
 version = "0.0.1"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT"
-description = "A no_std, protocol-independent recovery state machine: a node that fell behind asks a peer for what it missed, may be refused, retries, and falls back to a snapshot. This version reserves the name; there is no implementation yet."
+description = "A no_std, protocol-independent recovery registry: a recovery is a collection of chunks -- log entries or a snapshot's pieces -- and beggar accounts for which have moved. This version reserves the name; there is no implementation yet."
 documentation = "https://docs.rs/beggar"
 readme = "README.md"
-keywords = ["recovery", "consensus", "distributed", "state-machine", "no-std"]
+keywords = ["recovery", "consensus", "distributed", "registry", "no-std"]
 categories = ["no-std", "algorithms", "network-programming"]
 
 # `repository` and `homepage` are the one departure from faction's manifest, and

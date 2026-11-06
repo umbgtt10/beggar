@@ -4,35 +4,41 @@
 #![no_std]
 #![forbid(unsafe_code)]
 
-//! Protocol-agnostic recovery for replicated logs.
+//! A `no_std`, protocol-independent recovery registry.
 //!
 //! **This version reserves the name. There is no implementation, so nothing
 //! should depend on it yet.**
 //!
+//! # What it does
+//!
+//! A recovery is a collection of chunks -- a request for blocks, a lagging
+//! follower's missing log entries, a snapshot sent in pieces -- and beggar
+//! accounts for which of them have moved. It knows sessions, chunk counts,
+//! chunk ids and node ids, and nothing else: what a chunk holds, in what order
+//! chunks move, which protocol moves them and under what policy are the
+//! caller's.
+//!
 //! # What the name means
 //!
 //! Recovery is a supplicant. A node that fell behind has no leverage over the
-//! peers that did not: it asks for the entries it missed, the peer may refuse,
-//! it may be handed a snapshot instead of what it asked for, and if ignored its
-//! only recourse is to ask again. Nothing in that loop is a negotiation, which
-//! is why the crate is not called `sync` or `catchup`.
+//! peers that did not: it asks for what it missed, the peer may refuse, it may
+//! be handed something other than what it asked for, and if ignored its only
+//! recourse is to ask again. Nothing in that loop is a negotiation, which is
+//! why the crate is not called `sync` or `catchup`.
 //!
 //! # Sibling to `faction`
 //!
 //! [`faction`](https://crates.io/crates/faction) is the same idea applied to
-//! the moment a cluster starts: a deterministic state machine the host drives,
-//! with one entry point, a read-only probe, and the set of admissible commands
-//! returned on every result. This crate is intended to follow that shape for
-//! the moment a node falls behind.
-//!
-//! Two things differ, and both change the design. Faction converges once —
-//! `Bootstrapped` is terminal. Recovery is cyclic, re-entered at every
-//! partition, so episodes need an explicit counter where faction needed none.
-//! And serving must stay admissible in *every* state, because the node that
-//! answers a request is precisely the one that is already in sync.
+//! the moment a cluster starts, and the two differ where it matters. Faction is
+//! a state machine; beggar is a registry. Every outcome here is a function of
+//! the command and the session's record, so no state label does any work and
+//! there is no set of admissible commands to return. Serving needs no rule to
+//! stay possible: the node that answers is the one already in sync, and a
+//! registry refuses it nothing.
 //!
 //! # Why `no_std`
 //!
-//! The intended consumers run on embedded targets with no allocator growth
-//! budget, so the mode is declared here at the first version rather than
-//! discovered later. State must be bounded per episode.
+//! The intended consumers run on embedded targets, so the mode is declared
+//! here at the first version rather than discovered later. A session's size
+//! follows the gaps in what has arrived, not its chunk count, and both terminal
+//! outcomes evict it.

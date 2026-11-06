@@ -21,8 +21,12 @@ That asymmetry is the whole mechanism, and it is the reason for the name.
 chunk count and two node identities; each chunk that moves is recorded against it; when the set is full, or the
 caller cancels, the session terminates and is evicted.
 
-It deals in **no bytes, blocks, arrays or wire types** — session identities, chunk counts, node identities, and
-nothing else. The payload moves elsewhere; beggar records that it moved.
+It deals in **no bytes, blocks, arrays or wire types** — session identities, chunk counts, chunk ids and node
+identities, and nothing else. The payload moves elsewhere; beggar records that it moved.
+
+**A recovery is just a collection of chunks**: a request for blocks, a lagging follower's missing log entries, a
+snapshot sent in pieces; in IBFT or in Raft; pulled by the node behind or pushed by the node ahead. Beggar knows
+none of it. What a chunk holds, in what order chunks move and under what policy are the caller's.
 
 **It is deliberately not a control layer.** It does not detect that a node is behind, does not choose a peer,
 does not time a retry and does not decide to fall back to a snapshot. It owns no clock and knows no heights.

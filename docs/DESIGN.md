@@ -2,7 +2,9 @@
 
 **Status: design settled 2026-09-30. No implementation.** This document supersedes every earlier description
 of beggar, including the framing in `README.md` — see §11 for what changed and why. **Amended 2026-10-12** with
-where beggar sits among the layers of the integration — §12. Nothing settled here changed.
+where beggar sits among the layers of the integration — §12. Nothing settled here changed. **Amended 2026-11-06**:
+a recovery is just a collection of chunks — logs or snapshots, IBFT or Raft, pushed or pulled — §13; and with it
+the received set holds ranges of chunk ids rather than a bitmap, and `chunks` is a u64 — §8.
 
 **Sequencing.** Beggar takes over one part of the block-recovery path in `etheram-ibft` — the bookkeeping of
 the request in flight — beneath the control layer the extraction carved out of it (§12). The path's as-built
@@ -68,13 +70,18 @@ defect would quietly become a feature. It does not: **a beggar may ask repeatedl
 once — what it may not do is presume the answer.** The design permits the first and refuses the second, and the
 two must not be conflated.
 
+**The stance names the node in need, not the one that opens a session.** Under pull the node behind asks and
+opens it; under push the node ahead opens it, and the node behind never asked. Beggar cannot tell the two apart
+and does not need to (§13).
+
 ## 1. What beggar is
 
 **A pure accountant driving a registry of ongoing operations**, with a configurable retention policy, full
 queryability, full forensic observability, and zero technology.
 
 It deals in **no bytes, blocks, arrays or wire types**. It knows session identities, chunk counts and node
-identities. The payload moves elsewhere; beggar records that it moved.
+identities. The payload moves elsewhere; beggar records that it moved. Nor bits: which chunks have arrived is a set
+of chunk ids, never a bitmap (§8).
 
 **Why the name.** Recovery is a supplicant. A node that fell behind has no leverage over the peers that did
 not: it asks for what it missed, the peer **may refuse**, it may be offered something other than what it asked
@@ -89,7 +96,7 @@ the other's strategy.
 
 | # | property |
 |---|---|
-| 1 | **consuming-protocol independent** — beggar does not know it serves IBFT |
+| 1 | **consuming-protocol independent** — beggar does not know whether it serves IBFT or Raft |
 | 2 | **not intertwined** with faction or any other subsystem |
 | 3 | **fully observable** |
 | 4 | **technology agnostic** — `no_std` + `alloc`, zero `unsafe` |
@@ -163,8 +170,9 @@ cannot be confused at a call site.
 | `RecoveryPartialRejected` | the `chunk_id` is outside `1..=chunks` |
 
 **`chunks` is mode-agnostic, and that is the point.** Under `etheram-ibft`'s deployed profile a block request
-carries 8; a chunked snapshot would carry of the order of 100. Beggar does not know which it is accounting for,
-which is property 1 paying for itself.
+carries 8; a chunked snapshot would carry of the order of 100; a Raft leader catching a follower up carries
+whatever its control layer chose. Beggar does not know which it is accounting for, which is property 1 paying for
+itself (§13). It is a u64, so a caller may make one log entry one chunk (§8).
 
 **`sender` and `receiver` on the partials are redundant, and kept anyway — the rule is "nothing redundant,
 except where the redundancy is the only witness".** `StartRecovery` binds both to the `session_id`, which is the
@@ -295,7 +303,7 @@ fail: *reconstructed X of Y events*. A replay that cannot say how much it is mis
 
 **Beggar owns no clock, so it cannot supply the ordinal itself.** It comes in with the command.
 
-**The in-memory record therefore carries membership, not order.** The bitmap answers *which* chunks arrived;
+**The in-memory record therefore carries membership, not order.** The received set answers *which* chunks arrived;
 *when* is a log question, answered by the ordinals. An ordered structure in the registry would duplicate what the
 log already holds.
 
@@ -323,36 +331,47 @@ binding constraint is partition duration.
 
 ## 8. Memory
 
-Sized against `PeerId = u64`:
+**No bits or bytes in the record — amended 2026-11-06.** The first sizing kept the received set as a bitmap, a bit
+a chunk, sized for a block request's 8. A bitmap is a byte-level representation in a crate that deals in none, and
+it grows with the chunk count: a recovery is any number of chunks (§13), and over a u64 count a bitmap cannot
+exist. The received set is a set of **ranges of chunk ids** — `3..=7`, `9..=12` — merged as chunks arrive.
 
-| field | type | bytes |
-|---|---|---|
-| `session_id` | u64 | 8 |
-| `sender` | u64 | 8 |
-| `receiver` | u64 | 8 |
-| `chunks` | u16 | 2 |
-| `received` — 8 chunks as a bitmap | u8 | **1** |
-| | aligned | **32** |
+| field | holds |
+|---|---|
+| `session_id` | u64 |
+| `sender` | u64 |
+| `receiver` | u64 |
+| `chunks` | u64 — widened from u16, so a caller may make one log entry one chunk without converting |
+| `received` | ranges of chunk ids |
 
-**The container costs more than the record.** One session in a `Vec<Session>` is a 24-byte inline struct plus a
-32-byte allocation; in a `BTreeMap` it is a full B=6 leaf — 11 keys plus 11 values plus overhead, **≈470 bytes**.
-Roughly ten times, and below ~5 sessions a linear scan also beats a tree lookup.
+What that costs in bytes is the implementation's to report and the memory test's to measure, never the design's
+to promise.
 
-**Five nodes, one session, eight chunks, one peer: ~48 bytes on each of the two involved nodes and zero on the
-other three** — `Vec::new()` does not allocate. **~96 bytes cluster-wide.** Five concurrent sessions is one
-160-byte allocation. An ordered ledger rather than a bitmap would make a session ~96 bytes. All negligible.
+**A session's size follows its gaps, not its chunks.** Chunks that arrive in order — the common case for a log and
+for a snapshot alike — hold one range however many there are; each gap holds one more. The worst case is a peer
+sending every other chunk: a range a gap, up to `chunks / 2`. Beggar cannot bound that, because it owns no policy;
+the caller's chunk size and its cancellation policy (§5) bound it, and the caller states how.
+
+**The container costs more than the record.** One session in a `Vec<Session>` is the record in one allocation; in
+a `BTreeMap` it is a full B=6 leaf — 11 keys plus 11 values plus overhead, several times the record. And below ~5
+sessions a linear scan also beats a tree lookup.
+
+**Five nodes, one session, one peer: a record on each of the two involved nodes and nothing on the other three** —
+`Vec::new()` does not allocate. Five concurrent sessions are one allocation of records, and their ranges.
 
 **Churn is negligible too.** At 3–8 sessions per catch-up and a few hundred catch-ups per long run, that is
-~1,900 allocate/free cycles of 48 bytes across ~16 hours — about **0.03 per second**, against a logging path
-doing ~40 lines per second on the same board.
+~1,900 sessions opened and evicted across ~16 hours — about **0.03 per second**, against a logging path doing ~40
+lines per second on the same board.
 
 ### The memory test — required in CI
 
 **Shape.** Five nodes, one session, eight chunks, one peer; then **100 recoveries in sequence**, each completed
-so that retention 0 evicts it. Two assertions, catching different bugs:
+so that retention 0 evicts it. Chunks arrive in order, so each session holds one range; **a second run interleaves
+them** — the odd chunks first — so each session's ranges grow to their worst before it completes. Two assertions,
+catching different bugs:
 
-- **peak live bytes never exceed the skeleton plus one session's record** — catches transient bloat that frees
-  itself before the end
+- **peak live bytes never exceed the skeleton plus one session's record and its ranges** — catches transient bloat
+  that frees itself before the end
 - **live bytes after 100 equal live bytes after the first** — catches per-session residue
 
 **Measure at the allocator, not in the type.** A counting `#[global_allocator]` sees every `Layout`, so it
@@ -396,6 +415,7 @@ with where each landed, so the reasoning is not lost in the sections that now st
 | where "unservable" lives | **not in beggar** — it is a height-and-retention fact. `CancelRecovery` gains an opaque caller-defined `reason` instead | §4, §5 |
 | `sender`/`receiver` redundancy | **kept**, under the rule *"nothing redundant, except where the redundancy is the only witness"* | §4 |
 | shape of the injected admission policy | **deleted, not closed.** There is no admission policy and no trait boundary — beggar never sees an entry, so there is nothing to admit. Zero injected dependencies | §2 |
+| width of `chunks` — closed 2026-11-06 | **u64.** u16 was sized for a block request; a recovery is any number of chunks | §8, §13 |
 
 The first two turned out to be one decision: answering the return shape made the ordered-ledger question
 disappear, because once commands and outputs are the emitted record, order is already in the log and duplicating
@@ -413,12 +433,14 @@ validated. It is the largest single simplification in this document.
   handles a *collision with different parameters*, but not a caller that reuses an id after eviction — which is
   indistinguishable from a fresh session, and may well be fine.
 
-## 11. What this supersedes in `README.md`
+## 11. What this supersedes in the README, the crate's documentation and its manifest
 
-The README predates this design and contradicts it in four places. Listed so the repository is not
-self-contradictory, and so nobody reintroduces them:
+All three predated this design. The README was rewritten to agree with it; the crate's documentation
+(`src/lib.rs`) and its manifest's description and keywords still said "state machine", "admissible commands" and
+"episodes" until 2026-11-06, when they were brought into line. crates.io shows 0.0.1's description until a release
+carries the new one. What the old texts said is listed so nobody reintroduces it:
 
-| README says | now |
+| the old texts said | now |
 |---|---|
 | "recovery **state machine**" | a **registry**; there are no states — §3 |
 | "the set of **admissible commands** returned on every result" | **dropped** — it presupposes states — §3 |
@@ -469,7 +491,37 @@ consensus vocabulary in its source, comments included. It may know a chain; it m
 - **the peer set supplied per call and never cached** (§2): the control layer borrows it from its caller on every
   call.
 
+**Raft has the same three layers — 2026-11-06, §13.** Its control layer is the catch-up bookkeeping behind
+`etheram-raft`'s `CatchUpBookkeeping` port, whose default steps back on a rejection: log indices, `nextIndex` and
+`matchIndex`, the follower to send to next. Beggar sits beneath it as beneath IBFT's, and takes over the same one
+thing: the bookkeeping of what is in flight.
+
 **Status, 2026-10-12.** The control layer exists on `etheram-ibft`'s branch `extract-recovery-crate`, as `(outcome)
 = process(event, facts)` behind one trait. Beggar does not exist yet, so nothing depends on it. **Not decided:**
 whether the control layer ever moves into this repository. If it does, it arrives as a second crate that depends
 on beggar, never the reverse.
+
+**Status, 2026-11-06.** The extraction merged to `etheram-ibft`'s main in `0963d1d` on 2026-10-17, so the control
+layer is on main, in `recovery/control/`. Beggar still does not exist. Nor does Raft's split: its catch-up
+bookkeeping is one layer today, and beggar's arrival there is what would split it.
+
+## 13. A recovery is a collection of chunks — decided 2026-11-06
+
+**Beggar supports logs and snapshots, for IBFT and for Raft. As a bookkeeper it does not know what is being
+transferred, how, in what sequence, with what policy or under which protocol. A recovery is just a collection of
+chunks.** The owner's rule; §4's mode-agnostic `chunks` said it for IBFT's two modes, and this says it for
+everything.
+
+- **Logs and snapshots alike.** IBFT's request for 8 blocks, a Raft follower's missing log entries, a snapshot sent
+  in pieces: each is a session of `chunks`. What a chunk holds — a block, an entry, a batch of entries, a slice of
+  a snapshot — is the caller's choice and never reaches beggar.
+- **Both protocols.** IBFT's control layer and Raft's (§12) drive the same registry through the same entry point.
+- **Pushed or pulled.** Under pull the node behind opens the session, as IBFT asks for blocks; under push the node
+  ahead does, as a Raft leader sends a lagging follower what it lacks. §4's one registry with two roles covers
+  both, and nothing in the commands says which it was.
+- **A stream becomes a collection above beggar.** A log catch-up has no fixed end: entries keep arriving, and Raft
+  steps back on a rejection. The control layer decides what one recovery covers — what was missing when it
+  opened, with entries appended later left to ordinary replication — and a range found wrong is a
+  `CancelRecovery`, its `reason` saying why, and a new session. Beggar sees a fixed count either way.
+- **No bits or bytes, and a wider count.** The received set is ranges of chunk ids, never a bitmap, and `chunks`
+  is a u64 (§8).
