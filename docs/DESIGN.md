@@ -1,12 +1,10 @@
 # beggar — design
 
-**Status: design settled 2026-09-30. No implementation.** This document supersedes every earlier description
-of beggar, including the framing in `README.md` — see §11 for what changed and why. **Amended 2026-10-12** with
-where beggar sits among the layers of the integration — §12. Nothing settled here changed. **Amended 2026-11-06**:
-a recovery is just a collection of chunks — logs or snapshots, IBFT or Raft, pushed or pulled — §13; and with it
-the received set holds ranges of chunk ids rather than a bitmap, and `chunks` is a u64 — §8. **And later that
-day**: beggar names its sessions, refuses with specific outputs rather than exceptions, and answers four queries,
-the checkpoint among them — §14, with §4's vocabulary and matrix rewritten to match.
+**Status: design settled; no implementation.** The foundations are four P0 ADRs in [`ADRs/`](ADRs/README.md):
+what beggar is and why. This document is how — the vocabulary and its matrix (§4), the semantics (§5), retention
+(§6), observability (§7), memory (§8) — and the decisions below the foundations (§14). Settled 2026-09-30, amended
+2026-10-12 (§12) and 2026-11-06 (§8, §14); the foundations moved to the ADRs the same day, and §0–§3 and §13 keep
+only what the ADRs leave here. The section numbers are kept, because other repositories cite them.
 
 **Sequencing.** Beggar takes over one part of the block-recovery path in `etheram-ibft` — the bookkeeping of
 the request in flight — beneath the control layer the extraction carved out of it (§12). The path's as-built
@@ -28,19 +26,12 @@ parallel with all of it.
 
 ## 0. The stance, and why it forces the architecture
 
-**Initiating a recovery is begging for help.** Not a metaphor for the name — a statement about what the asking
-node can know, and the whole design follows from it.
+**Initiating a recovery is begging for help**, and the design refuses to assume what the node behind cannot know:
+whether a peer is ahead, whether it will serve, whether to ask one or several. That refusal is why beggar is a
+registry — [`P0-ADR-ARegistryNotAStateMachine`](ADRs/P0-ADR-ARegistryNotAStateMachine.md).
 
-A node that has fallen behind faces three irreducible uncertainties:
-
-| | |
-|---|---|
-| **Is the peer ahead?** | It may or may not know. A status may have arrived; it may not have |
-| **Will the peer serve?** | It may or may not know. Willingness is discovered only by asking, and silence and refusal look identical from outside |
-| **Ask one peer, or several at once?** | It may or may not be willing to fan out. That is a choice, not a fact about the world |
-
-**These are negative requirements — things the design refuses to assume** — and each is a place where beggar
-deliberately holds *less* knowledge than the recovery it replaces:
+Against IBFT's recovery as built, each is a place where beggar deliberately holds *less* knowledge than what it
+replaces:
 
 | uncertainty | as-built recovery | beggar |
 |---|---|---|
@@ -48,51 +39,17 @@ deliberately holds *less* knowledge than the recovery it replaces:
 | peer willing? | refusal is distinct from timeout and excludes a peer at that height | **no refusal command exists.** An unwilling peer simply never produces a partial |
 | one or many? | a **single** in-flight slot, ever | many concurrent sessions; beggar neither requires nor prevents fan-out |
 
-### Why this makes it a registry rather than a state machine
-
-**You cannot build a state machine over uncertainties you refuse to resolve.** A machine would need a label
-distinguishing *waiting on a willing peer* from *waiting on an unwilling one* — and that distinction is
-unknowable from inside, because the two produce identical observations. Any such label would be a guess encoded
-as structure.
-
-A registry does not need it. It records what actually arrived and says nothing about what a silence means. So
-the epistemic humility is not a gloss on the design; **it is the reason the design is accounting**, and §3's
-argument about state labels is this argument in mechanical form.
-
-### Two consequences
-
-**`CancelRecovery`'s `reason` carries more weight than it appears to.** Because beggar cannot express refusal,
-*"the peer said no"* and *"the peer said nothing"* collapse into the same absence — and they warrant different
-responses, since only one of them should exclude that peer next time. The tag is the **only** place willingness
-survives in the ledger. That makes it load-bearing rather than a convenience.
-
-**The stance is about not assuming, not about not acting.** "Begging" reads as passive, and one of the as-built
-open issues is precisely *"reactive only, never probes"*. If the stance were taken to endorse passivity, that
-defect would quietly become a feature. It does not: **a beggar may ask repeatedly, and ask several peers at
-once — what it may not do is presume the answer.** The design permits the first and refuses the second, and the
-two must not be conflated.
-
-**The stance names the node in need, not the one that opens a session.** Under pull the node behind asks and
-opens it; under push the node ahead opens it, and the node behind never asked. Beggar cannot tell the two apart
-and does not need to (§13).
-
 ## 1. What beggar is
 
-**A pure accountant driving a registry of ongoing operations**, with a configurable retention policy, full
-queryability, full forensic observability, and zero technology.
+**A pure accountant driving a registry of ongoing transfers**, with a configurable retention policy, full
+queryability, full forensic observability, and zero technology. Four ADRs found it:
 
-It deals in **no bytes, blocks, arrays or wire types**. It knows session identities, chunk counts and node
-identities. The payload moves elsewhere; beggar records that it moved. Nor bits: which chunks have arrived is a set
-of chunk ids, never a bitmap (§8).
+- [`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md) — what it knows: sessions, chunk counts, chunk ids and node ids;
+- [`P0-ADR-ARegistryNotAStateMachine`](ADRs/P0-ADR-ARegistryNotAStateMachine.md) — what it is;
+- [`P0-ADR-AccountsNeverDecides`](ADRs/P0-ADR-AccountsNeverDecides.md) — what it leaves to the caller;
+- [`P0-ADR-SpecificationIsNormativeCrateIsReference`](ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md) — what defines it.
 
-**Why the name.** Recovery is a supplicant. A node that fell behind has no leverage over the peers that did
-not: it asks for what it missed, the peer **may refuse**, it may be offered something other than what it asked
-for, and if ignored its only recourse is to ask again. That asymmetry is the mechanism.
-
-**Sibling to `faction`, and the difference is load-bearing.** Faction *is* a state machine — membership has
-genuine states a node moves between, and `Bootstrapped` is terminal. Beggar has no states at all. That decides
-how each is tested: **an FSM needs transition coverage, a registry needs invariants.** Neither should borrow
-the other's strategy.
+What the name means is in the README.
 
 ## 2. Properties
 
@@ -105,49 +62,23 @@ the other's strategy.
 | 5 | **one single entry point**: `(output) = process(command, <internal state>)` |
 | 6 | **query without side effect**: `(output) = process(command:query, <internal state>)` |
 
-**Property 1 is true by construction, not by discipline.** There is no vocabulary in which a protocol-specific
-type could be expressed.
-
-**Beggar has zero injected dependencies — settled 2026-09-30.** An earlier draft made **admission** a trait
-boundary, on the reasoning that whether an entry is valid and who may serve it does not generalise. That was
-inherited from a broader conception in which beggar fetched and validated. It does not apply: **beggar never
-sees an entry.** The caller validates, and only then reports that a chunk arrived; a rejected entry is simply
-never reported. Nothing is left to inject — no clock (property 4 forbids it), no transport, and emission is
-*returned* rather than pushed to a sink.
-
-That is a result rather than a gap. A type with no injection points is trivially implementable in any language
-and needs no stubs to test, which is what makes a cross-language conformance suite practical.
-
-**Property 2 has an API consequence.** Beggar cannot ask whether it is a member and cannot be told the
-validator set changed. The peer set is **supplied per call** and never cached, which costs nothing while
-membership is static and is what lets beggar survive faction gaining join/leave without either learning about
-the other.
-
-**Property 4 is what collapses the entrances.** A core that owns no timer and no socket cannot have five call
-sites; "the retry timeout expired" becomes a command rather than an entrance.
+Property 1 is [`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md)'s. Property 2, and with it zero injected dependencies — no clock, storage, transport, sink or
+admission check; **the caller validates, and only then reports**; the peer set supplied per call and never
+cached — is [`P0-ADR-AccountsNeverDecides`](ADRs/P0-ADR-AccountsNeverDecides.md)'s. Properties 3, 5 and 6 are this document's: §7 and §4.
 
 ## 3. A registry, not a state machine
 
-**The test that settles it.** In a state machine, the response to a command depends on a *state label* that
-cannot be read off the data — the same command with the same arguments yields different results in different
-states. Here it never does. Every output is a pure function of the command and the session record. No label does
-any work, so there is no machine: there is a keyed collection with validated operations. `StartRecovery` and
-`AdoptRecovery` insert, `CancelRecovery` removes, a partial updates one set member.
+Why is [`P0-ADR-ARegistryNotAStateMachine`](ADRs/P0-ADR-ARegistryNotAStateMachine.md). What it commits the design to:
 
-**Three consequences.**
-
-**`admissible commands` does not exist.** An earlier design returned the set of legal commands alongside the
-output. That only makes sense relative to a state, and keeping it would have meant inventing a state concept to
-give the field something to say. If a sender needs to know what to resend, that is a **query returning the
-missing chunk ids** — data from the record, not a transition list.
+`StartRecovery` and `AdoptRecovery` insert, `CancelRecovery` removes, a partial updates one set member.
 
 **Both terminal outputs evict.** Retaining a completed record accumulates exactly as a height-keyed exclusion
 map once did in `etheram-ibft`: 292 orphaned entries at ~110 bytes, fatal by fragmentation long before size. With
 both evicting, the registry's size is bounded by *concurrent* transfers, not by transfers ever attempted.
 
-**Correctness is invariants, not paths.** `received ⊆ 1..=chunks`, `|received| ≤ chunks`, no record survives a
-terminal output, every open session has this node as exactly one of its two ends, no two open sessions share a
-name, and the command-to-output mapping is total. Exhaustively property-testable over small `chunks`.
+**The invariants.** `received ⊆ 1..=chunks`, `|received| ≤ chunks`, no record survives a terminal output, every
+open session has this node as exactly one of its two ends, no two open sessions share a name, and the
+command-to-output mapping is total. Exhaustively property-testable over small `chunks`.
 
 ## 4. Vocabulary
 
@@ -205,8 +136,8 @@ degenerate or a malicious one — a peer's, which is why each carries what the l
 
 **`chunks` is mode-agnostic, and that is the point.** Under `etheram-ibft`'s deployed profile a block request
 carries 8; a chunked snapshot would carry of the order of 100; a Raft leader catching a follower up carries
-whatever its control layer chose. Beggar does not know which it is accounting for, which is property 1 paying for
-itself (§13). It is a u64, so a caller may make one log entry one chunk (§8).
+whatever its control layer chose. Beggar does not know which it is accounting for — [`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md). It is a u64, so a
+caller may make one log entry one chunk (§8).
 
 **`sender` and `receiver` on the partials are redundant, and kept anyway — the rule is "nothing redundant,
 except where the redundancy is the only witness".** Opening a session binds both to its name, which is the key, so
@@ -219,7 +150,9 @@ case, principled, and written down rather than quietly violated.
 larger one" and "the peer has pruned past what I need" are height-and-retention facts it has no vocabulary for.
 Without the tag those two are indistinguishable in the forensic record, and they call for completely different
 responses. Beggar records and emits it and never reads it, so protocol independence is intact. Its type is the
-caller's enum, for the same reason (§14).
+caller's enum, for the same reason (§14). It is also the **only** place willingness survives in the ledger:
+beggar cannot express refusal, so *"the peer said no"* and *"the peer said nothing"* are the same absence, and only
+the reason tells apart the one that should exclude that peer next time.
 
 **One registry, two roles, many sessions.** The same type runs on both ends; the role follows from which
 commands arrive and from `sender`/`receiver` against this node's id. A node receiving from one peer while
@@ -390,10 +323,8 @@ binding constraint is partition duration.
 
 ## 8. Memory
 
-**No bits or bytes in the record — amended 2026-11-06.** The first sizing kept the received set as a bitmap, a bit
-a chunk, sized for a block request's 8. A bitmap is a byte-level representation in a crate that deals in none, and
-it grows with the chunk count: a recovery is any number of chunks (§13), and over a u64 count a bitmap cannot
-exist. The received set is a set of **ranges of chunk ids** — `3..=7`, `9..=12` — merged as chunks arrive.
+**The received set is ranges of chunk ids** — `3..=7`, `9..=12` — merged as chunks arrive; never a bitmap
+([`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md)).
 
 | field | holds |
 |---|---|
@@ -514,13 +445,8 @@ and validated.
 
 ## 12. Where beggar sits: three layers — decided 2026-10-11
 
-**The extraction in `etheram-ibft` split recovery along the line §11 draws, and found a layer on each side of
-it.** What it measured as consensus-unaware is not beggar: it detects lag, chooses a peer from the statuses it has
-seen, retries on timeout and excludes a peer that refuses — the control layer §11 puts out of scope. Folding it
-into beggar would reverse four settled decisions: no heights (§0, §1); a registry and not a state machine (§3 —
-the control layer has genuine states: an episode open or closed, a request targeted or blind); no refusal command
-(§0); and the control layer out of scope (§11). The reading the owner decided is the one under which nothing here
-is reversed:
+**The extraction in `etheram-ibft` split recovery along the line [`P0-ADR-AccountsNeverDecides`](ADRs/P0-ADR-AccountsNeverDecides.md) draws, and found a layer on each side of
+it.** What it measured as consensus-unaware is not beggar but the control layer that ADR puts above it:
 
 | layer | knows | where |
 |---|---|---|
@@ -531,7 +457,8 @@ is reversed:
 **Beggar takes over one thing from the control layer: the bookkeeping of the request in flight.** A block request
 is a session of `chunks` blocks — 8 under the deployed profile, as §4 says. The control layer keeps everything
 beggar refuses to know — which heights a request covers, which peer is ahead, why a request was abandoned, which
-travels as `CancelRecovery`'s opaque `reason` — and it is the driver that, per §5, owns the cancellation policy.
+travels as `CancelRecovery`'s `reason`, the caller's enum — and it is the driver that, per §5, owns the
+cancellation policy.
 
 **The dependency runs one way.** The control layer will depend on beggar; beggar depends on nothing, and property 1
 holds by construction as before. The control layer's own independence is mechanical too, at a different line: its
@@ -564,24 +491,8 @@ bookkeeping is one layer today, and beggar's arrival there is what would split i
 
 ## 13. A recovery is a collection of chunks — decided 2026-11-06
 
-**Beggar supports logs and snapshots, for IBFT and for Raft. As a bookkeeper it does not know what is being
-transferred, how, in what sequence, with what policy or under which protocol. A recovery is just a collection of
-chunks.** The owner's rule; §4's mode-agnostic `chunks` said it for IBFT's two modes, and this says it for
-everything.
-
-- **Logs and snapshots alike.** IBFT's request for 8 blocks, a Raft follower's missing log entries, a snapshot sent
-  in pieces: each is a session of `chunks`. What a chunk holds — a block, an entry, a batch of entries, a slice of
-  a snapshot — is the caller's choice and never reaches beggar.
-- **Both protocols.** IBFT's control layer and Raft's (§12) drive the same registry through the same entry point.
-- **Pushed or pulled.** Under pull the node behind opens the session, as IBFT asks for blocks; under push the node
-  ahead does, as a Raft leader sends a lagging follower what it lacks. §4's one registry with two roles covers
-  both, and nothing in the commands says which it was.
-- **A stream becomes a collection above beggar.** A log catch-up has no fixed end: entries keep arriving, and Raft
-  steps back on a rejection. The control layer decides what one recovery covers — what was missing when it
-  opened, with entries appended later left to ordinary replication — and a range found wrong is a
-  `CancelRecovery`, its `reason` saying why, and a new session. Beggar sees a fixed count either way.
-- **No bits or bytes, and a wider count.** The received set is ranges of chunk ids, never a bitmap, and `chunks`
-  is a u64 (§8).
+[`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md): logs or snapshots, IBFT or Raft, pushed or pulled. What a chunk holds, in what order chunks move, under what
+policy and which protocol are the caller's, and a stream becomes a collection above beggar.
 
 ## 14. Names, refusals and queries — decided 2026-11-06
 
@@ -617,7 +528,7 @@ what the log needs to tell a degenerate caller from a malicious peer. `RecoveryP
 
 **The cancel reason is the caller's enum — with or without a payload, never a string.** Its variants are why
 recoveries end, which beggar does not know and must not. So beggar is generic over it: stores it, emits it, never
-reads it. A type parameter carries no behaviour, so zero injected dependencies (§2) still holds. In the
+reads it. A type parameter carries no behaviour, so zero injected dependencies ([`P0-ADR-AccountsNeverDecides`](ADRs/P0-ADR-AccountsNeverDecides.md)) still holds. In the
 conformance vectors it is an enum of the vectors' own, written as JSON.
 
 **A late duplicate `AdoptRecovery` reopens a finished session, and the caller's cancellation policy owns it.**

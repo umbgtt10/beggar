@@ -9,7 +9,8 @@ A recovery is just a collection of chunks -- logs or snapshots, for IBFT or for
 Raft, pushed or pulled. Beggar does not know what is transferred, how, in what
 order, under what policy or which protocol. No bits or bytes in beggar.
 
-`docs/DESIGN.md` is authoritative; read it before changing anything.
+`docs/ADRs/` holds the foundations and `docs/DESIGN.md` the how; both are
+authoritative. Read them before changing anything.
 
 ## Quality Gates
 
