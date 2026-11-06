@@ -16,6 +16,7 @@ documentation = "https://docs.rs/beggar"
 readme = "../README.md"
 keywords = ["recovery", "consensus", "distributed", "registry", "no-std"]
 categories = ["no-std", "algorithms", "network-programming"]
+autotests = false
 
 # `repository` and `homepage` are the one departure from faction's manifest, and
 # not a stylistic one: faction's repository is public, this one is private, so
@@ -31,3 +32,7 @@ categories = ["no-std", "algorithms", "network-programming"]
 [lib]
 name = "beggar"
 path = "src/lib.rs"
+
+[[test]]
+name = "all_tests"
+path = "tests/all_tests.rs"

@@ -32,7 +32,9 @@ and cargo-deny, in that order, for the reasons etheram-core records. stern runs
 over `beggar` **and** `xtask`; the rest over `beggar`.
 
 crap4rust needs a function to score: on a crate with none, llvm-cov finds no
-coverage data and the gate fails. It goes green with the first function.
+coverage data and the gate fails. Until the implementation begins,
+`core/src/dummy.rs` and its test give it one; they go when the first real
+function arrives.
 
 ## Layout
 

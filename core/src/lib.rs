@@ -42,3 +42,5 @@
 //! here at the first version rather than discovered later. A session's size
 //! follows the gaps in what has arrived, not its chunk count, and both terminal
 //! outcomes evict it.
+
+pub mod dummy;
