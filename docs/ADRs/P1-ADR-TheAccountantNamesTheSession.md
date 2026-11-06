@@ -65,6 +65,10 @@ restarts at zero, so every boot draws the same one. An ordered incarnation — a
 count or a timestamp — also tells a peer that every session of an older one is
 dead, which the caller's cleanup can use; a random one cannot.
 
+A restarted node is never a restored checkpoint: a checkpoint's count may be
+behind the instance's, and restoring it in service would mint names again
+([P1-ADR-TheLogIsTheRecord](P1-ADR-TheLogIsTheRecord.md)).
+
 `StartRecovery` cannot meet an open session, so it has one row. `AdoptRecovery`
 can, and takes the three: not open, open with the same parameters, open with
 different ones.

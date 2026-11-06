@@ -23,6 +23,11 @@ command, and each is total over the commands it has.
   crate does so far. When to publish is the owner's call.
 - **Grows what is there:** the vectors, the random-sequence property test and the memory test take each new
   command; nothing is rebuilt.
+- **Lands in every tier that applies** ([`P2-ADR-TestingLadder`](ADRs/P2-ADR-TestingLadder.md)), and keeps
+  coverage whole: no uncovered line, region or function, over all tiers and over the vectors alone
+  ([`P1-ADR-NoLineTheSpecificationDoesNotAskFor`](ADRs/P1-ADR-NoLineTheSpecificationDoesNotAskFor.md)).
+- **Grows the specification first:** its rows in `spec/matrix.json`, its types in the schema, its meaning in
+  `spec/SPEC.md`, its vectors — then the code.
 
 ## The slices
 
@@ -31,11 +36,17 @@ command, and each is total over the commands it has.
 - **Adds:** `Beggar<R>` and its receipts, numbered from 1 on every call; `StartRecovery` with all its rows —
   `NoChunks`, `SelfAddressed`, `NotAParty`, and `RecoveryStarted` under a new name minted after the instance id;
   and `ShowRegistry`, the checkpoint.
-- **Lays down:** the JSON vector format in `spec/`, at the repository root and outside the crate, since it is
-  language-independent; and its runner in `core/tests/`, mapping the JSON to beggar's types through a model of its
-  own, so the crate itself never needs `serde`. A vector is an instance, steps of a command and its expected
-  receipt, and a final state, which the runner reads through `ShowRegistry`: the specification checks state the
-  way a caller would.
+- **Lays down the specification** in `spec/`, at the repository root and outside the crate: the JSON Schema, the
+  decision table `matrix.json`, `SPEC.md`, and the vectors, every u64 a string of decimal digits
+  ([`P0-ADR-SpecificationIsNormativeCrateIsReference`](ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md)).
+  A vector is an initial state, steps of a command and its expected receipt, and a final state, read through
+  `ShowRegistry`: the specification checks state the way a caller would.
+- **Lays down the ladder's first four tiers:** unit; conformance, whose runner in `core/tests/` maps the JSON to
+  beggar's types through a model of its own — so the crate never needs `serde` — and checks every vector against
+  the schema and every row of the matrix against the vectors; exhaustive matrix; and property, with the naive
+  model. And the coverage gate in stage 2, over every tier and over the conformance tier alone.
+- **Lays down both origins:** an instance created fresh or from a checkpoint, the checkpoint's round trip proved
+  — `ShowRegistry`, restore, `ShowRegistry` — so vectors can start from the state they need.
 - **Proves:** names unique across instances and within one, and receipt numbers one more on every call, refused
   calls included. The dummy goes.
 - **A caller can then:** open recoveries under names unique across the cluster, be refused when a command is
@@ -49,8 +60,9 @@ Pull: the node behind opens the session and receives.
   advanced (with received and expected), completed, and a duplicate, unaffected — and the received set, kept as
   ranges, in any order. Completion evicts.
 - **Proves:** the invariants on the chunks received; completion exactly when every distinct chunk has arrived;
-  no record after it. The memory test arrives: its own test target, a counting allocator, a positive control, then
-  100 recoveries in sequence, in order and interleaved.
+  no record after it. The memory tier arrives: its own test target, a counting allocator, a positive control, then
+  100 recoveries in sequence, in order and interleaved. So does the replay tier: the property tier's logs written
+  in the specification's JSON and replayed, a dropped line detected, the replay resynchronised from a checkpoint.
 - **A caller can then:** account a whole recovery on the node that asked for it — IBFT's request for blocks —
   duplicates, strays and garbage included.
 
@@ -59,7 +71,9 @@ Pull: the node behind opens the session and receives.
 - **Adds:** `AdoptRecovery` with its rows, sharing `StartRecovery`'s checks of a well-formed session, then not
   open, open with the same parameters, open with different ones; and `SendRecoveryPartial` with all its rows.
 - **Proves:** a host test of two registries joining both ends of a transfer. Pull: B serves A — start on A, adopt
-  on B, sends on B, receives on A, both complete. Push: the sender starts it and the receiver adopts.
+  on B, sends on B, receives on A, both complete. Push: the sender starts it and the receiver adopts. The
+  simulation tier arrives: several registries over a seeded fake network that loses, duplicates and reorders, and
+  the replay tier takes its logs.
 - **A caller can then:** account both ends of a transfer, pulled or pushed, for IBFT or for Raft.
 
 ### 4. Abandon it

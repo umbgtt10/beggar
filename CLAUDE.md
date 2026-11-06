@@ -32,6 +32,12 @@ dry4rust against `dry4rust-baseline.json`, crap4rust, twin4rust, iceberg4rust
 and cargo-deny, in that order, for the reasons etheram-core records. stern runs
 over `beggar` **and** `xtask`; the rest over `beggar`.
 
+The tests climb a ladder of seven tiers — `docs/ADRs/P2-ADR-TestingLadder.md` —
+and from the first slice stage 2 also runs a coverage gate: no uncovered line,
+region or function, over every tier and over the conformance vectors alone
+(`docs/ADRs/P1-ADR-NoLineTheSpecificationDoesNotAskFor.md`). The specification
+in `spec/` is normative; the crate is one implementation of it.
+
 crap4rust needs a function to score: on a crate with none, llvm-cov finds no
 coverage data and the gate fails. Until the implementation begins,
 `core/src/dummy.rs` and its test give it one; they go when the first real

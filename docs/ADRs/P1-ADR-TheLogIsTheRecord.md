@@ -83,9 +83,18 @@ so a log is ordered, instance by instance, by its numbers.
 Placing beggar's receipts among the caller's own events is the caller's: it
 logs each receipt within its own sequenced log.
 
-The checkpoint is a query, the whole registry: every open and retained record,
-the count names are minted from, and the next receipt's number. The caller
-asks for it as often as it chooses and logs it like any other receipt.
+The checkpoint is a query, the whole registry: the instance id and the
+retention, every open and retained record, the count names are minted from,
+and the next receipt's number. The caller asks for it as often as it chooses
+and logs it like any other receipt.
+
+An instance is created from one of two origins: a fresh instance id with its
+retention, or a checkpoint. Restoring a checkpoint is how a replay
+resynchronises after a gap, and how a vector starts from the state it needs.
+It is never a live restart: a checkpoint's name count may be behind the count
+the instance had reached, so a restored instance in service would mint names
+again. A node that restarts is a new instance, under a new incarnation, and
+starts empty.
 
 The registry keeps membership, not order. Which chunks arrived is the record's;
 when is the log's, answered by the receipt numbers, and an ordered structure in
@@ -98,7 +107,9 @@ receive is the local view of the node that may not be heard.
 
 The receipt is what `process` returns, and the caller logs it. The property
 tests check that every call's number is one more than the last, refused calls
-included; the conformance vectors give every expected receipt.
+included; the conformance vectors give every expected receipt; the replay tier
+rebuilds every receipt from a log, detects a dropped line and resynchronises
+from a checkpoint ([P2-ADR-TestingLadder](P2-ADR-TestingLadder.md)).
 
 ## Related
 

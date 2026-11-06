@@ -1,0 +1,66 @@
+# P2-ADR-TestingLadder
+
+- **Status:** Accepted
+- **Date:** 2026-11-06
+- **Priority:** P2 (structural)
+
+## Context
+
+One style of test catches one class of failure and misses the others. The
+vectors prove the specification's samples; they say nothing about a command
+sequence nobody wrote down. A property test explores sequences; it cannot
+enumerate every situation. Neither drives two registries through a network
+that loses, duplicates and reorders. Without named tiers, a command lands with
+one kind of test and skips the rest.
+
+## Decision
+
+Beggar's correctness rests on a fixed ladder of seven tiers, each with an
+obligation of its own, all run by the gates: unit, conformance, exhaustive
+matrix, property, simulation, replay and memory.
+
+## Forcing constraints / Evidence
+
+Each tier is the only one that catches its class of failure:
+
+| tier | proves | catches |
+|---|---|---|
+| 1. unit | each type alone, one test file per source file | a type wrong in isolation |
+| 2. conformance | every vector, every vector valid against the schema, every row of the matrix exercised | a departure from the specification |
+| 3. exhaustive matrix | every command in every situation over small bounds — `chunks` up to 3 — against the naive model | a situation no vector names |
+| 4. property | the invariants after every call, receipts one more on every call, the crate against the naive model over random sequences | a sequence nobody wrote down |
+| 5. simulation | several registries driven over a seeded fake network that loses, duplicates and reorders — pull, push, cancels, restarts under a new incarnation | what happens between two ends |
+| 6. replay | the property and simulation tiers' logs written in the specification's JSON and replayed into a fresh instance: every receipt matches, a dropped line is detected, the replay resynchronises from a checkpoint | a log that cannot rebuild the state |
+| 7. memory | a counting allocator in a test target of its own: a positive control, then peak and residue over 100 recoveries | growth no other tier sees |
+
+## Rejected alternatives
+
+**The vectors alone.** Rejected: they are samples, however complete their
+coverage of the matrix's rows.
+
+**A system tier**, as `faction` has. Not applicable: beggar has no transport,
+no socket and no process. Its system tier is its consumers' — IBFT's and
+Raft's system tests, once it is integrated.
+
+**Tiers without names.** Rejected: coverage gaps drift in silently.
+
+## Consequences
+
+A command lands in every tier that applies to it, in the slice that brings it:
+a unit test for each new type, its rows in the vectors, its situations in the
+exhaustive matrix, its effect in the naive model, and a simulation scenario and
+a replay where it changes what passes between two ends.
+
+The ladder is slower than unit tests alone; tier 3's bounds keep it exhaustive
+and fast, and tier 5 is seeded, so a failure replays.
+
+## Enforcement
+
+Stage 1 runs every tier; stage 2's coverage gate measures them together and
+the conformance tier alone
+([P1-ADR-NoLineTheSpecificationDoesNotAskFor](P1-ADR-NoLineTheSpecificationDoesNotAskFor.md)).
+
+## Related
+
+`faction`'s `P2-ADR-TestingLadder` — the ladder this one follows, tier for tier
+where beggar has the same thing to prove.

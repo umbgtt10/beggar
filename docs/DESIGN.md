@@ -1,7 +1,8 @@
 # beggar — design
 
-**Status: design settled; no implementation.** The decisions are nine ADRs in [`ADRs/`](ADRs/README.md) — four
-P0 foundations and five P1s derived from them — and say why. This document says how: the vocabulary and its
+**Status: design settled; no implementation.** The decisions are eleven ADRs in [`ADRs/`](ADRs/README.md) — four
+P0 foundations, six P1s derived from them and the testing ladder — and say why. The specification itself will be
+`spec/`, at the repository root. This document says how: the vocabulary and its
 matrix (§4), the semantics (§5), memory (§8), technology (§9), and where beggar sits among the layers above it
 (§12). The order of building it is [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md). Settled 2026-09-30, amended 2026-10-12 and 2026-11-06; the decisions moved to the ADRs on 2026-11-06, and
 the sections they came from keep their numbers, because other repositories cite them, and say where each went.
@@ -83,8 +84,11 @@ command-to-output mapping is total. Exhaustively property-testable over small `c
 Commands are **imperative**, outputs **past participle** — so "what I was asked to do" and "what happened"
 cannot be confused at a call site.
 
-**An instance is created with three things:** this node's id, an incarnation that never repeats for this node, and
-its retention (§6). The first two are the **instance id**, and every session the instance opens is named after it
+**An instance is created from one of two origins:** fresh — this node's id, an incarnation that never repeats for
+this node, and its retention (§6) — or a checkpoint, which carries all three and the state it was taken in, for a
+replay or a vector and never for a live restart
+([`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md)). The node's id and incarnation are the
+**instance id**, and every session the instance opens is named after it
 — [`P1-ADR-TheAccountantNamesTheSession`](ADRs/P1-ADR-TheAccountantNamesTheSession.md). **Every call is answered with a receipt**: its output and its number, one more than the instance's last, the
 first being 1 (§7).
 
@@ -105,7 +109,7 @@ first being 1 (§7).
 | `ListRecoveries` | the names of the open sessions |
 | `ShowRecovery` | one session's record — `chunks`, `sender`, `receiver`, the chunks received (§8) — open or retained (§6) |
 | `ListMissingChunks` | one session's chunks not yet received, as maximal runs (§8) |
-| `ShowRegistry` | the whole registry: every open and retained record, the name count, the next receipt's number — **the checkpoint** (§7) |
+| `ShowRegistry` | the whole registry: the instance id and retention, every open and retained record, the name count, the next receipt's number — **the checkpoint** (§7) |
 
 | output | meaning |
 |---|---|

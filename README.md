@@ -55,8 +55,8 @@ no wire types means no encoding to specify, no clock means no temporal logic, an
 machine means the normative core is a data model plus one total function — the matrix in
 [`docs/DESIGN.md`](docs/DESIGN.md) §4.
 
-What will make it a specification rather than prose is a **committed, machine-readable conformance suite** in
-JSON: vectors of `(initial state, command sequence) → (expected receipts, final state)`, consumed by this
+What will make it a specification rather than prose is `spec/`, written first and by hand: a JSON Schema data
+model, a JSON decision table, normative prose, and a **committed, machine-readable conformance suite** in JSON: vectors of `(initial state, command sequence) → (expected receipts, final state)`, consumed by this
 crate's tests and by any other implementation's.
 
 ## Sibling to `faction`, and the difference is load-bearing
