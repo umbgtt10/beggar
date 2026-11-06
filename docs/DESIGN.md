@@ -4,7 +4,9 @@
 of beggar, including the framing in `README.md` — see §11 for what changed and why. **Amended 2026-10-12** with
 where beggar sits among the layers of the integration — §12. Nothing settled here changed. **Amended 2026-11-06**:
 a recovery is just a collection of chunks — logs or snapshots, IBFT or Raft, pushed or pulled — §13; and with it
-the received set holds ranges of chunk ids rather than a bitmap, and `chunks` is a u64 — §8.
+the received set holds ranges of chunk ids rather than a bitmap, and `chunks` is a u64 — §8. **And later that
+day**: beggar names its sessions, refuses with specific outputs rather than exceptions, and answers four queries,
+the checkpoint among them — §14, with §4's vocabulary and matrix rewritten to match.
 
 **Sequencing.** Beggar takes over one part of the block-recovery path in `etheram-ibft` — the bookkeeping of
 the request in flight — beneath the control layer the extraction carved out of it (§12). The path's as-built
@@ -129,8 +131,8 @@ sites; "the retry timeout expired" becomes a command rather than an entrance.
 **The test that settles it.** In a state machine, the response to a command depends on a *state label* that
 cannot be read off the data — the same command with the same arguments yields different results in different
 states. Here it never does. Every output is a pure function of the command and the session record. No label does
-any work, so there is no machine: there is a keyed collection with validated operations. `StartRecovery`
-inserts, `CancelRecovery` removes, a partial updates one set member.
+any work, so there is no machine: there is a keyed collection with validated operations. `StartRecovery` and
+`AdoptRecovery` insert, `CancelRecovery` removes, a partial updates one set member.
 
 **Three consequences.**
 
@@ -144,30 +146,62 @@ map once did in `etheram-ibft`: 292 orphaned entries at ~110 bytes, fatal by fra
 both evicting, the registry's size is bounded by *concurrent* transfers, not by transfers ever attempted.
 
 **Correctness is invariants, not paths.** `received ⊆ 1..=chunks`, `|received| ≤ chunks`, no record survives a
-terminal output, and the command-to-output mapping is total. Exhaustively property-testable over small `chunks`.
+terminal output, every open session has this node as exactly one of its two ends, no two open sessions share a
+name, and the command-to-output mapping is total. Exhaustively property-testable over small `chunks`.
 
 ## 4. Vocabulary
 
 Commands are **imperative**, outputs **past participle** — so "what I was asked to do" and "what happened"
 cannot be confused at a call site.
 
+**An instance is created with three things:** this node's id, an incarnation that never repeats for this node, and
+its retention (§6). The first two are the **instance id**, and every session the instance opens is named after it
+(§14). **Every command carries the caller's `ordinal`** (§7), queries included.
+
 | command | side | carries |
 |---|---|---|
-| `StartRecovery` | — | `session_id`, `chunks`, `sender`, `receiver`. `sender` defaults to this node's id when set at instantiation |
+| `StartRecovery` | the side that opens it | `chunks`, `sender`, `receiver`. No id: beggar names the session and returns the name |
+| `AdoptRecovery` | the other side | `session_id`, `chunks`, `sender`, `receiver` — a session the peer started, under the name its beggar gave it, carried here by the caller |
 | `SendRecoveryPartial` | sending | `session_id`, `chunk_id`, `sender`, `receiver` |
 | `ReceiveRecoveryPartial` | receiving | `session_id`, `chunk_id`, `sender`, `receiver` |
-| `CancelRecovery` | either | `session_id`, `reason` — an **opaque caller-defined tag**, recorded and emitted, never interpreted |
+| `CancelRecovery` | either | `session_id`, `reason` — a value of the **caller's enum**, recorded and emitted, never interpreted |
+
+**A `session_id` is the instance id that named the session and a count** — node, incarnation, count: three numbers.
+
+**Queries change nothing** (property 6) and are commands like the rest: each carries an ordinal and is emitted.
+
+| query | answers |
+|---|---|
+| `ListRecoveries` | the names of the open sessions |
+| `ShowRecovery` | one session's record — `chunks`, `sender`, `receiver`, the chunk ids received — open or retained (§6) |
+| `ListMissingChunks` | one session's chunk ids not yet received |
+| `ShowRegistry` | the whole registry: every open and retained record, the count, the last ordinal — **the checkpoint** (§7) |
 
 | output | meaning |
 |---|---|
-| `RecoveryStarted` | a session was opened |
-| `RecoveryAdvanced` | a non-redundant partial was added |
+| `RecoveryStarted` | a session was opened; carries its `session_id` |
+| `RecoveryAdvanced` | a non-redundant partial was added; carries `received` and `expected` (§5) |
 | `RecoveryCompleted` | the partial just added filled the set |
-| `RecoveryCancelled` | cancelled by the caller |
+| `RecoveryCancelled` | cancelled by the caller; carries the `reason` |
 | `RecoveryUnaffected` | nothing changed |
-| `RecoveryNotStarted` | a partial arrived for a session that is not open |
-| `RecoveryConflicted` | a start names an open session with different parameters |
-| `RecoveryPartialRejected` | the `chunk_id` is outside `1..=chunks` |
+| `RecoveryNotStarted` | the command names a session that is not open |
+| `RecoveryConflicted` | an adopt names an open session with a different `chunks`, `sender` or `receiver` |
+| `RecoveryRejected` | the command was refused and nothing changed; carries a `Rejection` saying why |
+| `RecoveriesListed`, `RecoveryShown`, `MissingChunksListed`, `RegistryShown` | a query's answer |
+
+| `Rejection` | refuses |
+|---|---|
+| `OrdinalNotAfter { last, given }` | any command whose ordinal is not after the last accepted (§7) |
+| `NoChunks` | a start or adopt with `chunks` = 0 |
+| `SelfAddressed` | a start or adopt whose `sender` and `receiver` are the same node |
+| `NotAParty` | a start or adopt in which this node is neither `sender` nor `receiver` |
+| `Misattributed { sender, receiver }` | a partial whose ends differ from its session's; carries the session's |
+| `WrongSide` | a partial reported on the wrong end: a send on the session's receiver, a receive on its sender |
+| `ChunkOutOfRange { chunk_id, chunks }` | a partial whose `chunk_id` is outside `1..=chunks` |
+
+**A refusal is an output, never an exception** (§14). `OrdinalNotAfter` is a caller's mistake; `NoChunks`,
+`SelfAddressed` and `NotAParty` a degenerate command; `Misattributed`, `WrongSide` and `ChunkOutOfRange` a
+degenerate or a malicious one — a peer's, which is why each carries what the log needs to tell which.
 
 **`chunks` is mode-agnostic, and that is the point.** Under `etheram-ibft`'s deployed profile a block request
 carries 8; a chunked snapshot would carry of the order of 100; a Raft leader catching a follower up carries
@@ -175,42 +209,55 @@ whatever its control layer chose. Beggar does not know which it is accounting fo
 itself (§13). It is a u64, so a caller may make one log entry one chunk (§8).
 
 **`sender` and `receiver` on the partials are redundant, and kept anyway — the rule is "nothing redundant,
-except where the redundancy is the only witness".** `StartRecovery` binds both to the `session_id`, which is the
-key, so on an *open* session they are derivable. But a partial arriving for a session that is **not** open has no
-record to derive them from, and without them the ledger cannot attribute that rejection to a peer — a hole
-exactly where a misbehaving or buggy peer would appear. One case, principled, and written down rather than
-quietly violated.
+except where the redundancy is the only witness".** Opening a session binds both to its name, which is the key, so
+on an *open* session they are derivable — and checked: a partial whose ends differ is `Misattributed`. But a
+partial arriving for a session that is **not** open has no record to derive them from, and without them the ledger
+cannot attribute that rejection to a peer — a hole exactly where a misbehaving or buggy peer would appear. One
+case, principled, and written down rather than quietly violated.
 
 **Why `CancelRecovery` carries a reason.** Beggar cannot know *why* a session was abandoned — "superseded by a
 larger one" and "the peer has pruned past what I need" are height-and-retention facts it has no vocabulary for.
 Without the tag those two are indistinguishable in the forensic record, and they call for completely different
-responses. Beggar records and emits it and never reads it, so protocol independence is intact.
+responses. Beggar records and emits it and never reads it, so protocol independence is intact. Its type is the
+caller's enum, for the same reason (§14).
 
 **One registry, two roles, many sessions.** The same type runs on both ends; the role follows from which
 commands arrive and from `sender`/`receiver` against this node's id. A node receiving from one peer while
-serving another holds two sessions.
+serving another holds two sessions. Neither end is assumed: under push the node that opens a session sends, under
+pull it receives (§13), so `sender` has no default.
 
-### The complete matrix — eight outputs, ten situations
+### The complete matrix
 
-| command | session state | output |
+Checked in this order; the first row that applies gives the output.
+
+| command | situation | output |
 |---|---|---|
-| `StartRecovery` | unknown | `RecoveryStarted` |
-| `StartRecovery` | open, same `chunks` | `RecoveryUnaffected` |
-| `StartRecovery` | open, **different** `chunks` | `RecoveryConflicted` |
+| any | ordinal not after the last accepted | `RecoveryRejected(OrdinalNotAfter)` |
+| start, adopt | `chunks` = 0 | `RecoveryRejected(NoChunks)` |
+| start, adopt | `sender` = `receiver` | `RecoveryRejected(SelfAddressed)` |
+| start, adopt | this node neither `sender` nor `receiver` | `RecoveryRejected(NotAParty)` |
+| `StartRecovery` | — | `RecoveryStarted`, under a new name |
+| `AdoptRecovery` | not open | `RecoveryStarted` |
+| `AdoptRecovery` | open, same `chunks`, `sender` and `receiver` | `RecoveryUnaffected` |
+| `AdoptRecovery` | open, any of them different | `RecoveryConflicted` |
 | partial | not open | `RecoveryNotStarted` |
-| partial | open, new chunk, set not full | `RecoveryAdvanced` |
-| partial | open, new chunk, **set now full** | `RecoveryCompleted` |
-| partial | open, chunk already present | `RecoveryUnaffected` |
-| partial | `chunk_id` out of range | `RecoveryPartialRejected` |
+| partial | ends differ from the session's | `RecoveryRejected(Misattributed)` |
+| partial | reported on the wrong end | `RecoveryRejected(WrongSide)` |
+| partial | `chunk_id` outside `1..=chunks` | `RecoveryRejected(ChunkOutOfRange)` |
+| partial | new chunk, set not full | `RecoveryAdvanced` |
+| partial | new chunk, **set now full** | `RecoveryCompleted` |
+| partial | chunk already present | `RecoveryUnaffected` |
 | `CancelRecovery` | open | `RecoveryCancelled` |
-| `CancelRecovery` | unknown | `RecoveryUnaffected` |
+| `CancelRecovery` | not open | `RecoveryUnaffected` |
+| `ShowRecovery`, `ListMissingChunks` | neither open nor retained | `RecoveryNotStarted` |
+| query | otherwise | its answer |
 
-**`RecoveryUnaffected` is reused three times deliberately, and the rule generalises: an output describes what
-happened to the *session*, never which command arrived** — the command is already in the logged tuple. No tag
-exists merely to tell two commands apart. Apply this when the next command is added.
+**`RecoveryUnaffected` is reused three times deliberately, and `RecoveryNotStarted` twice; the rule generalises:
+an output describes what happened to the *session*, never which command arrived** — the command is already in the
+logged tuple. No tag exists merely to tell two commands apart. Apply this when the next command is added.
 
-**Terminals are `RecoveryCompleted` and `RecoveryCancelled`, and only those.** `RecoveryConflicted` terminates
-nothing: the open session survives and the *new* start is refused.
+**Terminals are `RecoveryCompleted` and `RecoveryCancelled`, and only those.** `RecoveryConflicted` and
+`RecoveryRejected` terminate nothing: an open session survives, and the *new* command is refused.
 
 ## 5. Semantics
 
@@ -226,8 +273,11 @@ produces it, and duplicates are guaranteed. It will appear routinely on a health
 and pair any count of it with a witness — otherwise it becomes a number that looks like catastrophic loss and
 is a capacity signature.
 
-**An out-of-range `chunk_id` is rejected, not absorbed.** Folding it into `RecoveryUnaffected` would let a
-hostile or buggy peer's garbage read as a benign duplicate.
+**A late duplicate `AdoptRecovery` is ordinary traffic too, and not harmless.** It reopens a finished session whose
+chunks never come; the caller's cancellation policy, below, is what ends it (§14).
+
+**An out-of-range `chunk_id` is rejected, not absorbed** (`ChunkOutOfRange`). Folding it into `RecoveryUnaffected`
+would let a hostile or buggy peer's garbage read as a benign duplicate.
 
 **`RecoveryAdvanced` should carry `received` and `expected`.** Not for completion, which has its own tag, but
 because a transfer stalling at 97 of 100 is otherwise invisible — and that is exactly what a cancellation policy
@@ -275,6 +325,9 @@ table has two columns because a one-column version led four downstream records t
 deployed, and a published mechanism to rest on a poll interval no board ever ran. A retention default other than
 0 with the cluster at 0 is the identical trap.
 
+**Retention changes what a query can answer, and nothing else.** To every other command a retained session is
+not open, so an output never depends on the retention a node runs with — the host and the board answer alike.
+
 **Query axes.** Open sessions from the API; terminated sessions from the capture. "All session ids queryable"
 is two distinct questions — *which are open* and *which ever existed* — and they should not be conflated.
 
@@ -290,16 +343,22 @@ every call emit its whole state, which is what made observability expensive: a m
 small transmit ring competes with the very lines it exists to be correlated against. Commands and outputs are
 small and bounded; state is reconstructed by replaying them.
 
-**Plus a periodic full-state checkpoint, and its purpose is precise.** Not debugging — **resynchronisation.**
+**Plus a checkpoint, and its purpose is precise.** Not debugging — **resynchronisation.**
 Replay from an initial state only works while the command sequence is complete, and on a severed node it will not
 be. A checkpoint lets replay recover after a gap instead of diverging from it forever, which bounds the damage a
-gap does rather than letting one loss invalidate everything after it. Cadence is a configuration value.
+gap does rather than letting one loss invalidate everything after it. It is a query, `ShowRegistry`, so its
+cadence is whenever the caller asks: beggar holds no cadence setting (§14).
 
 **A caller-supplied monotonic ordinal on every command is required, not optional.** It is the only thing that
 makes the forensic claim checkable: without it a replay built from a lossy capture silently omits events and
 looks self-consistent. With it, gaps are **detectable** — which is also what makes the checkpoint above usable,
 since you must know a gap happened to know you need to resynchronise. It yields a completeness metric that can
 fail: *reconstructed X of Y events*. A replay that cannot say how much it is missing is not evidence.
+
+**It must rise.** A command whose ordinal is not after the last accepted one is recorded and rejected
+(`OrdinalNotAfter`) and leaves the last where it was; every other command moves it, whatever its output. After,
+not exactly one more — §14 says why — so a gap proves loss only where the caller numbers beggar's commands one by
+one, and that is the caller's to do.
 
 **Beggar owns no clock, so it cannot supply the ordinal itself.** It comes in with the command.
 
@@ -338,7 +397,7 @@ exist. The received set is a set of **ranges of chunk ids** — `3..=7`, `9..=12
 
 | field | holds |
 |---|---|
-| `session_id` | u64 |
+| `session_id` | three u64s: node, incarnation, count (§14) |
 | `sender` | u64 |
 | `receiver` | u64 |
 | `chunks` | u64 — widened from u16, so a caller may make one log entry one chunk without converting |
@@ -416,6 +475,9 @@ with where each landed, so the reasoning is not lost in the sections that now st
 | `sender`/`receiver` redundancy | **kept**, under the rule *"nothing redundant, except where the redundancy is the only witness"* | §4 |
 | shape of the injected admission policy | **deleted, not closed.** There is no admission policy and no trait boundary — beggar never sees an entry, so there is nothing to admit. Zero injected dependencies | §2 |
 | width of `chunks` — closed 2026-11-06 | **u64.** u16 was sized for a block request; a recovery is any number of chunks | §8, §13 |
+| the checkpoint cadence — closed 2026-11-06 | **the caller's.** The checkpoint is a query, asked whenever the caller chooses | §7, §14 |
+| whether `chunks` may be zero — closed 2026-11-06 | **no:** `RecoveryRejected(NoChunks)` | §4 |
+| whether `session_id` uniqueness is beggar's — closed 2026-11-06 | **beggar's:** it names every session, after an instance id that never repeats | §14 |
 
 The first two turned out to be one decision: answering the return shape made the ordered-ledger question
 disappear, because once commands and outputs are the emitted record, order is already in the log and duplicating
@@ -426,12 +488,7 @@ validated. It is the largest single simplification in this document.
 
 ### What remains genuinely open
 
-- **The checkpoint cadence** — a configuration value, but nobody has proposed a default.
-- **Whether `chunks` may be zero.** A zero-chunk session would complete on creation. Probably forbidden, but the
-  matrix in §4 does not currently say.
-- **Whether `session_id` uniqueness is beggar's to enforce** or the caller's to guarantee. `RecoveryConflicted`
-  handles a *collision with different parameters*, but not a caller that reuses an id after eviction — which is
-  indistinguishable from a fresh session, and may well be fine.
+Nothing in the design, as of 2026-11-06: the three questions left here were closed that day, in the table above.
 
 ## 11. What this supersedes in the README, the crate's documentation and its manifest
 
@@ -525,3 +582,66 @@ everything.
   `CancelRecovery`, its `reason` saying why, and a new session. Beggar sees a fixed count either way.
 - **No bits or bytes, and a wider count.** The received set is ranges of chunk ids, never a bitmap, and `chunks`
   is a u64 (§8).
+
+## 14. Names, refusals and queries — decided 2026-11-06
+
+**The accountant names the session.** `StartRecovery` carries no id: beggar mints one, `RecoveryStarted` returns
+it, and the caller carries it, with every message of the transfer, to the peer — whose beggar opens the same
+session under it with `AdoptRecovery`. Uniqueness is beggar's by construction, so no name is ever reused.
+
+**A name is unique across the cluster without coordination.** It is the instance id that minted it and a count;
+no two instances share an instance id and no instance repeats a count, so an adopted name never collides with one
+this instance minted.
+
+**The instance id must not repeat across a restart, and beggar cannot ensure that alone.** The count starts again
+at every start, while a peer may still hold the previous instance's sessions. Were node 7 to come back under the
+same instance id, its first new session would share a name with an old one; an adopt of it would find the old
+session open with the same parameters, answer `RecoveryUnaffected`, and count the new transfer's chunks onto the
+old one's — a completion before the chunks arrived. Beggar owns no storage and no clock, so the incarnation comes
+from the caller, which guarantees one thing: it never repeats for that node. How is the caller's:
+
+| incarnation | needs | fits |
+|---|---|---|
+| the start's wall-clock timestamp | a real-time clock | hosts, pods |
+| a stored count, incremented at every start | storage | a node of a protocol that persists — Raft stores its term and vote already |
+| a random number drawn at start | a hardware random-number generator | a board with neither |
+
+A timestamp is not safe on a board without a real-time clock: its time restarts at zero, so every boot draws the
+same one. An ordered incarnation — a count or a timestamp — also tells a peer that every session of an older one
+is dead, which the caller's cleanup can use; a random one cannot.
+
+**Refusals are outputs, never exceptions.** `process` is total: every call has one output and is emitted, a
+refused one included. A refused command is `RecoveryRejected` carrying a `Rejection` (§4), each specific, carrying
+what the log needs to tell a degenerate caller from a malicious peer. `RecoveryPartialRejected` became its
+`ChunkOutOfRange`.
+
+**The cancel reason is the caller's enum — with or without a payload, never a string.** Its variants are why
+recoveries end, which beggar does not know and must not. So beggar is generic over it: stores it, emits it, never
+reads it. A type parameter carries no behaviour, so zero injected dependencies (§2) still holds. In the
+conformance vectors it is an enum of the vectors' own, written as JSON.
+
+**A late duplicate `AdoptRecovery` reopens a finished session, and the caller's cancellation policy owns it.**
+Duplicates are expected (§5): a copy arriving after its session completed and was evicted finds it not open and
+opens it again, and its chunks never come. Beggar cannot tell it from a new session without remembering finished
+ones — a tombstone, which §5 forbids — or a highest count adopted per peer instance, which would also refuse a
+genuine session that arrived out of order. The reopened session is an abandoned one like any other, and ending
+abandoned sessions is what the caller's cancellation policy (§5) is for.
+
+**No caps.** Neither how many sessions are open nor how many gaps a session holds is beggar's to bound (§8); the
+caller bounds both.
+
+**Four queries, the checkpoint among them** (§4). Each is a command that changes nothing. The fourth, the whole
+registry, is the checkpoint §7 asks for, so its cadence is whenever the caller asks, and beggar holds no cadence
+setting and no policy.
+
+**The ordinal must rise, not step.** A command whose ordinal is not after the last accepted is recorded and
+rejected. *Exactly one more* was weighed and refused: one number the caller skipped would make every later ordinal
+wrong too, and the registry would refuse everything after it, for good. *After* catches an ordinal that goes back
+or repeats, and lets the caller share one count with other components. The price is stated rather than hidden: a
+gap in the log proves a lost line only where the caller numbers beggar's commands one by one.
+
+**No default `sender`.** §4 once defaulted it to this node's id, which assumed the node that opens a session sends
+— true under push, wrong under pull, where the receiver opens it (§13).
+
+**The conformance vectors are JSON**, and they give a session's received chunks as a set of chunk ids — never as
+the ranges an implementation may keep (§8) — so the specification fixes behaviour, not representation.

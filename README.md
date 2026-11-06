@@ -18,8 +18,9 @@ That asymmetry is the whole mechanism, and it is the reason for the name.
 ## What it actually does
 
 **Pure accounting.** Beggar is a registry of ongoing transfer sessions. A session is opened with an expected
-chunk count and two node identities; each chunk that moves is recorded against it; when the set is full, or the
-caller cancels, the session terminates and is evicted.
+chunk count and two node identities, and beggar names it; the peer's registry adopts the name. Each chunk that
+moves is recorded against it; when the set is full, or the caller cancels, the session terminates and is evicted.
+A command it refuses gets an output saying why — never an exception.
 
 It deals in **no bytes, blocks, arrays or wire types** — session identities, chunk counts, chunk ids and node
 identities, and nothing else. The payload moves elsewhere; beggar records that it moved.
@@ -50,11 +51,11 @@ language without stubbing anything.
 The intent is a **programming-language-independent specification** of beggar, with this Rust crate as one
 conforming implementation rather than the definition. That is practical here for reasons specific to the design:
 no wire types means no encoding to specify, no clock means no temporal logic, and a registry rather than a state
-machine means the normative core is a data model plus one total function — the ten-cell matrix in
+machine means the normative core is a data model plus one total function — the matrix in
 [`docs/DESIGN.md`](docs/DESIGN.md) §4.
 
-What will make it a specification rather than prose is a **committed, machine-readable conformance suite**:
-vectors of `(initial state, command sequence) → (expected output sequence, final state)`, consumed by this
+What will make it a specification rather than prose is a **committed, machine-readable conformance suite** in
+JSON: vectors of `(initial state, command sequence) → (expected output sequence, final state)`, consumed by this
 crate's tests and by any other implementation's.
 
 ## Sibling to `faction`, and the difference is load-bearing
