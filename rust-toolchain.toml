@@ -8,3 +8,6 @@
 [toolchain]
 channel = "1.99.1"
 components = ["rustfmt", "clippy", "llvm-tools"]
+# The no_std check in stage 1 builds for it: a host build of a `#![no_std]` crate
+# proves the attribute is there, not that nothing it links needs std.
+targets = ["thumbv7em-none-eabihf"]

@@ -1,35 +1,19 @@
-# A single package rather than a workspace. `faction` splits `core/` from its
-# validation and protocol crates because it has them; there is no second member
-# here yet, so there is nothing to scope apart.
+# A virtual workspace rather than a package at the root: `core/` is the crate and
+# `xtask/` runs the gates.
 #
-# The metadata shape is faction's, deliberately: same licence, same edition,
-# same MSRV, same category set. These two crates are siblings -- protocol-
-# independent, driven by a host through one entry point, though faction is a
-# state machine and beggar a registry -- and the one place their manifests
-# differ is noted below.
-[package]
-name = "beggar"
-version = "0.0.1"
+# The split is not cosmetic, and etheram-core paid for learning it: while a crate
+# sits at the repository root its package directory *is* the repository root, so
+# `cargo stern4rust` walks `xtask/tests/**` and reports its test functions as
+# living in the crate's source tree. `--package` does not narrow it, because the
+# scope is the directory.
+[workspace]
+members = ["core", "xtask"]
+resolver = "2"
+
+[workspace.package]
 edition = "2021"
-rust-version = "1.85"
 license = "MIT"
-description = "A no_std, protocol-independent recovery registry: a recovery is a collection of chunks -- log entries or a snapshot's pieces -- and beggar accounts for which have moved. This version reserves the name; there is no implementation yet."
-documentation = "https://docs.rs/beggar"
-readme = "README.md"
-keywords = ["recovery", "consensus", "distributed", "registry", "no-std"]
-categories = ["no-std", "algorithms", "network-programming"]
 
-# `repository` and `homepage` are the one departure from faction's manifest, and
-# not a stylistic one: faction's repository is public, this one is private, so
-# both links would resolve to a 404 on the crates.io page. They go in when the
-# repository goes public.
-#
-# `rust-version` is inherited from faction rather than measured. For a crate with
-# no code and no dependencies it is trivially true; it needs re-verifying once
-# there is something to compile.
-
-[dependencies]
-
-[lib]
-name = "beggar"
-path = "src/lib.rs"
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

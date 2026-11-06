@@ -1,0 +1,26 @@
+# What the dependencies are, judged by `cargo deny check`, last in stage 2.
+#
+# The same file as the *4rust tools' and slotgate's: the licences below are
+# the union of what their dependency trees carry, nothing allowed in advance;
+# beggar's own tree needs fewer: it has no dependencies, and xtask's are serde's.
+
+[advisories]
+# cargo-deny's defaults: vulnerabilities, unsound and unmaintained crates and
+# yanked versions fail. An advisory accepted here needs its id and its reason:
+#   ignore = [{ id = "RUSTSEC-...", reason = "..." }]
+
+[licenses]
+allow = ["MIT", "Apache-2.0", "Unicode-3.0"]
+confidence-threshold = 0.93
+
+[bans]
+# Two versions of one crate is a cost, not a defect, and usually not ours to fix.
+multiple-versions = "warn"
+# A `*` requirement is refused, except a path dependency in an unpublished crate
+# -- the validation crates and fixture trees -- which never reaches crates.io.
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
