@@ -3,7 +3,7 @@
 **Status: design settled; no implementation.** The decisions are nine ADRs in [`ADRs/`](ADRs/README.md) — four
 P0 foundations and five P1s derived from them — and say why. This document says how: the vocabulary and its
 matrix (§4), the semantics (§5), memory (§8), technology (§9), and where beggar sits among the layers above it
-(§12). Settled 2026-09-30, amended 2026-10-12 and 2026-11-06; the decisions moved to the ADRs on 2026-11-06, and
+(§12). The order of building it is [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md). Settled 2026-09-30, amended 2026-10-12 and 2026-11-06; the decisions moved to the ADRs on 2026-11-06, and
 the sections they came from keep their numbers, because other repositories cite them, and say where each went.
 
 **Sequencing.** Beggar takes over one part of the block-recovery path in `etheram-ibft` — the bookkeeping of

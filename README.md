@@ -5,7 +5,8 @@ A `no_std`, protocol-independent **recovery registry**.
 **Version 0.0.1 reserves the name. There is no implementation yet — do not depend on this crate.**
 
 The foundations are four ADRs in [`docs/ADRs/`](docs/ADRs/README.md); the design is
-[`docs/DESIGN.md`](docs/DESIGN.md). Both are authoritative; this file is the summary.
+[`docs/DESIGN.md`](docs/DESIGN.md). Both are authoritative; this file is the summary. The order of building it is
+[`docs/IMPLEMENTATION-PLAN.md`](docs/IMPLEMENTATION-PLAN.md).
 
 ## The idea
 
