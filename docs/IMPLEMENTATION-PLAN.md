@@ -28,14 +28,16 @@ command, and each is total over the commands it has.
 
 ### 1. Open a recovery and see it
 
-- **Adds:** `StartRecovery` with all its rows — the ordinal rule, `NoChunks`, `SelfAddressed`, `NotAParty`, and
-  `RecoveryStarted` under a new name minted after the instance id; and `ShowRegistry`, the checkpoint.
+- **Adds:** `Beggar<R>` and its receipts, numbered from 1 on every call; `StartRecovery` with all its rows —
+  `NoChunks`, `SelfAddressed`, `NotAParty`, and `RecoveryStarted` under a new name minted after the instance id;
+  and `ShowRegistry`, the checkpoint.
 - **Lays down:** the JSON vector format in `spec/`, at the repository root and outside the crate, since it is
   language-independent; and its runner in `core/tests/`, mapping the JSON to beggar's types through a model of its
-  own, so the crate itself never needs `serde`. A vector is an instance, steps of ordinal, command and expected
-  output, and a final state, which the runner reads through `ShowRegistry`: the specification checks state the
+  own, so the crate itself never needs `serde`. A vector is an instance, steps of a command and its expected
+  receipt, and a final state, which the runner reads through `ShowRegistry`: the specification checks state the
   way a caller would.
-- **Proves:** names unique across instances and within one, and ordinals that rise. The dummy goes.
+- **Proves:** names unique across instances and within one, and receipt numbers one more on every call, refused
+  calls included. The dummy goes.
 - **A caller can then:** open recoveries under names unique across the cluster, be refused when a command is
   wrong, and log the checkpoint.
 
@@ -79,7 +81,6 @@ Pull: the node behind opens the session and receives.
 
 | row of [`DESIGN.md`](DESIGN.md) §4 | slice |
 |---|---|
-| the ordinal rule | 1, for every command as it arrives |
 | `NoChunks`, `SelfAddressed`, `NotAParty` | 1 for a start, 3 for an adopt |
 | `StartRecovery` started | 1 |
 | `AdoptRecovery`: not open, same, different | 3 |
@@ -91,15 +92,15 @@ Pull: the node behind opens the session and receives.
 ## Decided
 
 - **The entry point is `Beggar<R>`**, `R` the caller's cancel-reason enum.
+- **Beggar numbers every call:** `process(&mut self, command) -> Receipt<R>`, the receipt carrying the output and
+  its number. No ordinal comes from the caller
+  ([`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md)).
 - **Pull first:** slice 2 receives, because IBFT's control layer already exists to integrate against; Raft's
   catch-up has yet to be split into a control layer and beggar.
 - **Vectors hold one instance each.** Two-ended transfers are host tests of two registries, from slice 3.
 
 ## Proposed
 
-- **The ordinal is an argument:** `process(&mut self, ordinal, command) -> Output<R>`. It belongs to no single
-  command's meaning, an argument cannot be forgotten on one variant, and the signature reads as the logged
-  `(ordinal, command, output)`.
 - **The chunks received are a type of beggar's own, `ReceivedChunks`**, showing behaviour, never its fields:
   `count`, `contains`, `ids`, and `runs` — the maximal runs of consecutive ids. A set has exactly one set of
   maximal runs, so they are a property of the set and not of a representation, and they keep a checkpoint small:

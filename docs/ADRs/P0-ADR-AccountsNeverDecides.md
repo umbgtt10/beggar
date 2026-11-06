@@ -59,10 +59,11 @@ Every policy is the caller's, and the caller states it — the cancellation
 policy above all, because a cancel nobody decides to send leaves sessions
 accumulating exactly as no cancel command would.
 
-What would need a clock or storage comes in from the caller: an ordinal with
-every command, an incarnation when the instance is created. Outputs are
-returned, never pushed to a sink. The peer set is supplied per call and never
-cached, so beggar survives membership changes without learning of them.
+What would need storage comes in from the caller: an incarnation, when the
+instance is created. What needs only a count, beggar keeps: the names it mints
+and the numbers on its receipts. Outputs are returned, never pushed to a
+sink. The peer set is supplied per call and never cached, so beggar survives
+membership changes without learning of them.
 
 With nothing injected, any implementation in any language is tested with
 nothing to stub.

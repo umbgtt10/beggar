@@ -16,9 +16,10 @@ the very lines it should be read against.
 
 ## Decision
 
-Every call is emitted as `(ordinal, command, output)`; the state is rebuilt by
-replaying them, resynchronised from a checkpoint the caller asks for, and the
-ordinal — the caller's, required to rise — makes every gap detectable.
+Every call is answered with a receipt — its output and a number the instance
+counts itself, one more than the last — and logged as `(number, command,
+output)`; the state is rebuilt by replaying the receipts, resynchronised from a
+checkpoint the caller asks for, and a gap in the numbers proves a lost line.
 
 ## Forcing constraints / Evidence
 
@@ -27,10 +28,16 @@ ordinal — the caller's, required to rise — makes every gap detectable.
 state after a call follows from the state before it and the command. Commands
 and outputs are small and bounded; a replay needs nothing else.
 
-**A lossy log looks complete without an ordinal.** A replay built from a
-capture with lines missing omits events silently and stays self-consistent.
-With an ordinal on every command, a gap is detectable, the replay can report
+**A lossy log looks complete without numbers.** A replay built from a capture
+with lines missing omits events silently and stays self-consistent. With a
+number on every receipt, a gap is detectable, the replay can report
 *reconstructed X of Y*, and it knows when to resynchronise.
+
+**Beggar can count its calls itself.** A number is a count, not a time: it is
+state, like the count names are minted from, so it needs no clock, is
+deterministic and is restored with the checkpoint. And only a number beggar
+counts is one more on every call by construction, so a gap proves a lost line
+whatever the caller does.
 
 **The sender is the witness.** `SendRecoveryPartial` is fed on the serving
 node, and the serving node is not the severed one. So the existence, size,
@@ -43,9 +50,14 @@ local view.
 **The full state on every call.** Rejected: on a board it competes with the
 lines it exists to be correlated with, and the state is derivable anyway.
 
-**An ordinal that must be exactly one more.** Rejected: one number the caller
-skipped would make every later ordinal wrong too, and the registry would
-refuse everything after it, for good.
+**An ordinal the caller supplies with every command.** Rejected. A gap would
+prove loss only where the caller numbered beggar's commands one by one;
+requiring exactly one more would let a single skipped number make the registry
+refuse everything after it, and requiring only a larger one would leave gaps
+unprovable. It adds an input, a refusal and a row of the matrix. What it caught
+that nothing now does — a caller handing in the same command twice under the
+same ordinal — is a caller's bug, not traffic, and both calls are in the log
+under consecutive numbers.
 
 **A checkpoint cadence held by beggar.** Rejected: when to checkpoint is a
 policy, and beggar holds none.
@@ -63,17 +75,20 @@ partition's length. The loss is accepted as a property of the platform.
 
 ## Consequences
 
-The ordinal must be after the last accepted. A command whose ordinal is not is
-recorded and rejected, and leaves the last where it was; every other command
-moves it, whatever its output. A gap proves a lost line only where the caller
-numbers beggar's commands one by one — the caller's to do, and to state.
+`process` returns a `Receipt<R>`, carrying the `number` and the `output`. Every
+call gets one, a refused one included. An instance's first receipt is number 1;
+the instance id — node and incarnation — tells two instances' receipts apart,
+so a log is ordered, instance by instance, by its numbers.
+
+Placing beggar's receipts among the caller's own events is the caller's: it
+logs each receipt within its own sequenced log.
 
 The checkpoint is a query, the whole registry: every open and retained record,
-the count, the last ordinal. The caller asks for it as often as it chooses and
-logs it like any other output.
+the count names are minted from, and the next receipt's number. The caller
+asks for it as often as it chooses and logs it like any other receipt.
 
 The registry keeps membership, not order. Which chunks arrived is the record's;
-when is the log's, answered by the ordinals, and an ordered structure in
+when is the log's, answered by the receipt numbers, and an ordered structure in
 memory would duplicate it.
 
 Both partials are kept: the send, on the serving node, is the witness; the
@@ -81,11 +96,11 @@ receive is the local view of the node that may not be heard.
 
 ## Enforcement
 
-The emission is what `process` returns, and the caller logs it. The ordinal
-rule is the matrix's first row; the conformance vectors replay command
-sequences and compare every output.
+The receipt is what `process` returns, and the caller logs it. The property
+tests check that every call's number is one more than the last, refused calls
+included; the conformance vectors give every expected receipt.
 
 ## Related
 
 [P1-ADR-RetentionGovernsQueriesNeverEmission](P1-ADR-RetentionGovernsQueriesNeverEmission.md)
-— why a terminal output is emitted whatever is retained.
+— why a terminal output is logged whatever is retained.

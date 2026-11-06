@@ -56,7 +56,7 @@ machine means the normative core is a data model plus one total function — the
 [`docs/DESIGN.md`](docs/DESIGN.md) §4.
 
 What will make it a specification rather than prose is a **committed, machine-readable conformance suite** in
-JSON: vectors of `(initial state, command sequence) → (expected output sequence, final state)`, consumed by this
+JSON: vectors of `(initial state, command sequence) → (expected receipts, final state)`, consumed by this
 crate's tests and by any other implementation's.
 
 ## Sibling to `faction`, and the difference is load-bearing
@@ -76,11 +76,12 @@ need. In a registry this is automatic rather than a rule to remember.
 
 ## Observability
 
-One entry point, `(output) = process(command, state)`, and every call emits the whole tuple. Because the outcome
+One entry point, `(receipt) = process(command, state)`, and every call is logged whole. Because the outcome
 is a pure function of command and record, a capture is **replayable**: the crate can be validated decision by
 decision instead of against aggregates.
 
-Every command carries a **caller-supplied monotonic ordinal**, so a gap in the sequence *proves* loss. Absence
+Every call is answered with a **receipt numbered by beggar**, one more than the last, so a gap in the numbers
+*proves* loss. Absence
 of a log line otherwise proves nothing — and a partitioned node is close to unobservable in practice, because
 its log path is severed along with its data path.
 

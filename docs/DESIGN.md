@@ -59,8 +59,8 @@ Five P1 ADRs derive from them, indexed in [`ADRs/`](ADRs/README.md). What the na
 | 2 | **not intertwined** with faction or any other subsystem |
 | 3 | **fully observable** |
 | 4 | **technology agnostic** — `no_std` + `alloc`, zero `unsafe` |
-| 5 | **one single entry point**: `(output) = process(command, <internal state>)` |
-| 6 | **query without side effect**: `(output) = process(command:query, <internal state>)` |
+| 5 | **one single entry point**: `(receipt) = process(command, <internal state>)` |
+| 6 | **query without side effect**: `(receipt) = process(command:query, <internal state>)` |
 
 Property 1 is [`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md)'s. Property 2, and with it zero injected dependencies — no clock, storage, transport, sink or
 admission check; **the caller validates, and only then reports**; the peer set supplied per call and never
@@ -85,7 +85,8 @@ cannot be confused at a call site.
 
 **An instance is created with three things:** this node's id, an incarnation that never repeats for this node, and
 its retention (§6). The first two are the **instance id**, and every session the instance opens is named after it
-— [`P1-ADR-TheAccountantNamesTheSession`](ADRs/P1-ADR-TheAccountantNamesTheSession.md). **Every command carries the caller's `ordinal`** (§7), queries included.
+— [`P1-ADR-TheAccountantNamesTheSession`](ADRs/P1-ADR-TheAccountantNamesTheSession.md). **Every call is answered with a receipt**: its output and its number, one more than the instance's last, the
+first being 1 (§7).
 
 | command | side | carries |
 |---|---|---|
@@ -97,14 +98,14 @@ its retention (§6). The first two are the **instance id**, and every session th
 
 **A `session_id` is the instance id that named the session and a count** — node, incarnation, count: three numbers.
 
-**Queries change nothing** (property 6) and are commands like the rest: each carries an ordinal and is emitted.
+**Queries change nothing** (property 6) and are commands like the rest: each gets a receipt.
 
 | query | answers |
 |---|---|
 | `ListRecoveries` | the names of the open sessions |
 | `ShowRecovery` | one session's record — `chunks`, `sender`, `receiver`, the chunk ids received — open or retained (§6) |
 | `ListMissingChunks` | one session's chunk ids not yet received |
-| `ShowRegistry` | the whole registry: every open and retained record, the count, the last ordinal — **the checkpoint** (§7) |
+| `ShowRegistry` | the whole registry: every open and retained record, the name count, the next receipt's number — **the checkpoint** (§7) |
 
 | output | meaning |
 |---|---|
@@ -120,7 +121,6 @@ its retention (§6). The first two are the **instance id**, and every session th
 
 | `Rejection` | refuses |
 |---|---|
-| `OrdinalNotAfter { last, given }` | any command whose ordinal is not after the last accepted (§7) |
 | `NoChunks` | a start or adopt with `chunks` = 0 |
 | `SelfAddressed` | a start or adopt whose `sender` and `receiver` are the same node |
 | `NotAParty` | a start or adopt in which this node is neither `sender` nor `receiver` |
@@ -128,8 +128,8 @@ its retention (§6). The first two are the **instance id**, and every session th
 | `WrongSide` | a partial reported on the wrong end: a send on the session's receiver, a receive on its sender |
 | `ChunkOutOfRange { chunk_id, chunks }` | a partial whose `chunk_id` is outside `1..=chunks` |
 
-**A refusal is an output, never an exception** — [`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md). `OrdinalNotAfter` is a caller's mistake; `NoChunks`,
-`SelfAddressed` and `NotAParty` a degenerate command; `Misattributed`, `WrongSide` and `ChunkOutOfRange` a
+**A refusal is an output, never an exception** — [`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md). `NoChunks`,
+`SelfAddressed` and `NotAParty` mark a degenerate command; `Misattributed`, `WrongSide` and `ChunkOutOfRange` a
 degenerate or a malicious one — a peer's, which is why each carries what the log needs to tell which.
 
 **`chunks` is mode-agnostic, and that is the point.** Under `etheram-ibft`'s deployed profile a block request
@@ -161,7 +161,6 @@ Checked in this order; the first row that applies gives the output.
 
 | command | situation | output |
 |---|---|---|
-| any | ordinal not after the last accepted | `RecoveryRejected(OrdinalNotAfter)` |
 | start, adopt | `chunks` = 0 | `RecoveryRejected(NoChunks)` |
 | start, adopt | `sender` = `receiver` | `RecoveryRejected(SelfAddressed)` |
 | start, adopt | this node neither `sender` nor `receiver` | `RecoveryRejected(NotAParty)` |
@@ -220,10 +219,11 @@ can answer and nothing else: every terminal output is emitted whatever is kept �
 
 ## 7. Observability and forensics
 
-`process` takes `&mut self` and returns the output only ([`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md)). Every call is emitted as
-**`(ordinal, command, output)`**, never the state, which a replay rebuilds; the **checkpoint** is a query,
-`ShowRegistry`, asked whenever the caller chooses; the **ordinal** is the caller's and must rise; and the
-guarantee is the majority side's, because the sending node witnesses every transfer — [`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md).
+`process` takes `&mut self` and returns a **receipt** — the output and a number beggar counts itself, one more
+than the last ([`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md)). Every call is logged as
+**`(number, command, output)`**, never the state, which a replay rebuilds; a gap in the numbers proves a lost
+line; the **checkpoint** is a query, `ShowRegistry`, asked whenever the caller chooses; and the guarantee is the
+majority side's, because the sending node witnesses every transfer — [`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md).
 
 ## 8. Memory
 
@@ -304,8 +304,8 @@ with where each landed, so the reasoning is not lost in the sections that now st
 
 | question | closed as | where |
 |---|---|---|
-| return shape of `process` | `&mut self`, returns the output tag only — posterior state is derivable, so nothing else is needed | §7 |
-| ordered ledger or membership | **membership** in the registry; order lives in the log, via the ordinals | §7 |
+| return shape of `process` | `&mut self`, returns the output tag only — posterior state is derivable, so nothing else is needed. Since 2026-11-06 the output comes on a receipt, with beggar's own number | §7 |
+| ordered ledger or membership | **membership** in the registry; order lives in the log, via the receipt numbers | §7 |
 | where "unservable" lives | **not in beggar** — it is a height-and-retention fact. `CancelRecovery` gains an opaque caller-defined `reason` instead | §4, §5 |
 | `sender`/`receiver` redundancy | **kept**, under the rule *"nothing redundant, except where the redundancy is the only witness"* | §4 |
 | shape of the injected admission policy | **deleted, not closed.** There is no admission policy and no trait boundary — beggar never sees an entry, so there is nothing to admit. Zero injected dependencies | §2 |
@@ -329,7 +329,7 @@ carries the new one. What the old texts said is listed so nobody reintroduces it
 |---|---|
 | "recovery **state machine**" | a **registry**; there are no states — §3 |
 | "the set of **admissible commands** returned on every result" | **dropped** — it presupposes states — §3 |
-| transitions emitted as `(from, event, to, epoch)` | `(output) = process(command, state)` plus a caller-supplied ordinal — §7 |
+| transitions emitted as `(from, event, to, epoch)` | `(output) = process(command, state)` on a receipt numbered by beggar — §7 |
 | a control layer that detects lag, chooses a peer, retries on timeout and falls back to a snapshot | **out of scope.** Beggar accounts; it does not detect, choose or time. It has no heights and no clock — §1, §2. That layer exists, above beggar — §12 |
 | "admission is the trait boundary" | **also superseded.** Beggar never sees an entry, so there is nothing to admit: the caller validates and only then reports. **Zero injected dependencies** — §2 |
 
@@ -359,7 +359,8 @@ consensus vocabulary in its source, comments included. It may know a chain; it m
 
 - **the emission shape** (§7): `(ordinal, command, output)` plus a periodic checkpoint becomes `(ordinal, event,
   facts, outcome)` there, because the control layer's input includes the facts its caller supplies. Where it is
-  emitted is still open in `etheram-ibft`;
+  emitted is still open in `etheram-ibft`. Beggar's own line has since become `(number, command, output)`,
+  numbered by beggar (§7); the control layer's ordinal is its own;
 - **"the caller validates, and only then reports"** (§2): the IBFT side validates a response and reports a verdict,
   so no block and no certificate enters the control layer;
 - **the peer set supplied per call and never cached** (§2): the control layer borrows it from its caller on every
@@ -390,7 +391,7 @@ Each decision of the day is in its ADR:
 
 - beggar names the session, after an instance id whose incarnation is the caller's — [`P1-ADR-TheAccountantNamesTheSession`](ADRs/P1-ADR-TheAccountantNamesTheSession.md);
 - one entry point, one output for every command; refusals are outputs, queries are commands — [`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md);
-- the checkpoint is a query, and the ordinal must be after the last accepted — [`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md);
+- the checkpoint is a query, and beggar numbers every call on a receipt, with no ordinal from the caller — [`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md);
 - the cancel reason is the caller's enum, and a late duplicate adopt is ended by the caller's policy — [`P1-ADR-CancelEvictsWithoutATombstone`](ADRs/P1-ADR-CancelEvictsWithoutATombstone.md);
 - no caps — [`P0-ADR-AccountsNeverDecides`](ADRs/P0-ADR-AccountsNeverDecides.md);
 - JSON conformance vectors, a session's chunks given as a set of ids — [`P0-ADR-SpecificationIsNormativeCrateIsReference`](ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md).

@@ -16,7 +16,7 @@ second implementation has nothing to be checked against.
 The specification is normative and this crate is one conforming
 implementation: a data model, one total function, and a committed,
 machine-readable conformance suite in JSON — vectors of `(initial state,
-command sequence) → (expected output sequence, final state)` — that this
+command sequence) → (expected receipts, final state)` — that this
 crate's tests and any other implementation consume.
 
 ## Forcing constraints / Evidence
