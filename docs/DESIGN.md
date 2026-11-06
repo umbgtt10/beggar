@@ -1,10 +1,10 @@
 # beggar — design
 
-**Status: design settled; no implementation.** The foundations are four P0 ADRs in [`ADRs/`](ADRs/README.md):
-what beggar is and why. This document is how — the vocabulary and its matrix (§4), the semantics (§5), retention
-(§6), observability (§7), memory (§8) — and the decisions below the foundations (§14). Settled 2026-09-30, amended
-2026-10-12 (§12) and 2026-11-06 (§8, §14); the foundations moved to the ADRs the same day, and §0–§3 and §13 keep
-only what the ADRs leave here. The section numbers are kept, because other repositories cite them.
+**Status: design settled; no implementation.** The decisions are nine ADRs in [`ADRs/`](ADRs/README.md) — four
+P0 foundations and five P1s derived from them — and say why. This document says how: the vocabulary and its
+matrix (§4), the semantics (§5), memory (§8), technology (§9), and where beggar sits among the layers above it
+(§12). Settled 2026-09-30, amended 2026-10-12 and 2026-11-06; the decisions moved to the ADRs on 2026-11-06, and
+the sections they came from keep their numbers, because other repositories cite them, and say where each went.
 
 **Sequencing.** Beggar takes over one part of the block-recovery path in `etheram-ibft` — the bookkeeping of
 the request in flight — beneath the control layer the extraction carved out of it (§12). The path's as-built
@@ -49,7 +49,7 @@ queryability, full forensic observability, and zero technology. Four ADRs found 
 - [`P0-ADR-AccountsNeverDecides`](ADRs/P0-ADR-AccountsNeverDecides.md) — what it leaves to the caller;
 - [`P0-ADR-SpecificationIsNormativeCrateIsReference`](ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md) — what defines it.
 
-What the name means is in the README.
+Five P1 ADRs derive from them, indexed in [`ADRs/`](ADRs/README.md). What the name means is in the README.
 
 ## 2. Properties
 
@@ -72,9 +72,7 @@ Why is [`P0-ADR-ARegistryNotAStateMachine`](ADRs/P0-ADR-ARegistryNotAStateMachin
 
 `StartRecovery` and `AdoptRecovery` insert, `CancelRecovery` removes, a partial updates one set member.
 
-**Both terminal outputs evict.** Retaining a completed record accumulates exactly as a height-keyed exclusion
-map once did in `etheram-ibft`: 292 orphaned entries at ~110 bytes, fatal by fragmentation long before size. With
-both evicting, the registry's size is bounded by *concurrent* transfers, not by transfers ever attempted.
+Both terminal outputs evict — [`P1-ADR-RetentionGovernsQueriesNeverEmission`](ADRs/P1-ADR-RetentionGovernsQueriesNeverEmission.md).
 
 **The invariants.** `received ⊆ 1..=chunks`, `|received| ≤ chunks`, no record survives a terminal output, every
 open session has this node as exactly one of its two ends, no two open sessions share a name, and the
@@ -87,7 +85,7 @@ cannot be confused at a call site.
 
 **An instance is created with three things:** this node's id, an incarnation that never repeats for this node, and
 its retention (§6). The first two are the **instance id**, and every session the instance opens is named after it
-(§14). **Every command carries the caller's `ordinal`** (§7), queries included.
+— [`P1-ADR-TheAccountantNamesTheSession`](ADRs/P1-ADR-TheAccountantNamesTheSession.md). **Every command carries the caller's `ordinal`** (§7), queries included.
 
 | command | side | carries |
 |---|---|---|
@@ -130,7 +128,7 @@ its retention (§6). The first two are the **instance id**, and every session th
 | `WrongSide` | a partial reported on the wrong end: a send on the session's receiver, a receive on its sender |
 | `ChunkOutOfRange { chunk_id, chunks }` | a partial whose `chunk_id` is outside `1..=chunks` |
 
-**A refusal is an output, never an exception** (§14). `OrdinalNotAfter` is a caller's mistake; `NoChunks`,
+**A refusal is an output, never an exception** — [`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md). `OrdinalNotAfter` is a caller's mistake; `NoChunks`,
 `SelfAddressed` and `NotAParty` a degenerate command; `Misattributed`, `WrongSide` and `ChunkOutOfRange` a
 degenerate or a malicious one — a peer's, which is why each carries what the log needs to tell which.
 
@@ -150,9 +148,7 @@ case, principled, and written down rather than quietly violated.
 larger one" and "the peer has pruned past what I need" are height-and-retention facts it has no vocabulary for.
 Without the tag those two are indistinguishable in the forensic record, and they call for completely different
 responses. Beggar records and emits it and never reads it, so protocol independence is intact. Its type is the
-caller's enum, for the same reason (§14). It is also the **only** place willingness survives in the ledger:
-beggar cannot express refusal, so *"the peer said no"* and *"the peer said nothing"* are the same absence, and only
-the reason tells apart the one that should exclude that peer next time.
+caller's enum, for the same reason, and the only place a peer's unwillingness survives in the ledger — [`P1-ADR-CancelEvictsWithoutATombstone`](ADRs/P1-ADR-CancelEvictsWithoutATombstone.md).
 
 **One registry, two roles, many sessions.** The same type runs on both ends; the role follows from which
 commands arrive and from `sender`/`receiver` against this node's id. A node receiving from one peer while
@@ -201,13 +197,8 @@ logged tuple. No tag exists merely to tell two commands apart. Apply this when t
 delivers a partition's oldest at the heal, so a duplicate partial is *expected*. A counter would complete a
 session early and report a transfer that never finished.
 
-**`RecoveryNotStarted` is ordinary traffic, not an error.** A duplicate final chunk arriving after eviction
-produces it, and duplicates are guaranteed. It will appear routinely on a healthy node. **Do not alert on it**,
-and pair any count of it with a witness — otherwise it becomes a number that looks like catastrophic loss and
-is a capacity signature.
-
-**A late duplicate `AdoptRecovery` is ordinary traffic too, and not harmless.** It reopens a finished session whose
-chunks never come; the caller's cancellation policy, below, is what ends it (§14).
+**`RecoveryNotStarted` is ordinary traffic, not an error, and a late duplicate `AdoptRecovery` reopens a finished
+session** — both consequences of eviction without a tombstone, in [`P1-ADR-CancelEvictsWithoutATombstone`](ADRs/P1-ADR-CancelEvictsWithoutATombstone.md).
 
 **An out-of-range `chunk_id` is rejected, not absorbed** (`ChunkOutOfRange`). Folding it into `RecoveryUnaffected`
 would let a hostile or buggy peer's garbage read as a benign duplicate.
@@ -218,108 +209,21 @@ must act on.
 
 ### Cancellation
 
-Needed for four independent reasons: a session opened for a node that turns out unservable must be abandonable;
-a node falling further behind needs a larger session and the old one must die; the serving peer may be banned,
-refuse, or fail mid-session; and any timeout policy needs something to act *through*.
-
-**Cancel is local. Propagation is outside.** Beggar does no wire, so cancelling on one side does not tell the
-other.
-
-**Cancel evicts; it does not tombstone.** A partial after a cancel is therefore indistinguishable from one for a
-session that never existed, and `RecoveryNotStarted` covers both. The cost is accepted: beggar can say a session
-is absent, not *why*. Do not add a tombstone state to recover the distinction.
-
-**Legal in four situations, none an error:** unknown session (normal — it may already be evicted), already
-completed, already cancelled, and racing the final partial.
-
-**The race needs a rule, because arrival order is not a contract.** **Cancel wins once accepted, and no
-completion is emitted afterwards for that `session_id`.** A canceller has information beggar does not — that is
-why it is cancelling — so letting transport timing override it is the wrong default.
-
-**Beggar cannot time anything out**, because property 4 forbids owning a clock. `CancelRecovery` closes the
-*mechanism* gap and not the *policy* gap: **whoever drives beggar owns a stated cancellation policy.** A cancel
-command nobody decides to send leaves sessions accumulating exactly as no cancel command would. The second half
-is the half that gets forgotten.
+A cancel evicts, leaves no tombstone and wins once accepted; it is local, and legal in four situations, none an
+error. Beggar cannot time anything out, so ending abandoned sessions is **the caller's stated cancellation
+policy** — [`P1-ADR-CancelEvictsWithoutATombstone`](ADRs/P1-ADR-CancelEvictsWithoutATombstone.md).
 
 ## 6. Retention
 
-**How many completed-or-cancelled sessions beggar keeps is configuration.** On the IBFT cluster it is **0**:
-evicted immediately — **and the terminal output is still emitted.**
-
-**The invariant that must not be optimised away: retention governs what can be *queried*, never what is
-*emitted*.** The tempting shortcut is to skip emitting a terminal nobody will retain; that destroys the forensic
-trail in precisely the configuration the cluster runs.
-
-One knob, not two mechanisms — which is what lets the same code serve both cases property 4 promises: retention
-high on a host for tests and analysis, 0 on a board.
-
-**Record it in two columns from the first line of code** — `Default` and deployed. `etheram-ibft`'s constants
-table has two columns because a one-column version led four downstream records to quote a library default as
-deployed, and a published mechanism to rest on a poll interval no board ever ran. A retention default other than
-0 with the cluster at 0 is the identical trap.
-
-**Retention changes what a query can answer, and nothing else.** To every other command a retained session is
-not open, so an output never depends on the retention a node runs with — the host and the board answer alike.
-
-**Query axes.** Open sessions from the API; terminated sessions from the capture. "All session ids queryable"
-is two distinct questions — *which are open* and *which ever existed* — and they should not be conflated.
+How many finished sessions beggar keeps is configuration — **0** on the IBFT cluster — and it changes what a query
+can answer and nothing else: every terminal output is emitted whatever is kept — [`P1-ADR-RetentionGovernsQueriesNeverEmission`](ADRs/P1-ADR-RetentionGovernsQueriesNeverEmission.md).
 
 ## 7. Observability and forensics
 
-**`process` takes `&mut self` and returns the output tag only — settled 2026-09-30.** It does not return the new
-state, and the reason is worth stating because it decides what gets logged: **if the function is total and
-deterministic, the posterior state is derivable from the prior state and the command.** A replay does not need
-it.
-
-**So the emission per call is `(ordinal, command, output)` — not the full internal state.** An earlier draft had
-every call emit its whole state, which is what made observability expensive: a multi-field dump on a board with a
-small transmit ring competes with the very lines it exists to be correlated against. Commands and outputs are
-small and bounded; state is reconstructed by replaying them.
-
-**Plus a checkpoint, and its purpose is precise.** Not debugging — **resynchronisation.**
-Replay from an initial state only works while the command sequence is complete, and on a severed node it will not
-be. A checkpoint lets replay recover after a gap instead of diverging from it forever, which bounds the damage a
-gap does rather than letting one loss invalidate everything after it. It is a query, `ShowRegistry`, so its
-cadence is whenever the caller asks: beggar holds no cadence setting (§14).
-
-**A caller-supplied monotonic ordinal on every command is required, not optional.** It is the only thing that
-makes the forensic claim checkable: without it a replay built from a lossy capture silently omits events and
-looks self-consistent. With it, gaps are **detectable** — which is also what makes the checkpoint above usable,
-since you must know a gap happened to know you need to resynchronise. It yields a completeness metric that can
-fail: *reconstructed X of Y events*. A replay that cannot say how much it is missing is not evidence.
-
-**It must rise.** A command whose ordinal is not after the last accepted one is recorded and rejected
-(`OrdinalNotAfter`) and leaves the last where it was; every other command moves it, whatever its output. After,
-not exactly one more — §14 says why — so a gap proves loss only where the caller numbers beggar's commands one by
-one, and that is the caller's to do.
-
-**Beggar owns no clock, so it cannot supply the ordinal itself.** It comes in with the command.
-
-**The in-memory record therefore carries membership, not order.** The received set answers *which* chunks arrived;
-*when* is a log question, answered by the ordinals. An ordered structure in the registry would duplicate what the
-log already holds.
-
-### The guarantee is majority-side, and the vocabulary is why that works
-
-A partitioned node is close to unobservable: its log path is severed along with its data path. Measured on the
-reference hardware — unsevered nodes lose 0.05% of a periodic probe; the severed node loses 2.8% to 84.6% across
-a run window, and **inside the partition the loss is effectively total**, what survives being the transmit ring's
-content at the moment of heal.
-
-**The asymmetry is structural: the node whose record matters most is the one that cannot speak.**
-
-**But `SendRecoveryPartial` is fed on the serving node, which is not severed.** So every chunk of a session has
-an unsevered witness, and the existence, size, peer and progress of a transfer are reconstructible from the
-majority alone. What the silence costs is receive *timings* and the local view — not the fact of the transfer.
-**That is the argument for keeping both `Send` and `Receive`** rather than instrumenting only the receiver and
-putting the whole record on the one node that cannot speak.
-
-**The loss is accepted as a property of the platform**, not deferred as a defect. A reliable transport would
-recover the 0.05% and none of the rest, because a severed port is a *connectivity* failure, not a reliability
-one — there is no path to retry on. It would also reintroduce head-of-line blocking on the log path, which has
-already cost this family of systems a stall that read as a timing problem. And a larger transmit ring does not
-close it either: eight times the buffer buys single-digit percentages of a multi-minute partition, because the
-binding constraint is partition duration.
+`process` takes `&mut self` and returns the output only ([`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md)). Every call is emitted as
+**`(ordinal, command, output)`**, never the state, which a replay rebuilds; the **checkpoint** is a query,
+`ShowRegistry`, asked whenever the caller chooses; the **ordinal** is the caller's and must rise; and the
+guarantee is the majority side's, because the sending node witnesses every transfer — [`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md).
 
 ## 8. Memory
 
@@ -410,13 +314,6 @@ with where each landed, so the reasoning is not lost in the sections that now st
 | whether `chunks` may be zero — closed 2026-11-06 | **no:** `RecoveryRejected(NoChunks)` | §4 |
 | whether `session_id` uniqueness is beggar's — closed 2026-11-06 | **beggar's:** it names every session, after an instance id that never repeats | §14 |
 
-The first two turned out to be one decision: answering the return shape made the ordered-ledger question
-disappear, because once commands and outputs are the emitted record, order is already in the log and duplicating
-it in memory buys nothing.
-
-The last was an error rather than a question, carried forward from a conception in which beggar fetched and
-validated. It is the largest single simplification in this document.
-
 ### What remains genuinely open
 
 Nothing in the design, as of 2026-11-06: the three questions left here were closed that day, in the table above.
@@ -435,13 +332,6 @@ carries the new one. What the old texts said is listed so nobody reintroduces it
 | transitions emitted as `(from, event, to, epoch)` | `(output) = process(command, state)` plus a caller-supplied ordinal — §7 |
 | a control layer that detects lag, chooses a peer, retries on timeout and falls back to a snapshot | **out of scope.** Beggar accounts; it does not detect, choose or time. It has no heights and no clock — §1, §2. That layer exists, above beggar — §12 |
 | "admission is the trait boundary" | **also superseded.** Beggar never sees an entry, so there is nothing to admit: the caller validates and only then reports. **Zero injected dependencies** — §2 |
-
-**One README point survives intact**, and it is kept in both files: **a monotonic counter is what makes a gap
-prove loss** — absence of a log line otherwise proving nothing.
-
-The admission row was itself a correction. An earlier revision of this document listed admission as one of *two*
-surviving points, which was wrong for the same reason the control layer was: it belonged to a beggar that fetched
-and validated.
 
 ## 12. Where beggar sits: three layers — decided 2026-10-11
 
@@ -496,63 +386,13 @@ policy and which protocol are the caller's, and a stream becomes a collection ab
 
 ## 14. Names, refusals and queries — decided 2026-11-06
 
-**The accountant names the session.** `StartRecovery` carries no id: beggar mints one, `RecoveryStarted` returns
-it, and the caller carries it, with every message of the transfer, to the peer — whose beggar opens the same
-session under it with `AdoptRecovery`. Uniqueness is beggar's by construction, so no name is ever reused.
+Each decision of the day is in its ADR:
 
-**A name is unique across the cluster without coordination.** It is the instance id that minted it and a count;
-no two instances share an instance id and no instance repeats a count, so an adopted name never collides with one
-this instance minted.
+- beggar names the session, after an instance id whose incarnation is the caller's — [`P1-ADR-TheAccountantNamesTheSession`](ADRs/P1-ADR-TheAccountantNamesTheSession.md);
+- one entry point, one output for every command; refusals are outputs, queries are commands — [`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md);
+- the checkpoint is a query, and the ordinal must be after the last accepted — [`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md);
+- the cancel reason is the caller's enum, and a late duplicate adopt is ended by the caller's policy — [`P1-ADR-CancelEvictsWithoutATombstone`](ADRs/P1-ADR-CancelEvictsWithoutATombstone.md);
+- no caps — [`P0-ADR-AccountsNeverDecides`](ADRs/P0-ADR-AccountsNeverDecides.md);
+- JSON conformance vectors, a session's chunks given as a set of ids — [`P0-ADR-SpecificationIsNormativeCrateIsReference`](ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md).
 
-**The instance id must not repeat across a restart, and beggar cannot ensure that alone.** The count starts again
-at every start, while a peer may still hold the previous instance's sessions. Were node 7 to come back under the
-same instance id, its first new session would share a name with an old one; an adopt of it would find the old
-session open with the same parameters, answer `RecoveryUnaffected`, and count the new transfer's chunks onto the
-old one's — a completion before the chunks arrived. Beggar owns no storage and no clock, so the incarnation comes
-from the caller, which guarantees one thing: it never repeats for that node. How is the caller's:
-
-| incarnation | needs | fits |
-|---|---|---|
-| the start's wall-clock timestamp | a real-time clock | hosts, pods |
-| a stored count, incremented at every start | storage | a node of a protocol that persists — Raft stores its term and vote already |
-| a random number drawn at start | a hardware random-number generator | a board with neither |
-
-A timestamp is not safe on a board without a real-time clock: its time restarts at zero, so every boot draws the
-same one. An ordered incarnation — a count or a timestamp — also tells a peer that every session of an older one
-is dead, which the caller's cleanup can use; a random one cannot.
-
-**Refusals are outputs, never exceptions.** `process` is total: every call has one output and is emitted, a
-refused one included. A refused command is `RecoveryRejected` carrying a `Rejection` (§4), each specific, carrying
-what the log needs to tell a degenerate caller from a malicious peer. `RecoveryPartialRejected` became its
-`ChunkOutOfRange`.
-
-**The cancel reason is the caller's enum — with or without a payload, never a string.** Its variants are why
-recoveries end, which beggar does not know and must not. So beggar is generic over it: stores it, emits it, never
-reads it. A type parameter carries no behaviour, so zero injected dependencies ([`P0-ADR-AccountsNeverDecides`](ADRs/P0-ADR-AccountsNeverDecides.md)) still holds. In the
-conformance vectors it is an enum of the vectors' own, written as JSON.
-
-**A late duplicate `AdoptRecovery` reopens a finished session, and the caller's cancellation policy owns it.**
-Duplicates are expected (§5): a copy arriving after its session completed and was evicted finds it not open and
-opens it again, and its chunks never come. Beggar cannot tell it from a new session without remembering finished
-ones — a tombstone, which §5 forbids — or a highest count adopted per peer instance, which would also refuse a
-genuine session that arrived out of order. The reopened session is an abandoned one like any other, and ending
-abandoned sessions is what the caller's cancellation policy (§5) is for.
-
-**No caps.** Neither how many sessions are open nor how many gaps a session holds is beggar's to bound (§8); the
-caller bounds both.
-
-**Four queries, the checkpoint among them** (§4). Each is a command that changes nothing. The fourth, the whole
-registry, is the checkpoint §7 asks for, so its cadence is whenever the caller asks, and beggar holds no cadence
-setting and no policy.
-
-**The ordinal must rise, not step.** A command whose ordinal is not after the last accepted is recorded and
-rejected. *Exactly one more* was weighed and refused: one number the caller skipped would make every later ordinal
-wrong too, and the registry would refuse everything after it, for good. *After* catches an ordinal that goes back
-or repeats, and lets the caller share one count with other components. The price is stated rather than hidden: a
-gap in the log proves a lost line only where the caller numbers beggar's commands one by one.
-
-**No default `sender`.** §4 once defaulted it to this node's id, which assumed the node that opens a session sends
-— true under push, wrong under pull, where the receiver opens it (§13).
-
-**The conformance vectors are JSON**, and they give a session's received chunks as a set of chunk ids — never as
-the ranges an implementation may keep (§8) — so the specification fixes behaviour, not representation.
+What stays here is §4's vocabulary and matrix, in which `sender` has no default.

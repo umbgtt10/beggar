@@ -19,6 +19,11 @@ the matrix, the semantics, retention, observability and memory.
 | [P0-ADR-ARegistryNotAStateMachine](P0-ADR-ARegistryNotAStateMachine.md) | Every output is a function of the command and the session's record; no state label does any work. |
 | [P0-ADR-AccountsNeverDecides](P0-ADR-AccountsNeverDecides.md) | No detection, no peer choice, no timing, no policy; zero injected dependencies. The control layer sits above. |
 | [P0-ADR-SpecificationIsNormativeCrateIsReference](P0-ADR-SpecificationIsNormativeCrateIsReference.md) | A language-independent specification with JSON conformance vectors; this crate is one conforming implementation. |
+| [P1-ADR-TheAccountantNamesTheSession](P1-ADR-TheAccountantNamesTheSession.md) | `StartRecovery` mints the name — instance id and a count — and the peer adopts it; the instance id never repeats, restarts included. |
+| [P1-ADR-OneEntryPointOneOutput](P1-ADR-OneEntryPointOneOutput.md) | One `process(command)`, one output for every command — queries and refusals included — never an exception. |
+| [P1-ADR-TheLogIsTheRecord](P1-ADR-TheLogIsTheRecord.md) | Every call emitted as `(ordinal, command, output)`; state rebuilt by replay; the checkpoint a query; the ordinal must rise. |
+| [P1-ADR-RetentionGovernsQueriesNeverEmission](P1-ADR-RetentionGovernsQueriesNeverEmission.md) | What is kept changes what a query answers, and nothing else; every terminal is emitted. |
+| [P1-ADR-CancelEvictsWithoutATombstone](P1-ADR-CancelEvictsWithoutATombstone.md) | A cancel evicts and wins; no tombstones; ending abandoned sessions is the caller's stated policy. |
 
 ## Template
 
