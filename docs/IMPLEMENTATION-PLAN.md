@@ -58,9 +58,11 @@ command, and each is total over the commands it has.
 The serving end: the side that holds the chunks opens the session and sends them
 ([`P1-ADR-TheSenderOpensAndStatesTheCount`](ADRs/P1-ADR-TheSenderOpensAndStatesTheCount.md)).
 
-- **Adds:** `SendRecoveryPartial` with all its rows — not started, misattributed, wrong side, out of range,
-  advanced (with received and expected), completed, and a duplicate, unaffected — and the set of chunks recorded,
-  kept as ranges, in any order. Completion evicts.
+- **Adds:** `SendRecoveryPartial`, a run of chunks
+  ([`P1-ADR-APartialIsARunOfChunks`](ADRs/P1-ADR-APartialIsARunOfChunks.md)), with all its rows — an empty run,
+  not started, misattributed, wrong side, out of range, advanced (with received and expected), completed, and a run
+  already present, unaffected — and the set of chunks recorded, kept as ranges, runs merged in any order.
+  Completion evicts.
 - **Proves:** the invariants on the chunks recorded; completion exactly when every distinct chunk has been
   recorded; no record after it. The memory tier arrives: its own test target, a counting allocator, a positive control, then
   100 recoveries in sequence, in order and interleaved. So does the replay tier: the property tier's logs written
@@ -100,7 +102,7 @@ The serving end: the side that holds the chunks opens the session and sends them
 | `NoChunks`, `SelfAddressed`, `NotAParty`, `RegistryFull` | 1 for a start, 3 for an adopt |
 | `StartRecovery` started | 1 |
 | `AdoptRecovery`: not open, same, different | 3 |
-| a partial: not open, misattributed, wrong side, out of range, advanced, completed, duplicate | 2 for a send, 3 for a receive |
+| a partial: empty run, not open, misattributed, wrong side, out of range, advanced, completed, already present | 2 for a send, 3 for a receive |
 | `CancelRecovery`: open, not open | 4 |
 | `ShowRegistry` | 1 |
 | `ListRecoveries`, `ShowRecovery`, `ListMissingChunks`, and not started for a session neither open nor retained | 5 |

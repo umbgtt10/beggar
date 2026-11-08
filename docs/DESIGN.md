@@ -1,7 +1,7 @@
 # beggar — design
 
-**Status: design settled; no implementation.** The decisions are thirteen ADRs in [`ADRs/`](ADRs/README.md) — four
-P0 foundations, eight P1s derived from them and the testing ladder — and say why. The specification itself will be
+**Status: design settled; no implementation.** The decisions are fourteen ADRs in [`ADRs/`](ADRs/README.md) — four
+P0 foundations, nine P1s derived from them and the testing ladder — and say why. The specification itself will be
 `spec/`, at the repository root. This document says how: the vocabulary and its
 matrix (§4), the semantics (§5), memory (§8), technology (§9), and where beggar sits among the layers above it
 (§12). The order of building it is [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md). Settled 2026-09-30, amended 2026-10-12, 2026-11-06 and 2026-11-08; the decisions moved to the ADRs on 2026-11-06, and
@@ -97,8 +97,8 @@ first being 1 (§7).
 |---|---|---|
 | `StartRecovery` | the side that holds the chunks, which knows their count — §15 | `chunks`, `sender`, `receiver`. No id: beggar names the session and returns the name |
 | `AdoptRecovery` | the other side | `session_id`, `chunks`, `sender`, `receiver` — a session the peer started, under the name its beggar gave it and the count it stated, carried here by the caller |
-| `SendRecoveryPartial` | sending | `session_id`, `chunk_id`, `sender`, `receiver` |
-| `ReceiveRecoveryPartial` | receiving | `session_id`, `chunk_id`, `sender`, `receiver` |
+| `SendRecoveryPartial` | sending | `session_id`, `first`, `last` — a run of chunk ids, a single chunk a run of one (§17) — `sender`, `receiver` |
+| `ReceiveRecoveryPartial` | receiving | `session_id`, `first`, `last`, `sender`, `receiver` |
 | `CancelRecovery` | either | `session_id`, `reason` — a value of the **caller's enum**, recorded and emitted, never interpreted |
 
 **A `session_id` is the instance id that named the session and a count** — node, incarnation, count: three numbers.
@@ -115,8 +115,8 @@ first being 1 (§7).
 | output | meaning |
 |---|---|
 | `RecoveryStarted` | a session was opened; carries its `session_id` |
-| `RecoveryAdvanced` | a non-redundant partial was added; carries `received` and `expected` (§5) |
-| `RecoveryCompleted` | the partial just added filled the set |
+| `RecoveryAdvanced` | a partial added at least one new chunk; carries `received` and `expected` (§5) |
+| `RecoveryCompleted` | the chunks the partial just added filled the set |
 | `RecoveryCancelled` | cancelled by the caller; carries the `reason` |
 | `RecoveryUnaffected` | nothing changed |
 | `RecoveryNotStarted` | the command names a session that is not open |
@@ -131,12 +131,13 @@ first being 1 (§7).
 | `NotAParty` | a start or adopt in which this node is neither `sender` nor `receiver` |
 | `Misattributed { sender, receiver }` | a partial whose ends differ from its session's; carries the session's |
 | `WrongSide` | a partial reported on the wrong end: a send on the session's receiver, a receive on its sender |
-| `ChunkOutOfRange { chunk_id, chunks }` | a partial whose `chunk_id` is outside `1..=chunks` |
+| `EmptyRun { first, last }` | a partial whose `last` is below its `first` |
+| `ChunkOutOfRange { first, last, chunks }` | a partial whose run reaches outside `1..=chunks`, at either end |
 | `RegistryFull { capacity }` | a start, or an adopt of a session not open, while the open sessions number the instance's bound |
 
 **A refusal is an output, never an exception** — [`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md). `NoChunks`,
-`SelfAddressed` and `NotAParty` mark a degenerate command; `Misattributed`, `WrongSide` and `ChunkOutOfRange` a
-degenerate or a malicious one — a peer's, which is why each carries what the log needs to tell which.
+`SelfAddressed`, `NotAParty` and `EmptyRun` mark a degenerate command; `Misattributed`, `WrongSide` and
+`ChunkOutOfRange` a degenerate or a malicious one — a peer's, which is why each carries what the log needs to tell which.
 
 **`chunks` is mode-agnostic, and that is the point.** Under `etheram-ibft`'s deployed profile an answer to a block
 request carries up to 8, as many as the answering node sends; a chunked snapshot would carry of the order of 100; a Raft leader catching a follower up carries
@@ -177,13 +178,14 @@ Checked in this order; the first row that applies gives the output.
 | `AdoptRecovery` | open, any of them different | `RecoveryConflicted` |
 | `AdoptRecovery` | not open, the open sessions number the bound | `RecoveryRejected(RegistryFull)` |
 | `AdoptRecovery` | not open | `RecoveryStarted` |
+| partial | `last` below `first` | `RecoveryRejected(EmptyRun)` |
 | partial | not open | `RecoveryNotStarted` |
 | partial | ends differ from the session's | `RecoveryRejected(Misattributed)` |
 | partial | reported on the wrong end | `RecoveryRejected(WrongSide)` |
-| partial | `chunk_id` outside `1..=chunks` | `RecoveryRejected(ChunkOutOfRange)` |
-| partial | new chunk, set not full | `RecoveryAdvanced` |
-| partial | new chunk, **set now full** | `RecoveryCompleted` |
-| partial | chunk already present | `RecoveryUnaffected` |
+| partial | the run reaches outside `1..=chunks` | `RecoveryRejected(ChunkOutOfRange)` |
+| partial | a new chunk in the run, set not full | `RecoveryAdvanced` |
+| partial | a new chunk in the run, **set now full** | `RecoveryCompleted` |
+| partial | every chunk in the run already present | `RecoveryUnaffected` |
 | `CancelRecovery` | open | `RecoveryCancelled` |
 | `CancelRecovery` | not open | `RecoveryUnaffected` |
 | `ShowRecovery`, `ListMissingChunks` | neither open nor retained | `RecoveryNotStarted` |
@@ -199,7 +201,7 @@ logged tuple. No tag exists merely to tell two commands apart. Apply this when t
 ## 5. Semantics
 
 **Completion is set cardinality, not last index.** Chunks arrive in any order; anything keyed on
-`chunk_id == chunks` is wrong on the first reorder.
+a run's `last` reaching `chunks` is wrong on the first reorder.
 
 **The received set is a set, not a counter.** Beggar assumes nothing about how a partial comes to be reported:
 one may be reported more than once, in any order, or never, so a duplicate partial is ordinary. A counter would
@@ -208,8 +210,12 @@ complete a session early and report a transfer that never finished.
 **`RecoveryNotStarted` is ordinary traffic, not an error, and a late duplicate `AdoptRecovery` reopens a finished
 session** — both consequences of eviction without a tombstone, in [`P1-ADR-CancelEvictsWithoutATombstone`](ADRs/P1-ADR-CancelEvictsWithoutATombstone.md).
 
-**An out-of-range `chunk_id` is rejected, not absorbed** (`ChunkOutOfRange`). Folding it into `RecoveryUnaffected`
-would let a hostile or buggy peer's garbage read as a benign duplicate.
+**A run reaching out of range is rejected whole, not absorbed or trimmed** (`ChunkOutOfRange`). Folding it into
+`RecoveryUnaffected` would let a hostile or buggy peer's garbage read as a benign duplicate, and keeping the part
+that fits would accept a piece of a unit the caller presented as one (§17).
+
+**A run partly present adds what is new.** Any new chunk advances or completes the session; a run every chunk of
+which is already present leaves it unaffected.
 
 **`RecoveryAdvanced` should carry `received` and `expected`.** Not for completion, which has its own tag, but
 because a transfer stalling at 97 of 100 is otherwise invisible — and that is exactly what a cancellation policy
@@ -332,6 +338,7 @@ with where each landed, so the reasoning is not lost in the sections that now st
 | the checkpoint cadence — closed 2026-11-06 | **the caller's.** The checkpoint is a query, asked whenever the caller chooses | §7, §14 |
 | whether `chunks` may be zero — closed 2026-11-06 | **no:** `RecoveryRejected(NoChunks)` | §4 |
 | whether `session_id` uniqueness is beggar's — closed 2026-11-06 | **beggar's:** it names every session, after an instance id that never repeats | §14 |
+| what a partial carries — closed 2026-11-08 | **a run of chunk ids**, `first..=last`; a single chunk is a run of one | §4, §17 |
 | a bound on open sessions — closed 2026-11-08 | **optional, given at construction**, none for no bound; past it an open is refused with `RegistryFull` | §6, §16 |
 
 ### What remains genuinely open
@@ -435,3 +442,12 @@ past it is refused with `RecoveryRejected(RegistryFull { capacity })`, and the p
 side that asked. A number the caller fixes at construction is configuration, as retention is, not a policy beggar
 holds: the bound supersedes §14's "no caps" for the number of open sessions, and nothing else — timeouts stay the
 caller's.
+
+## 17. A partial is a run of chunks — decided 2026-11-08
+
+[`P1-ADR-APartialIsARunOfChunks`](ADRs/P1-ADR-APartialIsARunOfChunks.md): a partial reports `first..=last`, the
+unit its caller moved and validated — a page of blocks, a batch of entries, a message of snapshot pieces — and a
+single chunk is a run of one. One call, one receipt, one line per unit: a catch-up of 77 blocks in pages of eight
+leaves about ten receipts at each end instead of 77. A run that overruns the session is refused whole; one partly
+present adds what is new; an empty run is malformed (`EmptyRun`), checked first. The received set merges a run in
+one step (§8).

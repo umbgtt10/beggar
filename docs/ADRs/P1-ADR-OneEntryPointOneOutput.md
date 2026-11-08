@@ -46,8 +46,8 @@ needs one, as the cancel carries its reason.
 ## Consequences
 
 Every refusal is `RecoveryRejected` carrying a `Rejection`: no chunks, a
-session that is self-addressed or does not involve this node, a partial
-misattributed, on the wrong side or out of range. Each is specific, and
+session that is self-addressed or does not involve this node, a full registry,
+an empty run, a partial misattributed, on the wrong side or out of range. Each is specific, and
 carries what the log needs to tell a degenerate caller from a malicious peer:
 a misattributed partial carries the session's own ends.
 

@@ -19,8 +19,8 @@ That asymmetry is the whole mechanism, and it is the reason for the name.
 ## What it actually does
 
 **Pure accounting.** Beggar is a registry of ongoing transfer sessions. A session is opened with an expected
-chunk count and two node identities, and beggar names it; the peer's registry adopts the name. Each chunk that
-moves is recorded against it; when the set is full, or the caller cancels, the session terminates and is evicted.
+chunk count and two node identities, and beggar names it; the peer's registry adopts the name. Each run of chunks
+that moves — a single chunk is a run of one — is recorded against it; when the set is full, or the caller cancels, the session terminates and is evicted.
 An instance may be given a bound on how many sessions are open at once; past it, an open is refused.
 A command it refuses gets an output saying why — never an exception.
 

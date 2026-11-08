@@ -21,6 +21,7 @@ the matrix, the semantics, retention, observability and memory.
 | [P0-ADR-SpecificationIsNormativeCrateIsReference](P0-ADR-SpecificationIsNormativeCrateIsReference.md) | A standard component, specified first and by hand in `spec/` — JSON Schema, a JSON decision table, prose, JSON vectors; this crate is one implementation. |
 | [P1-ADR-TheSenderOpensAndStatesTheCount](P1-ADR-TheSenderOpensAndStatesTheCount.md) | The side that holds the chunks opens the session and states their count; the other side adopts it. Under pull, asking opens nothing. |
 | [P1-ADR-TheAccountantNamesTheSession](P1-ADR-TheAccountantNamesTheSession.md) | `StartRecovery` mints the name — instance id and a count — and the peer adopts it; the instance id never repeats, restarts included. |
+| [P1-ADR-APartialIsARunOfChunks](P1-ADR-APartialIsARunOfChunks.md) | A partial reports a run of consecutive chunk ids, `first..=last`; a single chunk is a run of one. One unit, one receipt. |
 | [P1-ADR-OneEntryPointOneOutput](P1-ADR-OneEntryPointOneOutput.md) | One `process(command)`, one output for every command on a numbered receipt — queries and refusals included — never an exception. |
 | [P1-ADR-TheLogIsTheRecord](P1-ADR-TheLogIsTheRecord.md) | Every call answered with a receipt numbered by beggar, logged as `(number, command, output)`; state rebuilt by replay; the checkpoint a query. |
 | [P1-ADR-RetentionGovernsQueriesNeverEmission](P1-ADR-RetentionGovernsQueriesNeverEmission.md) | What is kept changes what a query answers, and nothing else; every terminal is emitted. |
