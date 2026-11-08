@@ -52,28 +52,29 @@ command, and each is total over the commands it has.
 - **A caller can then:** open recoveries under names unique across the cluster, be refused when a command is
   wrong, and log the checkpoint.
 
-### 2. Receive it to completion
+### 2. Send it to completion
 
-Pull: the node behind opens the session and receives.
+The serving end: the side that holds the chunks opens the session and sends them
+([`P1-ADR-TheSenderOpensAndStatesTheCount`](ADRs/P1-ADR-TheSenderOpensAndStatesTheCount.md)).
 
-- **Adds:** `ReceiveRecoveryPartial` with all its rows — not started, misattributed, wrong side, out of range,
-  advanced (with received and expected), completed, and a duplicate, unaffected — and the received set, kept as
-  ranges, in any order. Completion evicts.
-- **Proves:** the invariants on the chunks received; completion exactly when every distinct chunk has arrived;
-  no record after it. The memory tier arrives: its own test target, a counting allocator, a positive control, then
+- **Adds:** `SendRecoveryPartial` with all its rows — not started, misattributed, wrong side, out of range,
+  advanced (with received and expected), completed, and a duplicate, unaffected — and the set of chunks recorded,
+  kept as ranges, in any order. Completion evicts.
+- **Proves:** the invariants on the chunks recorded; completion exactly when every distinct chunk has been
+  recorded; no record after it. The memory tier arrives: its own test target, a counting allocator, a positive control, then
   100 recoveries in sequence, in order and interleaved. So does the replay tier: the property tier's logs written
   in the specification's JSON and replayed, a dropped line detected, the replay resynchronised from a checkpoint.
-- **A caller can then:** account a whole recovery on the node that asked for it — IBFT's request for blocks —
-  duplicates, strays and garbage included.
+- **A caller can then:** account a whole answer on the node that sends it — IBFT's answer to a request for blocks,
+  a Raft leader's push — duplicates, strays and garbage included.
 
-### 3. The serving end
+### 3. The receiving end
 
 - **Adds:** `AdoptRecovery` with its rows, sharing `StartRecovery`'s checks of a well-formed session, then not
-  open, open with the same parameters, open with different ones; and `SendRecoveryPartial` with all its rows.
-- **Proves:** a host test of two registries joining both ends of a transfer. Pull: B serves A — start on A, adopt
-  on B, sends on B, receives on A, both complete. Push: the sender starts it and the receiver adopts. The
-  simulation tier arrives: several registries whose reports to one another a seeded harness loses, duplicates, reorders and withholds, and
-  the replay tier takes its logs.
+  open, open with the same parameters, open with different ones; and `ReceiveRecoveryPartial` with all its rows.
+- **Proves:** a host test of two registries joining both ends of a transfer, the sender starting it and the
+  receiver adopting it under pull and push alike: B answers A — start on B, adopt on A, sends on B, receives on A,
+  both complete. The simulation tier arrives: several registries whose reports to one another a seeded harness
+  loses, duplicates, reorders and withholds, and the replay tier takes its logs.
 - **A caller can then:** account both ends of a transfer, pulled or pushed, for IBFT or for Raft.
 
 ### 4. Abandon it
@@ -98,7 +99,7 @@ Pull: the node behind opens the session and receives.
 | `NoChunks`, `SelfAddressed`, `NotAParty` | 1 for a start, 3 for an adopt |
 | `StartRecovery` started | 1 |
 | `AdoptRecovery`: not open, same, different | 3 |
-| a partial: not open, misattributed, wrong side, out of range, advanced, completed, duplicate | 2 for a receive, 3 for a send |
+| a partial: not open, misattributed, wrong side, out of range, advanced, completed, duplicate | 2 for a send, 3 for a receive |
 | `CancelRecovery`: open, not open | 4 |
 | `ShowRegistry` | 1 |
 | `ListRecoveries`, `ShowRecovery`, `ListMissingChunks`, and not started for a session neither open nor retained | 5 |
@@ -109,8 +110,9 @@ Pull: the node behind opens the session and receives.
 - **Beggar numbers every call:** `process(&mut self, command) -> Receipt<R>`, the receipt carrying the output and
   its number. No ordinal comes from the caller
   ([`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md)).
-- **Pull first:** slice 2 receives, because IBFT's control layer already exists to integrate against; Raft's
-  catch-up has yet to be split into a control layer and beggar.
+- **The sending end first:** slice 2 sends, because a session opens on its sender
+  ([`P1-ADR-TheSenderOpensAndStatesTheCount`](ADRs/P1-ADR-TheSenderOpensAndStatesTheCount.md)) and IBFT's control
+  layer already exists to integrate against; Raft's catch-up has yet to be split into a control layer and beggar.
 - **The chunks received are a type of beggar's own, `ReceivedChunks`**, showing behaviour, never its fields:
   `count`, `contains`, `ids`, and `runs` — the maximal runs of consecutive ids. A set has exactly one set of
   maximal runs, so they are a property of the set and not of a representation, and they keep a checkpoint small:

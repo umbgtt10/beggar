@@ -7,8 +7,8 @@
 ## Context
 
 Beggar serves recovery in two consensus protocols whose recoveries differ in
-everything a protocol cares about. IBFT's node behind asks for blocks, eight
-at a time. Raft's leader pushes a lagging follower the log entries it lacks,
+everything a protocol cares about. IBFT's node behind asks for blocks, and the
+node it asks answers with up to eight at a time. Raft's leader pushes a lagging follower the log entries it lacks,
 and has no fixed end: entries keep arriving, and a rejection steps it back.
 Either may send a snapshot in pieces. A bookkeeper that knew any of this would
 be rewritten for the next protocol, the next transfer mode, the next way of
@@ -25,8 +25,8 @@ what order, under what policy or which protocol — and no bits or bytes.
 The vocabulary is the enforcement. There is no type in which a block, an
 entry, a height or a wire format could be expressed, so protocol independence
 holds by construction rather than by discipline. And the shape is the one
-thing the recoveries share: a request for eight blocks, a follower's missing
-entries and a snapshot in a hundred pieces are each a session of chunks.
+thing the recoveries share: an answer of up to eight blocks, a follower's
+missing entries and a snapshot in a hundred pieces are each a session of chunks.
 
 ## Rejected alternatives
 
@@ -49,9 +49,11 @@ decides what one recovery covers — what was missing when it opened, with
 entries appended later left to ordinary replication — and a range found wrong
 is a cancel, its reason saying why, and a new session.
 
-Push and pull look the same. Under pull the node behind opens the session,
-under push the node ahead; the same registry runs at both ends, and nothing in
-the commands says which it was.
+Push and pull look the same: in both, the side that holds the chunks opens the
+session and states their count, and under pull the side behind only asks
+([P1-ADR-TheSenderOpensAndStatesTheCount](P1-ADR-TheSenderOpensAndStatesTheCount.md));
+the same registry runs at both ends, and nothing in the commands says which it
+was.
 
 What a chunk holds is the caller's to choose — a block, an entry, a batch, a
 slice of a snapshot — and so is the chunk size, which, with the caller's

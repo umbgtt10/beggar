@@ -1,10 +1,10 @@
 # beggar — design
 
-**Status: design settled; no implementation.** The decisions are eleven ADRs in [`ADRs/`](ADRs/README.md) — four
-P0 foundations, six P1s derived from them and the testing ladder — and say why. The specification itself will be
+**Status: design settled; no implementation.** The decisions are twelve ADRs in [`ADRs/`](ADRs/README.md) — four
+P0 foundations, seven P1s derived from them and the testing ladder — and say why. The specification itself will be
 `spec/`, at the repository root. This document says how: the vocabulary and its
 matrix (§4), the semantics (§5), memory (§8), technology (§9), and where beggar sits among the layers above it
-(§12). The order of building it is [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md). Settled 2026-09-30, amended 2026-10-12 and 2026-11-06; the decisions moved to the ADRs on 2026-11-06, and
+(§12). The order of building it is [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md). Settled 2026-09-30, amended 2026-10-12, 2026-11-06 and 2026-11-08; the decisions moved to the ADRs on 2026-11-06, and
 the sections they came from keep their numbers, because other repositories cite them, and say where each went.
 
 **Sequencing.** Beggar takes over one part of the block-recovery path in `etheram-ibft` — the bookkeeping of
@@ -94,8 +94,8 @@ first being 1 (§7).
 
 | command | side | carries |
 |---|---|---|
-| `StartRecovery` | the side that opens it | `chunks`, `sender`, `receiver`. No id: beggar names the session and returns the name |
-| `AdoptRecovery` | the other side | `session_id`, `chunks`, `sender`, `receiver` — a session the peer started, under the name its beggar gave it, carried here by the caller |
+| `StartRecovery` | the side that holds the chunks, which knows their count — §15 | `chunks`, `sender`, `receiver`. No id: beggar names the session and returns the name |
+| `AdoptRecovery` | the other side | `session_id`, `chunks`, `sender`, `receiver` — a session the peer started, under the name its beggar gave it and the count it stated, carried here by the caller |
 | `SendRecoveryPartial` | sending | `session_id`, `chunk_id`, `sender`, `receiver` |
 | `ReceiveRecoveryPartial` | receiving | `session_id`, `chunk_id`, `sender`, `receiver` |
 | `CancelRecovery` | either | `session_id`, `reason` — a value of the **caller's enum**, recorded and emitted, never interpreted |
@@ -136,8 +136,8 @@ first being 1 (§7).
 `SelfAddressed` and `NotAParty` mark a degenerate command; `Misattributed`, `WrongSide` and `ChunkOutOfRange` a
 degenerate or a malicious one — a peer's, which is why each carries what the log needs to tell which.
 
-**`chunks` is mode-agnostic, and that is the point.** Under `etheram-ibft`'s deployed profile a block request
-carries 8; a chunked snapshot would carry of the order of 100; a Raft leader catching a follower up carries
+**`chunks` is mode-agnostic, and that is the point.** Under `etheram-ibft`'s deployed profile an answer to a block
+request carries up to 8, as many as the answering node sends; a chunked snapshot would carry of the order of 100; a Raft leader catching a follower up carries
 whatever its control layer chose. Beggar does not know which it is accounting for — [`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md). It is a u64, so a
 caller may make one log entry one chunk (§8).
 
@@ -156,8 +156,9 @@ caller's enum, for the same reason, and the only place a peer's unwillingness su
 
 **One registry, two roles, many sessions.** The same type runs on both ends; the role follows from which
 commands arrive and from `sender`/`receiver` against this node's id. A node receiving from one peer while
-serving another holds two sessions. Neither end is assumed: under push the node that opens a session sends, under
-pull it receives (§13), so `sender` has no default.
+serving another holds two sessions. The side that holds the chunks opens, under push and under pull alike, because
+only it knows their count; under pull the node behind asks through its protocol, which opens nothing (§15). Beggar
+does not check which side opens: a start names both ends, so `sender` has no default.
 
 ### The complete matrix
 
@@ -355,7 +356,8 @@ it.** What it measured as consensus-unaware is not beggar but the control layer 
 | **IBFT** | wire, certificates, validator membership and schedule, the execution payload, consensus's reactions, snapshot | `etheram-ibft`, `recovery/ibft/` and the node |
 
 **Beggar takes over one thing from the control layer: the bookkeeping of the request in flight.** A block request
-is a session of `chunks` blocks — 8 under the deployed profile, as §4 says. The control layer keeps everything
+is a session opened by the node that answers it, of the blocks it sends — up to 8 under the deployed profile, as §4
+says (§15). The control layer keeps everything
 beggar refuses to know — which heights a request covers, which peer is ahead, why a request was abandoned, which
 travels as `CancelRecovery`'s `reason`, the caller's enum — and it is the driver that, per §5, owns the
 cancellation policy.
@@ -407,3 +409,11 @@ Each decision of the day is in its ADR:
 - JSON conformance vectors, a session's chunks given as a set of ids — [`P0-ADR-SpecificationIsNormativeCrateIsReference`](ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md).
 
 What stays here is §4's vocabulary and matrix, in which `sender` has no default.
+
+## 15. The sender opens and states the count — decided 2026-11-08
+
+[`P1-ADR-TheSenderOpensAndStatesTheCount`](ADRs/P1-ADR-TheSenderOpensAndStatesTheCount.md): only the side that holds
+the chunks knows how many it will send — an IBFT server answers a request for eight with as many as its budget
+allows, six in a capture of 2026-11-05 — so it opens the session and states the count, and the other side adopts
+it. Under pull the request opens nothing; it is the protocol's to track until an answer opens a session. A short
+answer is a smaller session, and completes. The matrix is unchanged.
