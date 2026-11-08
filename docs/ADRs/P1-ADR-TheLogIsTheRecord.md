@@ -75,8 +75,8 @@ so a log is ordered, instance by instance, by its numbers.
 Placing beggar's receipts among the caller's own events is the caller's: it
 logs each receipt within its own sequenced log.
 
-The checkpoint is a query, the whole registry: the instance id and the
-retention, every open and retained record, the count names are minted from,
+The checkpoint is a query, the whole registry: the instance id, the
+retention and the bound on open sessions, every open and retained record, the count names are minted from,
 and the next receipt's number. The caller asks for it as often as it chooses
 and logs it like any other receipt.
 

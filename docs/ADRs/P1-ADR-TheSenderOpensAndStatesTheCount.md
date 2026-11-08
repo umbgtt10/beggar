@@ -56,7 +56,8 @@ count is only right when it is kept.
 
 Asking again before an answer arrives can make the side asked open more than
 one session for the same need; each is an open session like any other, ended
-by completion or by the caller's cancellation policy.
+by completion or by the caller's cancellation policy, and counted against the
+bound on open sessions where the caller set one.
 
 ## Enforcement
 

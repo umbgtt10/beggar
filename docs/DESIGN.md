@@ -1,7 +1,7 @@
 # beggar — design
 
-**Status: design settled; no implementation.** The decisions are twelve ADRs in [`ADRs/`](ADRs/README.md) — four
-P0 foundations, seven P1s derived from them and the testing ladder — and say why. The specification itself will be
+**Status: design settled; no implementation.** The decisions are thirteen ADRs in [`ADRs/`](ADRs/README.md) — four
+P0 foundations, eight P1s derived from them and the testing ladder — and say why. The specification itself will be
 `spec/`, at the repository root. This document says how: the vocabulary and its
 matrix (§4), the semantics (§5), memory (§8), technology (§9), and where beggar sits among the layers above it
 (§12). The order of building it is [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md). Settled 2026-09-30, amended 2026-10-12, 2026-11-06 and 2026-11-08; the decisions moved to the ADRs on 2026-11-06, and
@@ -76,8 +76,8 @@ Why is [`P0-ADR-ARegistryNotAStateMachine`](ADRs/P0-ADR-ARegistryNotAStateMachin
 Both terminal outputs evict — [`P1-ADR-RetentionGovernsQueriesNeverEmission`](ADRs/P1-ADR-RetentionGovernsQueriesNeverEmission.md).
 
 **The invariants.** `received ⊆ 1..=chunks`, `|received| ≤ chunks`, no record survives a terminal output, every
-open session has this node as exactly one of its two ends, no two open sessions share a name, and the
-command-to-output mapping is total. Exhaustively property-testable over small `chunks`.
+open session has this node as exactly one of its two ends, no two open sessions share a name, the open sessions
+never outnumber the bound where there is one, and the command-to-output mapping is total. Exhaustively property-testable over small `chunks`.
 
 ## 4. Vocabulary
 
@@ -85,7 +85,8 @@ Commands are **imperative**, outputs **past participle** — so "what I was aske
 cannot be confused at a call site.
 
 **An instance is created from one of two origins:** fresh — this node's id, an incarnation that never repeats for
-this node, and its retention (§6) — or a checkpoint, which carries all three and the state it was taken in, for a
+this node, its retention and its bound on open sessions, if any (§6) — or a checkpoint, which carries all four and
+the state it was taken in, for a
 replay or a vector and never for a live restart
 ([`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md)). The node's id and incarnation are the
 **instance id**, and every session the instance opens is named after it
@@ -109,7 +110,7 @@ first being 1 (§7).
 | `ListRecoveries` | the names of the open sessions |
 | `ShowRecovery` | one session's record — `chunks`, `sender`, `receiver`, the chunks received (§8) — open or retained (§6) |
 | `ListMissingChunks` | one session's chunks not yet received, as maximal runs (§8) |
-| `ShowRegistry` | the whole registry: the instance id and retention, every open and retained record, the name count, the next receipt's number — **the checkpoint** (§7) |
+| `ShowRegistry` | the whole registry: the instance id, the retention and the bound, every open and retained record, the name count, the next receipt's number — **the checkpoint** (§7) |
 
 | output | meaning |
 |---|---|
@@ -131,6 +132,7 @@ first being 1 (§7).
 | `Misattributed { sender, receiver }` | a partial whose ends differ from its session's; carries the session's |
 | `WrongSide` | a partial reported on the wrong end: a send on the session's receiver, a receive on its sender |
 | `ChunkOutOfRange { chunk_id, chunks }` | a partial whose `chunk_id` is outside `1..=chunks` |
+| `RegistryFull { capacity }` | a start, or an adopt of a session not open, while the open sessions number the instance's bound |
 
 **A refusal is an output, never an exception** — [`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md). `NoChunks`,
 `SelfAddressed` and `NotAParty` mark a degenerate command; `Misattributed`, `WrongSide` and `ChunkOutOfRange` a
@@ -169,10 +171,12 @@ Checked in this order; the first row that applies gives the output.
 | start, adopt | `chunks` = 0 | `RecoveryRejected(NoChunks)` |
 | start, adopt | `sender` = `receiver` | `RecoveryRejected(SelfAddressed)` |
 | start, adopt | this node neither `sender` nor `receiver` | `RecoveryRejected(NotAParty)` |
+| `StartRecovery` | the open sessions number the bound | `RecoveryRejected(RegistryFull)` |
 | `StartRecovery` | — | `RecoveryStarted`, under a new name |
-| `AdoptRecovery` | not open | `RecoveryStarted` |
 | `AdoptRecovery` | open, same `chunks`, `sender` and `receiver` | `RecoveryUnaffected` |
 | `AdoptRecovery` | open, any of them different | `RecoveryConflicted` |
+| `AdoptRecovery` | not open, the open sessions number the bound | `RecoveryRejected(RegistryFull)` |
+| `AdoptRecovery` | not open | `RecoveryStarted` |
 | partial | not open | `RecoveryNotStarted` |
 | partial | ends differ from the session's | `RecoveryRejected(Misattributed)` |
 | partial | reported on the wrong end | `RecoveryRejected(WrongSide)` |
@@ -221,6 +225,10 @@ policy** — [`P1-ADR-CancelEvictsWithoutATombstone`](ADRs/P1-ADR-CancelEvictsWi
 
 How many finished sessions beggar keeps is configuration — **0** on the IBFT cluster — and it changes what a query
 can answer and nothing else: every terminal output is emitted whatever is kept — [`P1-ADR-RetentionGovernsQueriesNeverEmission`](ADRs/P1-ADR-RetentionGovernsQueriesNeverEmission.md).
+
+**How many sessions may be open is configuration too, and optional** — none by default, no bound; its deployed value
+is the integration's to choose. Past it a start, or an adopt of a session not open, is refused with
+`RegistryFull`, and the open sessions never outnumber it; it counts open sessions only — [`P1-ADR-AnOptionalBoundOnOpenSessions`](ADRs/P1-ADR-AnOptionalBoundOnOpenSessions.md) (§16).
 
 ## 7. Observability and forensics
 
@@ -324,6 +332,7 @@ with where each landed, so the reasoning is not lost in the sections that now st
 | the checkpoint cadence — closed 2026-11-06 | **the caller's.** The checkpoint is a query, asked whenever the caller chooses | §7, §14 |
 | whether `chunks` may be zero — closed 2026-11-06 | **no:** `RecoveryRejected(NoChunks)` | §4 |
 | whether `session_id` uniqueness is beggar's — closed 2026-11-06 | **beggar's:** it names every session, after an instance id that never repeats | §14 |
+| a bound on open sessions — closed 2026-11-08 | **optional, given at construction**, none for no bound; past it an open is refused with `RegistryFull` | §6, §16 |
 
 ### What remains genuinely open
 
@@ -405,7 +414,7 @@ Each decision of the day is in its ADR:
 - one entry point, one output for every command; refusals are outputs, queries are commands — [`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md);
 - the checkpoint is a query, and beggar numbers every call on a receipt, with no ordinal from the caller — [`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md);
 - the cancel reason is the caller's enum, and a late duplicate adopt is ended by the caller's policy — [`P1-ADR-CancelEvictsWithoutATombstone`](ADRs/P1-ADR-CancelEvictsWithoutATombstone.md);
-- no caps — [`P0-ADR-AccountsNeverDecides`](ADRs/P0-ADR-AccountsNeverDecides.md);
+- no caps — [`P0-ADR-AccountsNeverDecides`](ADRs/P0-ADR-AccountsNeverDecides.md); since 2026-11-08 an optional bound on open sessions (§16);
 - JSON conformance vectors, a session's chunks given as a set of ids — [`P0-ADR-SpecificationIsNormativeCrateIsReference`](ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md).
 
 What stays here is §4's vocabulary and matrix, in which `sender` has no default.
@@ -417,3 +426,12 @@ the chunks knows how many it will send — an IBFT server answers a request for 
 allows, six in a capture of 2026-11-05 — so it opens the session and states the count, and the other side adopts
 it. Under pull the request opens nothing; it is the protocol's to track until an answer opens a session. A short
 answer is a smaller session, and completes. The matrix is unchanged.
+
+## 16. An optional bound on open sessions — decided 2026-11-08
+
+[`P1-ADR-AnOptionalBoundOnOpenSessions`](ADRs/P1-ADR-AnOptionalBoundOnOpenSessions.md): an instance may be given,
+at construction, a bound on its open sessions; none means no bound. A start, or an adopt of a session not open,
+past it is refused with `RecoveryRejected(RegistryFull { capacity })`, and the protocol carries the refusal to the
+side that asked. A number the caller fixes at construction is configuration, as retention is, not a policy beggar
+holds: the bound supersedes §14's "no caps" for the number of open sessions, and nothing else — timeouts stay the
+caller's.

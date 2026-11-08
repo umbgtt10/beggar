@@ -24,6 +24,7 @@ the matrix, the semantics, retention, observability and memory.
 | [P1-ADR-OneEntryPointOneOutput](P1-ADR-OneEntryPointOneOutput.md) | One `process(command)`, one output for every command on a numbered receipt — queries and refusals included — never an exception. |
 | [P1-ADR-TheLogIsTheRecord](P1-ADR-TheLogIsTheRecord.md) | Every call answered with a receipt numbered by beggar, logged as `(number, command, output)`; state rebuilt by replay; the checkpoint a query. |
 | [P1-ADR-RetentionGovernsQueriesNeverEmission](P1-ADR-RetentionGovernsQueriesNeverEmission.md) | What is kept changes what a query answers, and nothing else; every terminal is emitted. |
+| [P1-ADR-AnOptionalBoundOnOpenSessions](P1-ADR-AnOptionalBoundOnOpenSessions.md) | An optional bound on open sessions, given at construction; past it an open is refused with `RegistryFull`. Configuration, like retention, not policy. |
 | [P1-ADR-CancelEvictsWithoutATombstone](P1-ADR-CancelEvictsWithoutATombstone.md) | A cancel evicts and wins; no tombstones; ending abandoned sessions is the caller's stated policy. |
 | [P1-ADR-NoLineTheSpecificationDoesNotAskFor](P1-ADR-NoLineTheSpecificationDoesNotAskFor.md) | 100% coverage from the first function — no uncovered line, region or function — under all tiers and under the vectors alone. |
 | [P2-ADR-TestingLadder](P2-ADR-TestingLadder.md) | Seven tiers — unit, conformance, exhaustive matrix, property, simulation, replay, memory — all run by the gates. |

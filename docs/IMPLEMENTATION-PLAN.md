@@ -33,9 +33,10 @@ command, and each is total over the commands it has.
 
 ### 1. Open a recovery and see it
 
-- **Adds:** `Beggar<R>` and its receipts, numbered from 1 on every call; `StartRecovery` with all its rows —
-  `NoChunks`, `SelfAddressed`, `NotAParty`, and `RecoveryStarted` under a new name minted after the instance id;
-  and `ShowRegistry`, the checkpoint.
+- **Adds:** `Beggar<R>` and its receipts, numbered from 1 on every call, created with an optional bound on open
+  sessions; `StartRecovery` with all its rows — `NoChunks`, `SelfAddressed`, `NotAParty`, `RegistryFull`, and
+  `RecoveryStarted` under a new name minted after the instance id; and `ShowRegistry`, the checkpoint, the bound in
+  it.
 - **Lays down the specification** in `spec/`, at the repository root and outside the crate: the JSON Schema, the
   decision table `matrix.json`, `SPEC.md`, and the vectors, every u64 a string of decimal digits
   ([`P0-ADR-SpecificationIsNormativeCrateIsReference`](ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md)).
@@ -96,7 +97,7 @@ The serving end: the side that holds the chunks opens the session and sends them
 
 | row of [`DESIGN.md`](DESIGN.md) §4 | slice |
 |---|---|
-| `NoChunks`, `SelfAddressed`, `NotAParty` | 1 for a start, 3 for an adopt |
+| `NoChunks`, `SelfAddressed`, `NotAParty`, `RegistryFull` | 1 for a start, 3 for an adopt |
 | `StartRecovery` started | 1 |
 | `AdoptRecovery`: not open, same, different | 3 |
 | a partial: not open, misattributed, wrong side, out of range, advanced, completed, duplicate | 2 for a send, 3 for a receive |

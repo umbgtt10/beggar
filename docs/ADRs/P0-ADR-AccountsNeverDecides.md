@@ -45,8 +45,8 @@ clock, refusal and states — each refused by
 
 **An injected admission policy.** Rejected: there is nothing to admit.
 
-**Beggar enforcing limits** — a cap on sessions, a timeout on a stalled one.
-Rejected: a limit is a policy, and its right value is the caller's.
+**Beggar timing a session out.** Rejected: it needs a clock, and its length is
+a policy.
 
 ## Consequences
 
@@ -54,6 +54,11 @@ Three layers: beggar accounts; a control layer above it — consensus-unaware,
 chain-aware — holds heights, peer statuses, retries, refusals and the
 cancellation policy; the protocol sits above that. The dependency runs one
 way: the control layer depends on beggar, never the reverse.
+
+A number the caller fixes at construction is configuration, not policy: the
+retention, and the bound on open sessions
+([P1-ADR-AnOptionalBoundOnOpenSessions](P1-ADR-AnOptionalBoundOnOpenSessions.md)),
+which beggar counts against and never chooses.
 
 Every policy is the caller's, and the caller states it — the cancellation
 policy above all, because a cancel nobody decides to send leaves sessions
