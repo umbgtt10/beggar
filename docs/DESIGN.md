@@ -196,9 +196,9 @@ logged tuple. No tag exists merely to tell two commands apart. Apply this when t
 **Completion is set cardinality, not last index.** Chunks arrive in any order; anything keyed on
 `chunk_id == chunks` is wrong on the first reorder.
 
-**The received set is a set, not a counter.** The transport retries undelivered datagrams indefinitely and
-delivers a partition's oldest at the heal, so a duplicate partial is *expected*. A counter would complete a
-session early and report a transfer that never finished.
+**The received set is a set, not a counter.** Beggar assumes nothing about how a partial comes to be reported:
+one may be reported more than once, in any order, or never, so a duplicate partial is ordinary. A counter would
+complete a session early and report a transfer that never finished.
 
 **`RecoveryNotStarted` is ordinary traffic, not an error, and a late duplicate `AdoptRecovery` reopens a finished
 session** — both consequences of eviction without a tombstone, in [`P1-ADR-CancelEvictsWithoutATombstone`](ADRs/P1-ADR-CancelEvictsWithoutATombstone.md).
@@ -227,7 +227,7 @@ can answer and nothing else: every terminal output is emitted whatever is kept �
 than the last ([`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md)). Every call is logged as
 **`(number, command, output)`**, never the state, which a replay rebuilds; a gap in the numbers proves a lost
 line; the **checkpoint** is a query, `ShowRegistry`, asked whenever the caller chooses; and the guarantee is the
-majority side's, because the sending node witnesses every transfer — [`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md).
+caller's, because both ends account every transfer — [`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md).
 
 ## 8. Memory
 

@@ -10,9 +10,9 @@ A session has to be abandonable, for four independent reasons: it was opened
 for a node that turns out unservable; the node fell further behind and needs a
 larger session; the serving peer was banned, refused or failed midway; and any
 timeout policy needs something to act through. Beggar owns no clock, so it
-cannot time a session out itself. And after a session ends, late traffic for
-it is certain: the transport retries undelivered datagrams indefinitely and
-delivers a partition's oldest at the heal.
+cannot time a session out itself. And beggar assumes nothing about how the
+commands it is given come about, so commands for a session after it ends must
+be expected.
 
 ## Decision
 
@@ -42,8 +42,8 @@ existed". Rejected: tombstones accumulate as retained records do, and buy a
 duplicate adopt. Rejected: it would also refuse a genuine session that arrived
 out of order.
 
-**A completion emitted after an accepted cancel.** Rejected: transport timing
-would override the canceller.
+**A completion emitted after an accepted cancel.** Rejected: the order in which
+the caller's reports happen to arrive would override the canceller.
 
 **Timeouts inside beggar.** Rejected: they need a clock, and their length is a
 policy.

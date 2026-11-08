@@ -10,7 +10,7 @@ The foundations are four ADRs in [`docs/ADRs/`](docs/ADRs/README.md); the design
 
 ## The idea
 
-Recovery is a supplicant. A node that fell behind — severed by a partition, or simply slow — has no leverage
+Recovery is a supplicant. A node that fell behind — for whatever reason — has no leverage
 over the peers that did not. It asks for the entries it missed, the peer **may refuse**, it may be handed
 something other than what it asked for, and if ignored its only recourse is to ask again.
 
@@ -82,8 +82,7 @@ decision instead of against aggregates.
 
 Every call is answered with a **receipt numbered by beggar**, one more than the last, so a gap in the numbers
 *proves* loss. Absence
-of a log line otherwise proves nothing — and a partitioned node is close to unobservable in practice, because
-its log path is severed along with its data path.
+of a log line otherwise proves nothing.
 
 ## Licence
 

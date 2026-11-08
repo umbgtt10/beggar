@@ -9,8 +9,8 @@
 One style of test catches one class of failure and misses the others. The
 vectors prove the specification's samples; they say nothing about a command
 sequence nobody wrote down. A property test explores sequences; it cannot
-enumerate every situation. Neither drives two registries through a network
-that loses, duplicates and reorders. Without named tiers, a command lands with
+enumerate every situation. Neither drives two registries whose reports to one
+another are lost, duplicated, reordered or withheld. Without named tiers, a command lands with
 one kind of test and skips the rest.
 
 ## Decision
@@ -29,7 +29,7 @@ Each tier is the only one that catches its class of failure:
 | 2. conformance | every vector, every vector valid against the schema, every row of the matrix exercised | a departure from the specification |
 | 3. exhaustive matrix | every command in every situation over small bounds — `chunks` up to 3 — against the naive model | a situation no vector names |
 | 4. property | the invariants after every call, receipts one more on every call, the crate against the naive model over random sequences | a sequence nobody wrote down |
-| 5. simulation | several registries driven over a seeded fake network that loses, duplicates and reorders — pull, push, cancels, restarts under a new incarnation | what happens between two ends |
+| 5. simulation | several registries whose reports to one another a seeded harness loses, duplicates, reorders and withholds — pull, push, cancels, restarts under a new incarnation | what happens between two ends |
 | 6. replay | the property and simulation tiers' logs written in the specification's JSON and replayed into a fresh instance: every receipt matches, a dropped line is detected, the replay resynchronises from a checkpoint | a log that cannot rebuild the state |
 | 7. memory | a counting allocator in a test target of its own: a positive control, then peak and residue over 100 recoveries | growth no other tier sees |
 

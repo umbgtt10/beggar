@@ -72,7 +72,7 @@ Pull: the node behind opens the session and receives.
   open, open with the same parameters, open with different ones; and `SendRecoveryPartial` with all its rows.
 - **Proves:** a host test of two registries joining both ends of a transfer. Pull: B serves A — start on A, adopt
   on B, sends on B, receives on A, both complete. Push: the sender starts it and the receiver adopts. The
-  simulation tier arrives: several registries over a seeded fake network that loses, duplicates and reorders, and
+  simulation tier arrives: several registries whose reports to one another a seeded harness loses, duplicates, reorders and withholds, and
   the replay tier takes its logs.
 - **A caller can then:** account both ends of a transfer, pulled or pushed, for IBFT or for Raft.
 
