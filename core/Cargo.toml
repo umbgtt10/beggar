@@ -7,7 +7,7 @@
 # differ is noted below.
 [package]
 name = "beggar"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT"
@@ -23,9 +23,9 @@ autotests = false
 # both links would resolve to a 404 on the crates.io page. They go in when the
 # repository goes public.
 #
-# `rust-version` is inherited from faction rather than measured. For a crate with
-# no code and no dependencies it is trivially true; it needs re-verifying once
-# there is something to compile.
+# `rust-version` was inherited from faction, and measured at 0.1.0: the crate
+# builds, and its unit tier passes, on 1.85.0. Measure it again whenever the
+# crate reaches for a newer feature of the language or of `alloc`.
 
 [dependencies]
 
