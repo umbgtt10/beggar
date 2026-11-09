@@ -165,3 +165,20 @@ fn to_string_of_sources_without_a_mirror_says_so() {
     // Assert
     assert_eq!(shown, "source files without a mirrored test");
 }
+
+#[test]
+fn to_string_of_uncovered_code_names_the_scope_and_why_it_matters() {
+    // Arrange
+    let failure = GateFailure::Uncovered {
+        scope: String::from("the conformance tier alone"),
+    };
+
+    // Act
+    let shown = failure.to_string();
+
+    // Assert
+    assert_eq!(
+        shown,
+        "the conformance tier alone leaves lines, regions or functions of beggar uncovered -- every line is one the specification asks for"
+    );
+}

@@ -6,6 +6,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use xtask::crap::crap_report_parser::CrapReportParser;
+use xtask::gates::coverage_gate::CoverageGate;
 use xtask::gates::crap_gate::CrapGate;
 use xtask::gates::deny_gate::DenyGate;
 use xtask::gates::dry_gate::DryGate;
@@ -16,6 +17,7 @@ use xtask::gates::stern_gate::SternGate;
 use xtask::gates::twin_gate::TwinGate;
 use xtask::process::system_command_runner::SystemCommandRunner;
 
+const CONFORMANCE_TIER: &str = "conformance";
 const CORE_PACKAGE: &str = "beggar";
 const LADDER_PACKAGE: &str = "beggar-ladder";
 const XTASK_PACKAGE: &str = "xtask";
@@ -80,6 +82,18 @@ fn run_stage2() -> ExitCode {
         core_only.clone(),
         String::from(CRAP_THRESHOLD),
     );
+    // Beggar's lines over every tier, then over the conformance tier alone: the
+    // vectors must reach every line by themselves, or the crate holds something
+    // the specification does not ask for. The ladder runs the scenario tiers,
+    // so both packages are measured, beggar's lines the ones that count.
+    let measured = vec![String::from(CORE_PACKAGE), String::from(LADDER_PACKAGE)];
+    let coverage = CoverageGate::new(&runner, manifest_path.clone(), measured.clone(), None);
+    let conformance_coverage = CoverageGate::new(
+        &runner,
+        manifest_path.clone(),
+        measured,
+        Some(String::from(CONFORMANCE_TIER)),
+    );
     let twin = TwinGate::new(&runner, manifest_path.clone(), core_only.clone());
     // Last in stage 2: its advisories change without the code changing (see DenyGate).
     let deny = DenyGate::new(&runner, manifest_path.clone());
@@ -90,7 +104,16 @@ fn run_stage2() -> ExitCode {
         String::from(ICEBERG_THRESHOLD),
     );
 
-    let gates: Vec<&dyn Gate> = vec![&stern, &dry, &crap, &twin, &iceberg, &deny];
+    let gates: Vec<&dyn Gate> = vec![
+        &stern,
+        &dry,
+        &crap,
+        &coverage,
+        &conformance_coverage,
+        &twin,
+        &iceberg,
+        &deny,
+    ];
 
     match Stage2::new(gates).run() {
         Ok(()) => {

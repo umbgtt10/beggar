@@ -5,7 +5,7 @@ use alloc::vec::Vec;
 
 // The chunks a session has received, shown through behaviour and never its
 // fields. In this version no chunk is ever recorded, so the set is empty.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ReceivedChunks {
     ids: Vec<u64>,
 }
@@ -18,11 +18,5 @@ impl ReceivedChunks {
     // The chunk ids received, in ascending order.
     pub fn ids(&self) -> Vec<u64> {
         self.ids.clone()
-    }
-}
-
-impl Default for ReceivedChunks {
-    fn default() -> Self {
-        Self::new()
     }
 }

@@ -34,6 +34,9 @@ pub enum GateFailure {
         checks: String,
     },
     RuleBroken,
+    Uncovered {
+        scope: String,
+    },
     Unmirrored,
     Unreported {
         failure: ReportFailure,
@@ -73,6 +76,10 @@ impl fmt::Display for GateFailure {
             ),
             Self::Rejected { checks } => write!(formatter, "cargo-deny rejected: {checks}"),
             Self::RuleBroken => write!(formatter, "a house coding rule was broken"),
+            Self::Uncovered { scope } => write!(
+                formatter,
+                "{scope} leaves lines, regions or functions of beggar uncovered -- every line is one the specification asks for"
+            ),
             Self::Unmirrored => write!(formatter, "source files without a mirrored test"),
             Self::Unreported {
                 failure,

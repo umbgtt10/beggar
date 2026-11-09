@@ -28,20 +28,22 @@ The `no_std` check builds for `thumbv7em-none-eabihf`, a target with no std at
 all, which `rust-toolchain.toml` installs.
 
 Stage 2 is `cargo xtask stage2`, ported from etheram-core's: stern4rust, then
-dry4rust against `dry4rust-baseline.json`, crap4rust, twin4rust, iceberg4rust
-and cargo-deny, in that order, for the reasons etheram-core records. stern runs
-over `beggar` **and** `xtask`; the rest over `beggar`.
+dry4rust against `dry4rust-baseline.json`, crap4rust, the coverage gate twice,
+twin4rust, iceberg4rust and cargo-deny, in that order, for the reasons
+etheram-core records. stern runs over `beggar`, `beggar-ladder` **and** `xtask`;
+the rest over `beggar`.
 
-The tests climb a ladder of seven tiers — `docs/ADRs/P2-ADR-TestingLadder.md` —
-and from the first slice stage 2 also runs a coverage gate: no uncovered line,
-region or function, over every tier and over the conformance vectors alone
-(`docs/ADRs/P1-ADR-NoLineTheSpecificationDoesNotAskFor.md`). The specification
-in `spec/` is normative; the crate is one implementation of it.
-
-crap4rust needs a function to score: on a crate with none, llvm-cov finds no
-coverage data and the gate fails. Until the implementation begins,
-`core/src/dummy.rs` and its test give it one; they go when the first real
-function arrives.
+The tests climb a ladder of seven tiers — `docs/ADRs/P2-ADR-TestingLadder.md`.
+The coverage gate, `cargo llvm-cov` over `beggar` and `beggar-ladder`, fails on
+any line, region or function of beggar left uncovered: once over every tier, and
+once over the conformance tier alone, its tests filtered to `conformance::` —
+the vectors must reach every line by themselves, or the crate holds something
+the specification does not ask for
+(`docs/ADRs/P1-ADR-NoLineTheSpecificationDoesNotAskFor.md`). Derived impls are
+not measured, and a hand-written one is a line like any other: `ReceivedChunks`
+derives `Default`, which clippy asks for beside its `new`, rather than writing
+it. The specification in `spec/` is normative; the crate is one implementation
+of it.
 
 ## Layout
 

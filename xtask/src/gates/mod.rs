@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Umberto Gotti
 // SPDX-License-Identifier: MIT
 
+pub mod coverage_gate;
 pub mod crap_gate;
 pub mod deny_gate;
 pub mod dry_gate;
