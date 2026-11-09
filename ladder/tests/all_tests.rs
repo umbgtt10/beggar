@@ -2,4 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 mod conformance;
+mod matrix;
+mod property;
 mod support;

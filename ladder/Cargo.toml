@@ -17,6 +17,7 @@ autotests = false
 [dev-dependencies]
 beggar.workspace = true
 boon.workspace = true
+proptest.workspace = true
 serde_json.workspace = true
 
 [lib]
