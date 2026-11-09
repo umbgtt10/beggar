@@ -20,9 +20,9 @@ vectors alone.
 
 ## Forcing constraints / Evidence
 
-**Nothing is out of reach.** With zero injected dependencies
-([P0-ADR-AccountsNeverDecides](P0-ADR-AccountsNeverDecides.md)) and one entry
-point, there is no line a test cannot drive.
+**Nothing is out of reach.** With nothing injected but an observer that
+answers nothing ([P0-ADR-AccountsNeverDecides](P0-ADR-AccountsNeverDecides.md))
+and one entry point, there is no line a test cannot drive.
 
 **The vectors alone are the stronger measure.** The specification is normative
 ([P0-ADR-SpecificationIsNormativeCrateIsReference](P0-ADR-SpecificationIsNormativeCrateIsReference.md)):

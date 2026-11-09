@@ -12,7 +12,7 @@ use beggar::session_record::SessionRecord;
 use serde_json::Value;
 
 // The specification's JSON read into beggar's types, by the data model's own
-// names: the crate knows nothing of JSON. A form 0.1.0 does not have is a
+// names: the crate knows nothing of JSON. A form 0.2.0 does not have is a
 // broken vector, and panics saying which.
 pub struct SpecReader;
 
@@ -38,7 +38,7 @@ impl SpecReader {
                 receiver: Self::number(&carried["receiver"]),
             },
             "ShowRegistry" => Command::ShowRegistry,
-            other => panic!("not a command of 0.1.0: {other}"),
+            other => panic!("not a command of 0.2.0: {other}"),
         }
     }
 
@@ -88,12 +88,12 @@ impl SpecReader {
             .unwrap_or_else(|| panic!("a u64 is a string of decimal digits: {value}"))
     }
 
-    // 0.1.0 records no chunk, so every record's set is empty.
+    // 0.2.0 records no chunk, so every record's set is empty.
     fn received(value: &Value) -> ReceivedChunks {
         let ids = value
             .as_array()
             .unwrap_or_else(|| panic!("the chunks received are a set of ids: {value}"));
-        assert!(ids.is_empty(), "0.1.0 receives no chunk: {value}");
+        assert!(ids.is_empty(), "0.2.0 receives no chunk: {value}");
         ReceivedChunks::new()
     }
 

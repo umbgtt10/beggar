@@ -3,15 +3,18 @@
 
 // The property tier: random sequences on random instances, the crate against
 // the naive model after every call, the invariants on every state shown,
-// receipts one more on every call, a checkpoint taken at any point carrying on
-// as the instance it was taken from, and names never shared between instances.
+// receipts one more on every call, every call reported to the observer as it
+// was answered, a checkpoint taken at any point carrying on as the instance it
+// was taken from, and names never shared between instances.
 
 use crate::support::naive_registry::NaiveRegistry;
+use crate::support::recording_observer::RecordingObserver;
 use beggar::beggar::Beggar;
 use beggar::checkpoint::Checkpoint;
 use beggar::command::Command;
 use beggar::fresh::Fresh;
 use beggar::instance_id::InstanceId;
+use beggar::no_op_observer::NoOpObserver;
 use beggar::origin::Origin;
 use beggar::output::Output;
 use beggar::receipt::Receipt;
@@ -27,7 +30,9 @@ use proptest::prelude::Just;
 use proptest::prelude::ProptestConfig;
 use proptest::prelude::Strategy;
 use proptest::test_runner::TestCaseError;
+use std::cell::RefCell;
 use std::collections::BTreeSet;
+use std::rc::Rc;
 
 fn command() -> impl Strategy<Value = Command> {
     prop_oneof![
@@ -52,7 +57,7 @@ fn fresh() -> impl Strategy<Value = Fresh> {
     )
 }
 
-// What every state 0.1.0 can reach holds: the bound, the names minted in turn
+// What every state 0.2.0 can reach holds: the bound, the names minted in turn
 // and all still open, every record well formed, and the next receipt following
 // the one that showed it.
 fn holds(checkpoint: &Checkpoint, shown_by: u64) -> Result<(), TestCaseError> {
@@ -98,7 +103,7 @@ proptest! {
         after in vec(command(), 0..30),
     ) {
         // Arrange
-        let mut original: Beggar<()> = Beggar::new(Origin::Fresh(fresh));
+        let mut original: Beggar<()> = Beggar::new(Origin::Fresh(fresh), Box::new(NoOpObserver));
         for command in before {
             original.process(command);
         }
@@ -106,7 +111,8 @@ proptest! {
             Output::RegistryShown(checkpoint) => checkpoint,
             other => panic!("ShowRegistry answered {other:?}"),
         };
-        let mut restored: Beggar<()> = Beggar::new(Origin::Checkpoint(checkpoint));
+        let mut restored: Beggar<()> =
+            Beggar::new(Origin::Checkpoint(checkpoint), Box::new(NoOpObserver));
 
         // Act
         let both: Vec<(Receipt, Receipt)> = after
@@ -126,7 +132,8 @@ proptest! {
         commands in vec(command(), 0..60),
     ) {
         // Arrange
-        let mut beggar: Beggar<()> = Beggar::new(Origin::Fresh(fresh.clone()));
+        let mut beggar: Beggar<()> =
+            Beggar::new(Origin::Fresh(fresh.clone()), Box::new(NoOpObserver));
         let mut model = NaiveRegistry::fresh(&fresh);
 
         // Act
@@ -147,6 +154,28 @@ proptest! {
     }
 
     #[test]
+    fn process_of_any_sequence_reports_every_call_to_the_observer_as_answered(
+        fresh in fresh(),
+        commands in vec(command(), 0..60),
+    ) {
+        // Arrange
+        let calls = Rc::new(RefCell::new(Vec::new()));
+        let mut beggar: Beggar<()> = Beggar::new(
+            Origin::Fresh(fresh),
+            Box::new(RecordingObserver::new(Rc::clone(&calls))),
+        );
+
+        // Act
+        let answered: Vec<(Command, Receipt)> = commands
+            .into_iter()
+            .map(|command| (command.clone(), beggar.process(command)))
+            .collect();
+
+        // Assert
+        prop_assert_eq!(&*calls.borrow(), &answered);
+    }
+
+    #[test]
     fn process_on_distinct_instances_never_mints_one_name_twice(
         instances in btree_set((1u64..=3, 0u64..=3), 2..6),
         starts in 1usize..6,
@@ -155,11 +184,14 @@ proptest! {
         let mut registries: Vec<Beggar<()>> = instances
             .iter()
             .map(|(node, incarnation)| {
-                Beggar::new(Origin::Fresh(Fresh {
-                    instance: InstanceId { node: *node, incarnation: *incarnation },
-                    retention: 0,
-                    bound: None,
-                }))
+                Beggar::new(
+                    Origin::Fresh(Fresh {
+                        instance: InstanceId { node: *node, incarnation: *incarnation },
+                        retention: 0,
+                        bound: None,
+                    }),
+                    Box::new(NoOpObserver),
+                )
             })
             .collect();
 

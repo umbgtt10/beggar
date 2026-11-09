@@ -3,6 +3,7 @@
 
 use crate::checkpoint::Checkpoint;
 use crate::command::Command;
+use crate::observer::Observer;
 use crate::origin::Origin;
 use crate::output::Output;
 use crate::receipt::Receipt;
@@ -10,21 +11,23 @@ use crate::received_chunks::ReceivedChunks;
 use crate::rejection::Rejection;
 use crate::session_id::SessionId;
 use crate::session_record::SessionRecord;
+use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 
 // The registry, and its one entry point: every command answered by a receipt,
-// the first row of the specification's matrix that applies giving the output.
-// Its state is kept in the checkpoint's own shape, so ShowRegistry answers it as
-// it stands. R is the caller's cancel-reason enum, which no command carries
-// yet.
+// the first row of the specification's matrix that applies giving the output,
+// and reported with it to the observer. Its state is kept in the checkpoint's
+// own shape, so ShowRegistry answers it as it stands. R is the caller's
+// cancel-reason enum, which no command carries yet.
 pub struct Beggar<R> {
     state: Checkpoint,
+    observer: Box<dyn Observer>,
     reason: PhantomData<fn() -> R>,
 }
 
 impl<R> Beggar<R> {
-    pub fn new(origin: Origin) -> Self {
+    pub fn new(origin: Origin, observer: Box<dyn Observer>) -> Self {
         let state = match origin {
             Origin::Fresh(fresh) => Checkpoint {
                 instance: fresh.instance,
@@ -39,6 +42,7 @@ impl<R> Beggar<R> {
         };
         Self {
             state,
+            observer,
             reason: PhantomData,
         }
     }
@@ -54,7 +58,9 @@ impl<R> Beggar<R> {
             } => self.start(chunks, sender, receiver),
             Command::ShowRegistry => Output::RegistryShown(self.state.clone()),
         };
-        Receipt { number, output }
+        let receipt = Receipt { number, output };
+        self.observer.observe(&command, &receipt);
+        receipt
     }
 
     fn refusal(&self, chunks: u64, sender: u64, receiver: u64) -> Option<Rejection> {

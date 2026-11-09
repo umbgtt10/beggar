@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 pub mod naive_registry;
+pub mod recording_observer;
 pub mod spec_files;
 pub mod spec_reader;
 pub mod spec_schema;

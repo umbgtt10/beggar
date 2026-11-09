@@ -13,6 +13,7 @@ use beggar::checkpoint::Checkpoint;
 use beggar::command::Command;
 use beggar::fresh::Fresh;
 use beggar::instance_id::InstanceId;
+use beggar::no_op_observer::NoOpObserver;
 use beggar::origin::Origin;
 use beggar::output::Output;
 use beggar::receipt::Receipt;
@@ -40,7 +41,8 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
         retention: 0,
         bound: situation.bound,
     };
-    let mut crate_side: Beggar<()> = Beggar::new(Origin::Fresh(fresh.clone()));
+    let mut crate_side: Beggar<()> =
+        Beggar::new(Origin::Fresh(fresh.clone()), Box::new(NoOpObserver));
     let mut model = NaiveRegistry::fresh(&fresh);
     for _ in 0..situation.opened {
         let open_one = start(1, INSTANCE.node, 2);
@@ -50,7 +52,7 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
     if restored {
         let checkpoint = shown(&mut crate_side);
         model = NaiveRegistry::restored(&checkpoint);
-        crate_side = Beggar::new(Origin::Checkpoint(checkpoint));
+        crate_side = Beggar::new(Origin::Checkpoint(checkpoint), Box::new(NoOpObserver));
     }
     let crate_receipt = crate_side.process(situation.command.clone());
     let model_receipt = model.answer(&situation.command);

@@ -7,9 +7,9 @@
 //! A `no_std`, protocol-independent recovery registry.
 //!
 //! **Slice 1 of five is built:** an instance, created fresh or from a
-//! checkpoint; `StartRecovery`; and `ShowRegistry`, the checkpoint --
-//! conformant to version 0.1.0 of the specification in the repository's
-//! `spec/`. Nothing should depend on it until the slices are done.
+//! checkpoint, with an observer told of every call; `StartRecovery`; and
+//! `ShowRegistry`, the checkpoint -- conformant to version 0.2.0 of the
+//! specification in the repository's `spec/`. Nothing should depend on it until the slices are done.
 //!
 //! # What it does
 //!
@@ -38,6 +38,15 @@
 //! stay possible: the node that answers is the one already in sync, and a
 //! registry refuses it nothing.
 //!
+//! # Observer
+//!
+//! Every call is reported to the [`Observer`](observer::Observer) the instance
+//! is constructed with: the command and its receipt, once, by the time
+//! `process` returns. Wire it to a log, telemetry or a test; it answers
+//! nothing, so beggar's answers do not depend on it.
+//! [`NoOpObserver`](no_op_observer::NoOpObserver) is provided for the "just
+//! drive it" case, as `faction` provides its own.
+//!
 //! # Why `no_std`
 //!
 //! The intended consumers run on embedded targets, so the mode is declared
@@ -52,6 +61,8 @@ pub mod checkpoint;
 pub mod command;
 pub mod fresh;
 pub mod instance_id;
+pub mod no_op_observer;
+pub mod observer;
 pub mod origin;
 pub mod output;
 pub mod receipt;

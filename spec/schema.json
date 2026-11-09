@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:beggar:spec:0.1.0:schema",
-  "title": "beggar 0.1.0 -- the data model",
+  "$id": "urn:beggar:spec:0.2.0:schema",
+  "title": "beggar 0.2.0 -- the data model",
   "description": "Every command, receipt, output, rejection and the checkpoint, and the forms of a conformance vector and of the decision table. Normative with SPEC.md.",
   "$ref": "#/$defs/vector",
   "$defs": {

@@ -1,12 +1,14 @@
 # beggar — the specification
 
-**Version 0.1.0.** The four parts of this specification are versioned together: this prose, the data model in
+**Version 0.2.0.** The four parts of this specification are versioned together: this prose, the data model in
 [`schema.json`](schema.json), the decision table in [`matrix.json`](matrix.json) and the conformance vectors in
 [`vectors/`](vectors/). It is normative; the `beggar` crate is one implementation of it, and where the two disagree
 the specification is right ([`P0-ADR-SpecificationIsNormativeCrateIsReference`](../docs/ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md)).
 
-**What 0.1.0 covers:** an instance, created fresh or from a checkpoint; `StartRecovery` with every row it has; and
-`ShowRegistry`, the checkpoint. The other commands arrive in later versions, each with all of its rows.
+**What 0.2.0 covers:** an instance, created fresh or from a checkpoint, and the observer it reports every call to;
+`StartRecovery` with every row it has; and `ShowRegistry`, the checkpoint. The other commands arrive in later
+versions, each with all of its rows. 0.2.0 is 0.1.0 with the observer: the matrix, the schema and the vectors are
+unchanged but for the version.
 
 ## 1. Conventions
 
@@ -26,7 +28,7 @@ form, so two implementations' logs of the same calls are identical.
 
 ## 2. An instance
 
-**An instance is created from one of two origins.**
+**An instance is created from one of two origins**, and with an observer (§3).
 
 - **Fresh:** the node's id, an incarnation, a retention and a bound on open sessions, or none. The node's id and
   the incarnation are the **instance id**. The caller guarantees that an incarnation never repeats for its node
@@ -54,6 +56,11 @@ query are numbered like the rest ([`P1-ADR-OneEntryPointOneOutput`](../docs/ADRs
 **The answer is total and deterministic.** Every command has exactly one output in every state, given by the first
 row of [`matrix.json`](matrix.json) that applies, in the matrix's order. The same state and the same command give
 the same receipt.
+
+**Every call is reported to the instance's observer**, given when the instance is created: the command and its
+receipt, exactly once, by the time the receipt is returned — a refused command and a query like the rest. The
+observer is told and answers nothing, so it cannot change an output; an instance with no use for one is given an
+observer that does nothing ([`P1-ADR-EveryCallIsObserved`](../docs/ADRs/P1-ADR-EveryCallIsObserved.md)).
 
 **A refusal changes nothing** but the receipt number: no record is made, no name is minted.
 
@@ -109,5 +116,7 @@ checks state the way a caller would.
 **Each vector names the rows of the matrix it exercises.** Every vector is valid against the schema's `vector`; the
 matrix is valid against its `matrix`; and every row of the matrix is exercised by at least one vector.
 
-**An implementation conforms** when, created from each vector's origin and given each step's command in turn, it
-answers each with the step's receipt, and the closing `ShowRegistry` with the final state.
+**An implementation conforms** when, created from each vector's origin with an observer that does nothing and given
+each step's command in turn, it answers each with the step's receipt, and the closing `ShowRegistry` with the final
+state; and when, created with an observer that keeps what it is told, it has reported each of those calls with the
+receipt it answered, in order, and nothing else.

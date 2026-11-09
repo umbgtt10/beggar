@@ -2,9 +2,9 @@
 
 A `no_std`, protocol-independent **recovery registry**.
 
-**Slice 1 of five is built** (2026-11-09): an instance, created fresh or from a checkpoint; `StartRecovery` with
-every row it has; and `ShowRegistry`, the checkpoint — conformant to the specification's version 0.1.0, in
-[`spec/`](spec/SPEC.md). Version 0.0.1 on crates.io only reserves the name, and nothing should depend on this crate
+**Slice 1 of five is built** (2026-11-09): an instance, created fresh or from a checkpoint, with an observer told
+of every call; `StartRecovery` with every row it has; and `ShowRegistry`, the checkpoint — conformant to the
+specification's version 0.2.0, in [`spec/`](spec/SPEC.md). Version 0.0.1 on crates.io only reserves the name, and nothing should depend on this crate
 until the slices are done.
 
 The foundations are four ADRs in [`docs/ADRs/`](docs/ADRs/README.md); the design is
@@ -43,12 +43,12 @@ Those are the caller's, and keeping them out is what makes the rest of the prope
 Because there is no vocabulary in which a protocol-specific type could be expressed. Session ids, chunk counts
 and peer ids mean the same thing everywhere.
 
-**And there is nothing to inject.** An earlier draft made **admission** — whether an entry is valid and who may
-serve it — a trait boundary. It is not one: beggar never sees an entry. The caller validates, and only then
-reports that a chunk arrived; a rejected entry is simply never reported. No clock either, and emission is
-returned rather than pushed to a sink.
+**And there is nothing to inject but an observer.** An earlier draft made **admission** — whether an entry is
+valid and who may serve it — a trait boundary. It is not one: beggar never sees an entry. The caller validates, and
+only then reports that a chunk arrived; a rejected entry is simply never reported. No clock either. Every answer is
+returned, and reported to the observer the instance was constructed with, which answers nothing.
 
-**Zero injected dependencies**, which is why a conformance suite can be run against any implementation in any
+**Nothing injected that answers**, which is why a conformance suite can be run against any implementation in any
 language without stubbing anything.
 
 ## The spec is the artefact; this crate is a sample
@@ -83,6 +83,9 @@ need. In a registry this is automatic rather than a rule to remember.
 One entry point, `(receipt) = process(command, state)`, and every call is logged whole. Because the outcome
 is a pure function of command and record, a capture is **replayable**: the crate can be validated decision by
 decision instead of against aggregates.
+
+Every call is reported to the **observer** the instance is constructed with, as `faction`'s is: the command and
+its receipt, once, a refusal and a query included. `NoOpObserver` is there for a caller with no use for one.
 
 Every call is answered with a **receipt numbered by beggar**, one more than the last, so a gap in the numbers
 *proves* loss. Absence

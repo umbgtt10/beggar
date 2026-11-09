@@ -63,8 +63,8 @@ Five P1 ADRs derive from them, indexed in [`ADRs/`](ADRs/README.md). What the na
 | 5 | **one single entry point**: `(receipt) = process(command, <internal state>)` |
 | 6 | **query without side effect**: `(receipt) = process(command:query, <internal state>)` |
 
-Property 1 is [`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md)'s. Property 2, and with it zero injected dependencies — no clock, storage, transport, sink or
-admission check; **the caller validates, and only then reports**; the peer set supplied per call and never
+Property 1 is [`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md)'s. Property 2, and with it one injected dependency only — the observer of §7, which answers
+nothing; no clock, storage, transport or admission check; **the caller validates, and only then reports**; the peer set supplied per call and never
 cached — is [`P0-ADR-AccountsNeverDecides`](ADRs/P0-ADR-AccountsNeverDecides.md)'s. Properties 3, 5 and 6 are this document's: §7 and §4.
 
 ## 3. A registry, not a state machine
@@ -244,6 +244,11 @@ than the last ([`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOut
 line; the **checkpoint** is a query, `ShowRegistry`, asked whenever the caller chooses; and the guarantee is the
 caller's, because both ends account every transfer — [`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md).
 
+**Every call is also reported to the observer** the instance was constructed with: the command and its receipt,
+exactly once, by the time `process` returns, a query and a refusal included, so the log's line does not rest on
+every call site remembering to write it. The observer answers nothing, so it cannot decide; `NoOpObserver` is
+provided for a caller with no use for one, as faction provides its own — [`P1-ADR-EveryCallIsObserved`](ADRs/P1-ADR-EveryCallIsObserved.md).
+
 ## 8. Memory
 
 **The received set is ranges of chunk ids** — `3..=7`, `9..=12` — merged as chunks arrive; never a bitmap
@@ -333,7 +338,7 @@ with where each landed, so the reasoning is not lost in the sections that now st
 | ordered ledger or membership | **membership** in the registry; order lives in the log, via the receipt numbers | §7 |
 | where "unservable" lives | **not in beggar** — it is a height-and-retention fact. `CancelRecovery` gains an opaque caller-defined `reason` instead | §4, §5 |
 | `sender`/`receiver` redundancy | **kept**, under the rule *"nothing redundant, except where the redundancy is the only witness"* | §4 |
-| shape of the injected admission policy | **deleted, not closed.** There is no admission policy and no trait boundary — beggar never sees an entry, so there is nothing to admit. Zero injected dependencies | §2 |
+| shape of the injected admission policy | **deleted, not closed.** There is no admission policy and no trait boundary — beggar never sees an entry, so there is nothing to admit. Nothing injected but the observer, which answers nothing | §2, §7 |
 | width of `chunks` — closed 2026-11-06 | **u64.** u16 was sized for a block request; a recovery is any number of chunks | §8, §13 |
 | the checkpoint cadence — closed 2026-11-06 | **the caller's.** The checkpoint is a query, asked whenever the caller chooses | §7, §14 |
 | whether `chunks` may be zero — closed 2026-11-06 | **no:** `RecoveryRejected(NoChunks)` | §4 |
@@ -358,7 +363,7 @@ carries the new one. What the old texts said is listed so nobody reintroduces it
 | "the set of **admissible commands** returned on every result" | **dropped** — it presupposes states — §3 |
 | transitions emitted as `(from, event, to, epoch)` | `(output) = process(command, state)` on a receipt numbered by beggar — §7 |
 | a control layer that detects lag, chooses a peer, retries on timeout and falls back to a snapshot | **out of scope.** Beggar accounts; it does not detect, choose or time. It has no heights and no clock — §1, §2. That layer exists, above beggar — §12 |
-| "admission is the trait boundary" | **also superseded.** Beggar never sees an entry, so there is nothing to admit: the caller validates and only then reports. **Zero injected dependencies** — §2 |
+| "admission is the trait boundary" | **also superseded.** Beggar never sees an entry, so there is nothing to admit: the caller validates and only then reports. **Nothing injected but the observer**, which answers nothing — §2, §7 |
 
 ## 12. Where beggar sits: three layers — decided 2026-10-11
 

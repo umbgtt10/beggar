@@ -1,6 +1,6 @@
 # beggar — implementation plan
 
-**Status: planned 2026-11-06; slice 1 built 2026-11-09.** Its specification is `spec/` at version 0.1.0; the
+**Status: planned 2026-11-06; slice 1 built 2026-11-09.** Its specification is `spec/` at version 0.2.0 — 0.1.0 and the observer, added the same day; the
 ladder's scenario tiers live in `ladder/`, a package of their own, and the coverage gate stands at 100% over every
 tier and over the conformance tier alone. The decisions are the ADRs in [`ADRs/`](ADRs/README.md) and the
 how is [`DESIGN.md`](DESIGN.md); this is the order of building it.
@@ -36,7 +36,9 @@ command, and each is total over the commands it has.
 ### 1. Open a recovery and see it — built 2026-11-09
 
 - **Adds:** `Beggar<R>` and its receipts, numbered from 1 on every call, created with an optional bound on open
-  sessions; `StartRecovery` with all its rows — `NoChunks`, `SelfAddressed`, `NotAParty`, `RegistryFull`, and
+  sessions and an observer told of every call, `NoOpObserver` for a caller with no use for one
+  ([`P1-ADR-EveryCallIsObserved`](ADRs/P1-ADR-EveryCallIsObserved.md), added 2026-11-09 with the specification's
+  0.2.0); `StartRecovery` with all its rows — `NoChunks`, `SelfAddressed`, `NotAParty`, `RegistryFull`, and
   `RecoveryStarted` under a new name minted after the instance id; and `ShowRegistry`, the checkpoint, the bound in
   it.
 - **Lays down the specification** in `spec/`, at the repository root and outside the crate: the JSON Schema, the

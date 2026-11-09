@@ -24,8 +24,9 @@ bug.
 It is practical here for reasons specific to the design. No wire types means
 no encoding to specify; no clock means no temporal logic; a registry rather
 than a state machine means the normative core is a data model and one total
-function over a decision table. And with zero injected dependencies, an
-implementation runs the vectors with nothing to stub.
+function over a decision table. And with nothing injected that answers — its
+one dependency, an observer, is told and answers nothing — an implementation
+runs the vectors with nothing to stub.
 
 Nothing of beggar is built yet, so the specification can come first. A crate
 that already existed would have to export its vectors from its own tests and

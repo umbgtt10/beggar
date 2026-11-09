@@ -1,6 +1,6 @@
 # P0-ADR-AccountsNeverDecides
 
-- **Status:** Accepted
+- **Status:** Accepted; amended 2026-11-09 by [P1-ADR-EveryCallIsObserved](P1-ADR-EveryCallIsObserved.md) — one injected dependency, the observer
 - **Date:** 2026-11-06
 - **Priority:** P0 (axiom)
 
@@ -15,8 +15,9 @@ heights, peer statuses and a policy.
 ## Decision
 
 Beggar accounts and never decides: it detects nothing, chooses no peer, times
-nothing and holds no policy, and it has zero injected dependencies — no clock,
-no storage, no transport, no sink and no admission check.
+nothing and holds no policy. It has one injected dependency, an observer it
+tells of every call and asks nothing of, and no other — no clock, no storage,
+no transport and no admission check.
 
 ## Forcing constraints / Evidence
 
@@ -66,21 +67,21 @@ accumulating exactly as no cancel command would.
 
 What would need storage comes in from the caller: an incarnation, when the
 instance is created. What needs only a count, beggar keeps: the names it mints
-and the numbers on its receipts. Outputs are returned, never pushed to a
-sink. The peer set is supplied per call and never cached, so beggar survives
+and the numbers on its receipts. Outputs are returned, and reported to the
+observer, which answers nothing. The peer set is supplied per call and never cached, so beggar survives
 membership changes without learning of them.
 
-With nothing injected, any implementation in any language is tested with
-nothing to stub.
+With nothing injected that answers, any implementation in any language is
+tested with nothing to stub.
 
 ## Enforcement
 
-The crate's manifest has no dependencies, and beggar calls out through no
-trait. It is generic only over the caller's cancel reason, an enum that
+The crate's manifest has no dependencies, and beggar calls out through one
+trait, `Observer`, whose one method returns nothing. It is generic only over the caller's cancel reason, an enum that
 carries no behaviour.
 
 ## Related
 
 [P0-ADR-SpecificationIsNormativeCrateIsReference](P0-ADR-SpecificationIsNormativeCrateIsReference.md)
-— zero injected dependencies is what makes a stub-free conformance suite
+— nothing injected that answers is what makes a stub-free conformance suite
 possible.
