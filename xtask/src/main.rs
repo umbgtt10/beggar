@@ -17,6 +17,7 @@ use xtask::gates::twin_gate::TwinGate;
 use xtask::process::system_command_runner::SystemCommandRunner;
 
 const CORE_PACKAGE: &str = "beggar";
+const LADDER_PACKAGE: &str = "beggar-ladder";
 const XTASK_PACKAGE: &str = "xtask";
 const CRAP_THRESHOLD: &str = "15";
 const ICEBERG_THRESHOLD: &str = "5";
@@ -42,11 +43,15 @@ fn run_stage2() -> ExitCode {
     let parser = CrapReportParser::new();
 
     // The house rules reach xtask as well, so the crate that runs the gates is
-    // held to them too.
+    // held to them too, and the ladder, whose tests are held to them as tests.
     let stern = SternGate::new(
         &runner,
         manifest_path.clone(),
-        vec![String::from(CORE_PACKAGE), String::from(XTASK_PACKAGE)],
+        vec![
+            String::from(CORE_PACKAGE),
+            String::from(LADDER_PACKAGE),
+            String::from(XTASK_PACKAGE),
+        ],
     );
 
     // Second, for the same reason stern4rust is first: removing a duplicate

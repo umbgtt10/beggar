@@ -1,0 +1,98 @@
+// Copyright (c) 2026 Umberto Gotti
+// SPDX-License-Identifier: MIT
+
+use beggar::checkpoint::Checkpoint;
+use beggar::instance_id::InstanceId;
+use beggar::output::Output;
+use beggar::receipt::Receipt;
+use beggar::rejection::Rejection;
+use beggar::session_id::SessionId;
+use beggar::session_record::SessionRecord;
+use serde_json::json;
+use serde_json::Value;
+
+// Beggar's answers written in the specification's JSON, so a receipt compares
+// with a vector's as the specification states it.
+pub struct SpecWriter;
+
+impl SpecWriter {
+    pub fn checkpoint(checkpoint: &Checkpoint) -> Value {
+        json!({
+            "instance": Self::instance(&checkpoint.instance),
+            "retention": Self::number(checkpoint.retention),
+            "bound": checkpoint.bound.map_or(Value::Null, Self::number),
+            "open": Self::records(&checkpoint.open),
+            "retained": Self::records(&checkpoint.retained),
+            "name_count": Self::number(checkpoint.name_count),
+            "next_receipt": Self::number(checkpoint.next_receipt),
+        })
+    }
+
+    pub fn receipt(receipt: &Receipt) -> Value {
+        json!({
+            "number": Self::number(receipt.number),
+            "output": Self::output(&receipt.output),
+        })
+    }
+
+    fn instance(instance: &InstanceId) -> Value {
+        json!({
+            "node": Self::number(instance.node),
+            "incarnation": Self::number(instance.incarnation),
+        })
+    }
+
+    fn number(value: u64) -> Value {
+        Value::String(value.to_string())
+    }
+
+    fn output(output: &Output) -> Value {
+        match output {
+            Output::RecoveryStarted { session_id } => {
+                json!({ "RecoveryStarted": { "session_id": Self::session_id(session_id) } })
+            }
+            Output::RecoveryRejected(rejection) => {
+                json!({ "RecoveryRejected": Self::rejection(rejection) })
+            }
+            Output::RegistryShown(checkpoint) => {
+                json!({ "RegistryShown": Self::checkpoint(checkpoint) })
+            }
+        }
+    }
+
+    fn records(records: &[SessionRecord]) -> Value {
+        Value::Array(
+            records
+                .iter()
+                .map(|record| {
+                    json!({
+                        "session_id": Self::session_id(&record.session_id),
+                        "chunks": Self::number(record.chunks),
+                        "sender": Self::number(record.sender),
+                        "receiver": Self::number(record.receiver),
+                        "received": record.received.ids().into_iter().map(Self::number).collect::<Vec<Value>>(),
+                    })
+                })
+                .collect(),
+        )
+    }
+
+    fn rejection(rejection: &Rejection) -> Value {
+        match rejection {
+            Rejection::NoChunks => json!({ "NoChunks": {} }),
+            Rejection::SelfAddressed => json!({ "SelfAddressed": {} }),
+            Rejection::NotAParty => json!({ "NotAParty": {} }),
+            Rejection::RegistryFull { capacity } => {
+                json!({ "RegistryFull": { "capacity": Self::number(*capacity) } })
+            }
+        }
+    }
+
+    fn session_id(session_id: &SessionId) -> Value {
+        json!({
+            "node": Self::number(session_id.node),
+            "incarnation": Self::number(session_id.incarnation),
+            "count": Self::number(session_id.count),
+        })
+    }
+}

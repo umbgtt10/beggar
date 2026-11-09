@@ -1,0 +1,27 @@
+# The testing ladder's tiers that are scenarios rather than mirrors of a source
+# file -- conformance, the exhaustive matrix, property, and later simulation and
+# replay -- in a package of their own, so stern's paired-test-file can stand
+# down here and nowhere else: `core/` keeps its mirrored unit tier under every
+# rule. It tests the crate from outside, as a consumer would, and the coverage
+# gate measures beggar's lines over these tests as well as core's.
+[package]
+name = "beggar-ladder"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+autotests = false
+
+[dependencies]
+
+[dev-dependencies]
+beggar.workspace = true
+boon.workspace = true
+serde_json.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[test]]
+name = "all_tests"
+path = "tests/all_tests.rs"

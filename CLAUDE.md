@@ -45,9 +45,19 @@ function arrives.
 
 ## Layout
 
-A workspace: `core/` holds the crate and `xtask/` runs the gates. A crate at the
-repository root would put `xtask/tests/**` inside its package directory, and
-stern would read them as the crate's.
+A workspace: `core/` holds the crate, `ladder/` the testing ladder's scenario
+tiers, and `xtask/` runs the gates. A crate at the repository root would put
+`xtask/tests/**` inside its package directory, and stern would read them as the
+crate's.
+
+`core/tests/` is the unit tier, one test file per source file, under every rule.
+The tiers that are scenarios rather than mirrors of a file -- conformance, the
+exhaustive matrix, property, simulation, replay -- live in `ladder/`, a package
+with no code of its own (`publish = false`), where stern's `paired-test-file`
+stands down and nowhere else: it pairs `tests/a/b_tests.rs` with `src/a/b.rs`
+by path, and those tiers are named for what they prove. The specification,
+`spec/`, sits at the repository root, read by the ladder and never by the
+crate.
 
 ## Strict Rules
 

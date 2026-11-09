@@ -42,7 +42,8 @@ command, and each is total over the commands it has.
   ([`P0-ADR-SpecificationIsNormativeCrateIsReference`](ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md)).
   A vector is an initial state, steps of a command and its expected receipt, and a final state, read through
   `ShowRegistry`: the specification checks state the way a caller would.
-- **Lays down the ladder's first four tiers:** unit; conformance, whose runner in `core/tests/` maps the JSON to
+- **Lays down the ladder's first four tiers:** unit, in `core/tests/`; conformance, whose runner in `ladder/` -- a
+  package of the ladder's scenario tiers, where stern's `paired-test-file` stands down -- maps the JSON to
   beggar's types through a model of its own — so the crate never needs `serde` — and checks every vector against
   the schema and every row of the matrix against the vectors; exhaustive matrix; and property, with the naive
   model. And the coverage gate in stage 2, over every tier and over the conformance tier alone.

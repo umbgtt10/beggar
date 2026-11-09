@@ -4,3 +4,9 @@
 # file here rather than in the gate script means a hand-run of
 # `cargo stern4rust` checks exactly what the gate checks.
 header-file = "docs/header.txt"
+
+# The ladder's tiers are scenarios named for what they prove, not mirrors of a
+# source file: stern's README says a package of such tests skips
+# paired-test-file. core/ keeps it, over its mirrored unit tier.
+[package.beggar-ladder]
+skip = ["paired-test-file"]
