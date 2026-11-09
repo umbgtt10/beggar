@@ -2,7 +2,10 @@
 
 A `no_std`, protocol-independent **recovery registry**.
 
-**Version 0.0.1 reserves the name. There is no implementation yet — do not depend on this crate.**
+**Slice 1 of five is built** (2026-11-09): an instance, created fresh or from a checkpoint; `StartRecovery` with
+every row it has; and `ShowRegistry`, the checkpoint — conformant to the specification's version 0.1.0, in
+[`spec/`](spec/SPEC.md). Version 0.0.1 on crates.io only reserves the name, and nothing should depend on this crate
+until the slices are done.
 
 The foundations are four ADRs in [`docs/ADRs/`](docs/ADRs/README.md); the design is
 [`docs/DESIGN.md`](docs/DESIGN.md). Both are authoritative; this file is the summary. The order of building it is

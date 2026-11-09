@@ -1,6 +1,8 @@
 # beggar — implementation plan
 
-**Status: planned 2026-11-06; nothing built.** The decisions are the ADRs in [`ADRs/`](ADRs/README.md) and the
+**Status: planned 2026-11-06; slice 1 built 2026-11-09.** Its specification is `spec/` at version 0.1.0; the
+ladder's scenario tiers live in `ladder/`, a package of their own, and the coverage gate stands at 100% over every
+tier and over the conformance tier alone. The decisions are the ADRs in [`ADRs/`](ADRs/README.md) and the
 how is [`DESIGN.md`](DESIGN.md); this is the order of building it.
 
 ## Vertical slices
@@ -31,7 +33,7 @@ command, and each is total over the commands it has.
 
 ## The slices
 
-### 1. Open a recovery and see it
+### 1. Open a recovery and see it — built 2026-11-09
 
 - **Adds:** `Beggar<R>` and its receipts, numbered from 1 on every call, created with an optional bound on open
   sessions; `StartRecovery` with all its rows — `NoChunks`, `SelfAddressed`, `NotAParty`, `RegistryFull`, and

@@ -6,8 +6,10 @@
 
 //! A `no_std`, protocol-independent recovery registry.
 //!
-//! **This version reserves the name. There is no implementation, so nothing
-//! should depend on it yet.**
+//! **Slice 1 of five is built:** an instance, created fresh or from a
+//! checkpoint; `StartRecovery`; and `ShowRegistry`, the checkpoint --
+//! conformant to version 0.1.0 of the specification in the repository's
+//! `spec/`. Nothing should depend on it until the slices are done.
 //!
 //! # What it does
 //!
