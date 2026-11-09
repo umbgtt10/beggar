@@ -1,0 +1,47 @@
+{
+  "description": "A self-addressed start between two other nodes is refused as self-addressed: that row comes before not-a-party.",
+  "rows": [
+    "self-addressed"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "4",
+          "sender": "5",
+          "receiver": "5"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryRejected": {
+            "SelfAddressed": {}
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "3"
+  }
+}

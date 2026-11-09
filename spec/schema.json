@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:beggar:spec:0.1.0:schema",
+  "title": "beggar 0.1.0 -- the data model",
+  "description": "Every command, receipt, output, rejection and the checkpoint, and the forms of a conformance vector and of the decision table. Normative with SPEC.md.",
+  "$ref": "#/$defs/vector",
+  "$defs": {
+    "u64": {
+      "description": "A u64 as a string of decimal digits: no sign, no leading zero, no exponent.",
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "nothing": {
+      "description": "What a value of an enumeration that carries nothing carries.",
+      "type": "object",
+      "maxProperties": 0
+    },
+    "instance_id": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node", "incarnation"],
+      "properties": {
+        "node": { "$ref": "#/$defs/u64" },
+        "incarnation": { "$ref": "#/$defs/u64" }
+      }
+    },
+    "session_id": {
+      "description": "A session's name: the instance id that named it, and a count.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node", "incarnation", "count"],
+      "properties": {
+        "node": { "$ref": "#/$defs/u64" },
+        "incarnation": { "$ref": "#/$defs/u64" },
+        "count": { "$ref": "#/$defs/u64" }
+      }
+    },
+    "bound": {
+      "description": "How many sessions may be open at once, or null for no bound.",
+      "oneOf": [{ "$ref": "#/$defs/u64" }, { "type": "null" }]
+    },
+    "record": {
+      "description": "A session's record. The chunks received are a set of chunk ids, in ascending order.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_id", "chunks", "sender", "receiver", "received"],
+      "properties": {
+        "session_id": { "$ref": "#/$defs/session_id" },
+        "chunks": { "$ref": "#/$defs/u64" },
+        "sender": { "$ref": "#/$defs/u64" },
+        "receiver": { "$ref": "#/$defs/u64" },
+        "received": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/u64" }
+        }
+      }
+    },
+    "checkpoint": {
+      "description": "The whole registry, as ShowRegistry answers it and as an instance is restored from it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instance", "retention", "bound", "open", "retained", "name_count", "next_receipt"],
+      "properties": {
+        "instance": { "$ref": "#/$defs/instance_id" },
+        "retention": { "$ref": "#/$defs/u64" },
+        "bound": { "$ref": "#/$defs/bound" },
+        "open": { "type": "array", "items": { "$ref": "#/$defs/record" } },
+        "retained": { "type": "array", "items": { "$ref": "#/$defs/record" } },
+        "name_count": { "$ref": "#/$defs/u64" },
+        "next_receipt": { "$ref": "#/$defs/u64" }
+      }
+    },
+    "fresh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instance", "retention", "bound"],
+      "properties": {
+        "instance": { "$ref": "#/$defs/instance_id" },
+        "retention": { "$ref": "#/$defs/u64" },
+        "bound": { "$ref": "#/$defs/bound" }
+      }
+    },
+    "origin": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Fresh"],
+          "properties": { "Fresh": { "$ref": "#/$defs/fresh" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Checkpoint"],
+          "properties": { "Checkpoint": { "$ref": "#/$defs/checkpoint" } }
+        }
+      ]
+    },
+    "command": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["StartRecovery"],
+          "properties": {
+            "StartRecovery": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["chunks", "sender", "receiver"],
+              "properties": {
+                "chunks": { "$ref": "#/$defs/u64" },
+                "sender": { "$ref": "#/$defs/u64" },
+                "receiver": { "$ref": "#/$defs/u64" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ShowRegistry"],
+          "properties": { "ShowRegistry": { "$ref": "#/$defs/nothing" } }
+        }
+      ]
+    },
+    "rejection": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["NoChunks"],
+          "properties": { "NoChunks": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["SelfAddressed"],
+          "properties": { "SelfAddressed": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["NotAParty"],
+          "properties": { "NotAParty": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["RegistryFull"],
+          "properties": {
+            "RegistryFull": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["capacity"],
+              "properties": { "capacity": { "$ref": "#/$defs/u64" } }
+            }
+          }
+        }
+      ]
+    },
+    "output": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["RecoveryStarted"],
+          "properties": {
+            "RecoveryStarted": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["session_id"],
+              "properties": { "session_id": { "$ref": "#/$defs/session_id" } }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["RecoveryRejected"],
+          "properties": { "RecoveryRejected": { "$ref": "#/$defs/rejection" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["RegistryShown"],
+          "properties": { "RegistryShown": { "$ref": "#/$defs/checkpoint" } }
+        }
+      ]
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "output"],
+      "properties": {
+        "number": { "$ref": "#/$defs/u64" },
+        "output": { "$ref": "#/$defs/output" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "receipt"],
+      "properties": {
+        "command": { "$ref": "#/$defs/command" },
+        "receipt": { "$ref": "#/$defs/receipt" }
+      }
+    },
+    "vector": {
+      "description": "A conformance vector: an initial state, steps, and the final state a closing ShowRegistry must answer.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "rows", "origin", "steps", "final"],
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string" }
+        },
+        "origin": { "$ref": "#/$defs/origin" },
+        "steps": { "type": "array", "items": { "$ref": "#/$defs/step" } },
+        "final": { "$ref": "#/$defs/checkpoint" }
+      }
+    },
+    "matrix": {
+      "description": "The decision table: its rows in the order they are checked, each a named situation and its output.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "rows"],
+      "properties": {
+        "version": { "type": "string" },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "commands", "situation", "output"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z]+(-[a-z]+)*$" },
+              "commands": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": { "type": "string" }
+              },
+              "situation": { "type": "string", "minLength": 1 },
+              "output": { "type": "string", "minLength": 1 },
+              "rejection": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

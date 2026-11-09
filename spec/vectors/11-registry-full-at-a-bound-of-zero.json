@@ -1,0 +1,49 @@
+{
+  "description": "A bound of 0 is a bound like any other: every start is refused.",
+  "rows": [
+    "start-registry-full"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": "0"
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "8",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryRejected": {
+            "RegistryFull": {
+              "capacity": "0"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": "0",
+    "open": [],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "3"
+  }
+}

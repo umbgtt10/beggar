@@ -1,0 +1,52 @@
+{
+  "description": "A fresh instance shows its instance id, its retention and its bound, no records and no names minted.",
+  "rows": [
+    "show-registry"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "9",
+        "incarnation": "1794213776525000000"
+      },
+      "retention": "5",
+      "bound": "2"
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "ShowRegistry": {}
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RegistryShown": {
+            "instance": {
+              "node": "9",
+              "incarnation": "1794213776525000000"
+            },
+            "retention": "5",
+            "bound": "2",
+            "open": [],
+            "retained": [],
+            "name_count": "0",
+            "next_receipt": "2"
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "9",
+      "incarnation": "1794213776525000000"
+    },
+    "retention": "5",
+    "bound": "2",
+    "open": [],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "3"
+  }
+}

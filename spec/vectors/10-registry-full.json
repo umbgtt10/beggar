@@ -1,0 +1,83 @@
+{
+  "description": "At a bound of 1 with one session open, the next start is refused, carrying the bound, and mints no name.",
+  "rows": [
+    "start-started",
+    "start-registry-full"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": "1"
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "8",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "5",
+          "sender": "1",
+          "receiver": "3"
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryRejected": {
+            "RegistryFull": {
+              "capacity": "1"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": "1",
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "8",
+        "sender": "1",
+        "receiver": "2",
+        "received": []
+      }
+    ],
+    "retained": [],
+    "name_count": "1",
+    "next_receipt": "4"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "description": "A start between two nodes neither of which is this one is refused.",
+  "rows": [
+    "not-a-party"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "4",
+          "sender": "2",
+          "receiver": "3"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryRejected": {
+            "NotAParty": {}
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "3"
+  }
+}

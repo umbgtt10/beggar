@@ -1,0 +1,63 @@
+{
+  "description": "Beggar does not check which side starts: a start on the receiving end opens a session too.",
+  "rows": [
+    "start-started"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "3",
+          "sender": "2",
+          "receiver": "1"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "3",
+        "sender": "2",
+        "receiver": "1",
+        "received": []
+      }
+    ],
+    "retained": [],
+    "name_count": "1",
+    "next_receipt": "3"
+  }
+}

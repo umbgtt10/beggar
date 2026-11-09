@@ -1,0 +1,47 @@
+{
+  "description": "A start with no chunks that is also self-addressed is refused for its chunks: that row is checked first.",
+  "rows": [
+    "no-chunks"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "0",
+          "sender": "1",
+          "receiver": "1"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryRejected": {
+            "NoChunks": {}
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "3"
+  }
+}

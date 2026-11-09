@@ -1,0 +1,112 @@
+{
+  "description": "An instance restored from a checkpoint carries on from it: the next receipt number, the next name.",
+  "rows": [
+    "start-started"
+  ],
+  "origin": {
+    "Checkpoint": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": "3",
+      "open": [
+        {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "8",
+          "sender": "1",
+          "receiver": "2",
+          "received": []
+        },
+        {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "2"
+          },
+          "chunks": "4",
+          "sender": "3",
+          "receiver": "1",
+          "received": []
+        }
+      ],
+      "retained": [],
+      "name_count": "2",
+      "next_receipt": "10"
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "6",
+          "sender": "1",
+          "receiver": "4"
+        }
+      },
+      "receipt": {
+        "number": "10",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "3"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": "3",
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "8",
+        "sender": "1",
+        "receiver": "2",
+        "received": []
+      },
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "2"
+        },
+        "chunks": "4",
+        "sender": "3",
+        "receiver": "1",
+        "received": []
+      },
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "3"
+        },
+        "chunks": "6",
+        "sender": "1",
+        "receiver": "4",
+        "received": []
+      }
+    ],
+    "retained": [],
+    "name_count": "3",
+    "next_receipt": "12"
+  }
+}

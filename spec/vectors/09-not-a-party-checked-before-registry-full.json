@@ -1,0 +1,47 @@
+{
+  "description": "At a bound of 0, a start this node is no party to is refused as not-a-party: that row comes before the bound's.",
+  "rows": [
+    "not-a-party"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": "0"
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "4",
+          "sender": "2",
+          "receiver": "3"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryRejected": {
+            "NotAParty": {}
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": "0",
+    "open": [],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "3"
+  }
+}

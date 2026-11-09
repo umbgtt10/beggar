@@ -1,0 +1,45 @@
+{
+  "version": "0.1.0",
+  "rows": [
+    {
+      "id": "no-chunks",
+      "commands": ["StartRecovery"],
+      "situation": "`chunks` is 0",
+      "output": "RecoveryRejected",
+      "rejection": "NoChunks"
+    },
+    {
+      "id": "self-addressed",
+      "commands": ["StartRecovery"],
+      "situation": "`sender` is `receiver`",
+      "output": "RecoveryRejected",
+      "rejection": "SelfAddressed"
+    },
+    {
+      "id": "not-a-party",
+      "commands": ["StartRecovery"],
+      "situation": "this instance's node is neither `sender` nor `receiver`",
+      "output": "RecoveryRejected",
+      "rejection": "NotAParty"
+    },
+    {
+      "id": "start-registry-full",
+      "commands": ["StartRecovery"],
+      "situation": "the open sessions number the bound",
+      "output": "RecoveryRejected",
+      "rejection": "RegistryFull"
+    },
+    {
+      "id": "start-started",
+      "commands": ["StartRecovery"],
+      "situation": "otherwise: the next name is minted and a session opened under it",
+      "output": "RecoveryStarted"
+    },
+    {
+      "id": "show-registry",
+      "commands": ["ShowRegistry"],
+      "situation": "always: the checkpoint, describing the state after the call",
+      "output": "RegistryShown"
+    }
+  ]
+}

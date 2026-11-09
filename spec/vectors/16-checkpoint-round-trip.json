@@ -1,0 +1,125 @@
+{
+  "description": "A restored instance shows the checkpoint it was restored from, its next receipt number one more for the call that shows it.",
+  "rows": [
+    "show-registry"
+  ],
+  "origin": {
+    "Checkpoint": {
+      "instance": {
+        "node": "4",
+        "incarnation": "1794213776525000000"
+      },
+      "retention": "3",
+      "bound": null,
+      "open": [
+        {
+          "session_id": {
+            "node": "4",
+            "incarnation": "1794213776525000000",
+            "count": "1"
+          },
+          "chunks": "1",
+          "sender": "4",
+          "receiver": "6",
+          "received": []
+        },
+        {
+          "session_id": {
+            "node": "4",
+            "incarnation": "1794213776525000000",
+            "count": "2"
+          },
+          "chunks": "100",
+          "sender": "2",
+          "receiver": "4",
+          "received": []
+        }
+      ],
+      "retained": [],
+      "name_count": "2",
+      "next_receipt": "41"
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "ShowRegistry": {}
+      },
+      "receipt": {
+        "number": "41",
+        "output": {
+          "RegistryShown": {
+            "instance": {
+              "node": "4",
+              "incarnation": "1794213776525000000"
+            },
+            "retention": "3",
+            "bound": null,
+            "open": [
+              {
+                "session_id": {
+                  "node": "4",
+                  "incarnation": "1794213776525000000",
+                  "count": "1"
+                },
+                "chunks": "1",
+                "sender": "4",
+                "receiver": "6",
+                "received": []
+              },
+              {
+                "session_id": {
+                  "node": "4",
+                  "incarnation": "1794213776525000000",
+                  "count": "2"
+                },
+                "chunks": "100",
+                "sender": "2",
+                "receiver": "4",
+                "received": []
+              }
+            ],
+            "retained": [],
+            "name_count": "2",
+            "next_receipt": "42"
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "4",
+      "incarnation": "1794213776525000000"
+    },
+    "retention": "3",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "4",
+          "incarnation": "1794213776525000000",
+          "count": "1"
+        },
+        "chunks": "1",
+        "sender": "4",
+        "receiver": "6",
+        "received": []
+      },
+      {
+        "session_id": {
+          "node": "4",
+          "incarnation": "1794213776525000000",
+          "count": "2"
+        },
+        "chunks": "100",
+        "sender": "2",
+        "receiver": "4",
+        "received": []
+      }
+    ],
+    "retained": [],
+    "name_count": "2",
+    "next_receipt": "43"
+  }
+}
