@@ -14,7 +14,13 @@ use beggar_core_validation::trace_observer::TraceObserver;
 use beggar_core_validation::transport::fault_policy::FaultPolicy;
 use beggar_core_validation::transport::message_kind::MessageKind;
 use std::cell::RefCell;
+use std::ops::RangeInclusive;
 use std::rc::Rc;
+
+// Runs of chunk ids from their first and last.
+fn runs(pairs: &[(u64, u64)]) -> Vec<RangeInclusive<u64>> {
+    pairs.iter().map(|(first, last)| *first..=*last).collect()
+}
 
 #[test]
 fn cancel_abandoned_has_every_node_cancel_what_it_still_holds() {
@@ -29,6 +35,7 @@ fn cancel_abandoned_has_every_node_cancel_what_it_still_holds() {
         2,
         6,
         None,
+        0,
     );
     simulation.push(1, 2, 4);
     simulation.run_checked(100);
@@ -73,6 +80,30 @@ fn checkpoint_of_every_node_of_a_new_harness_holds_nothing_at_its_first_incarnat
 }
 
 #[test]
+fn missing_chunks_answers_for_each_transfer_what_its_receiver_lacks_in_their_order() {
+    // Arrange
+    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 8, None, 0);
+    simulation.push(1, 2, 4);
+    simulation.push(3, 2, 6);
+    simulation.step();
+    simulation.step();
+
+    // Act
+    let answers = simulation.missing_chunks();
+
+    // Assert
+    assert_eq!(
+        answers,
+        vec![
+            Output::MissingChunksListed {
+                missing: runs(&[(3, 4)])
+            },
+            Output::RecoveryNotStarted,
+        ]
+    );
+}
+
+#[test]
 fn observe_on_a_trace_observer_records_the_call_under_its_instance() {
     // Arrange
     let trace = Rc::new(RefCell::new(Vec::new()));
@@ -100,7 +131,7 @@ fn observe_on_a_trace_observer_records_the_call_under_its_instance() {
 #[test]
 fn process_on_a_node_records_every_call_in_its_trace() {
     // Arrange
-    let mut node = ScenarioNode::new(1);
+    let mut node = ScenarioNode::new(1, 0);
 
     // Act
     let started = node.process(Command::StartRecovery {
@@ -119,7 +150,7 @@ fn process_on_a_node_records_every_call_in_its_trace() {
 #[test]
 fn restart_of_a_node_replaces_its_instance_by_an_empty_one_and_keeps_its_trace() {
     // Arrange
-    let mut node = ScenarioNode::new(1);
+    let mut node = ScenarioNode::new(1, 0);
     node.process(Command::StartRecovery {
         chunks: 4,
         sender: 1,
@@ -148,7 +179,7 @@ fn restart_of_a_node_replaces_its_instance_by_an_empty_one_and_keeps_its_trace()
 #[test]
 fn run_checked_of_a_pull_answers_with_what_the_server_holds_and_completes_it() {
     // Arrange
-    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 4, None);
+    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 4, None, 0);
     simulation.pull(1, 2, 6);
 
     // Act
@@ -173,7 +204,7 @@ fn run_checked_of_a_pull_answers_with_what_the_server_holds_and_completes_it() {
 #[test]
 fn run_checked_of_a_push_completes_it_and_leaves_every_node_holding_nothing() {
     // Arrange
-    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 8, None);
+    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 8, None, 0);
     simulation.push(1, 2, 5);
 
     // Act
@@ -194,7 +225,7 @@ fn run_checked_of_a_push_completes_it_and_leaves_every_node_holding_nothing() {
 #[test]
 fn run_checked_past_its_limit_reports_the_cluster_unsettled() {
     // Arrange
-    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 1, 8, None);
+    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 1, 8, None, 0);
     simulation.push(1, 2, 8);
 
     // Act
@@ -217,6 +248,7 @@ fn run_checked_with_an_impatient_receiver_has_its_sender_cancel_the_pages_it_sti
         1,
         6,
         Some(1),
+        0,
     );
     simulation.push(1, 2, 6);
 
@@ -256,7 +288,7 @@ fn start_through_the_harness_is_answered_by_the_sender_alone() {
 #[test]
 fn step_of_a_simulation_with_nothing_to_do_is_false() {
     // Arrange
-    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 8, None);
+    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 8, None, 0);
 
     // Act
     let stepped = simulation.step();
@@ -277,6 +309,7 @@ fn step_with_patience_has_a_receiver_cancel_the_session_that_stalls() {
         1,
         6,
         Some(1),
+        0,
     );
     simulation.push(1, 2, 3);
 
@@ -292,7 +325,7 @@ fn step_with_patience_has_a_receiver_cancel_the_session_that_stalls() {
 #[test]
 fn traces_of_a_simulation_hold_each_nodes_calls() {
     // Arrange
-    let mut simulation = ClusterSimulation::new(2, FaultPolicy::default(), 4, 8, None);
+    let mut simulation = ClusterSimulation::new(2, FaultPolicy::default(), 4, 8, None, 0);
     simulation.push(1, 2, 4);
 
     // Act

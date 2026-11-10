@@ -9,10 +9,10 @@ use beggar::command::Command;
 use beggar::receipt::Receipt;
 use beggar::session_id::SessionId;
 
-// A deterministic scenario over several nodes, driven by hand: each call made
-// to the node it belongs on, as a control layer would make it -- a start and a
-// send on the sender, an adopt and a receive on the receiver -- or any command
-// to any node, for what a control layer would not do.
+// A deterministic scenario over several nodes at retention 0, driven by hand:
+// each call made to the node it belongs on, as a control layer would make it
+// -- a start and a send on the sender, an adopt and a receive on the receiver
+// -- or any command to any node, for what a control layer would not do.
 pub struct ScenarioHarness {
     nodes: Vec<ScenarioNode>,
 }
@@ -20,7 +20,10 @@ pub struct ScenarioHarness {
 impl ScenarioHarness {
     pub fn new(nodes: &[u64]) -> Self {
         Self {
-            nodes: nodes.iter().map(|node| ScenarioNode::new(*node)).collect(),
+            nodes: nodes
+                .iter()
+                .map(|node| ScenarioNode::new(*node, 0))
+                .collect(),
         }
     }
 

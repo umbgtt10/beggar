@@ -7,4 +7,5 @@ mod invariants_tests;
 mod pathology_tests;
 mod property_tests;
 mod restart_tests;
+mod retention_tests;
 mod transport_tests;

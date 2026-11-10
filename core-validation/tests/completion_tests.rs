@@ -97,6 +97,7 @@ fn run_checked_of_a_lossless_cluster_completes_every_transfer_pulled_or_pushed()
         2,
         5,
         None,
+        0,
     );
     simulation.pull(1, 2, 8);
     simulation.push(3, 1, 7);

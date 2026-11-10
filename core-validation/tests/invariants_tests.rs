@@ -4,11 +4,13 @@
 use beggar::checkpoint::Checkpoint;
 use beggar::chunk_set::ChunkSet;
 use beggar::instance_id::InstanceId;
+use beggar::output::Output;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
 use beggar_core_validation::cluster_invariants::ClusterInvariants;
 use beggar_core_validation::transfer::Transfer;
 use std::collections::BTreeSet;
+use std::ops::RangeInclusive;
 
 const SESSION: SessionId = SessionId {
     node: 2,
@@ -55,6 +57,11 @@ fn record(chunks: u64, ids: &[u64]) -> SessionRecord {
         receiver: 1,
         chunk_set,
     }
+}
+
+// Runs of chunk ids from their first and last.
+fn runs(pairs: &[(u64, u64)]) -> Vec<RangeInclusive<u64>> {
+    pairs.iter().map(|(first, last)| *first..=*last).collect()
 }
 
 // A transfer from node 2 to node 1 of four chunks, every one sent, the first
@@ -196,6 +203,80 @@ fn canonical_names_a_checkpoint_whose_records_are_out_of_name_order() {
 
     // Assert
     assert_eq!(violations.len(), 1, "{violations:#?}");
+}
+
+#[test]
+fn gaps_name_a_receiver_answering_for_a_session_it_does_not_hold_at_retention_0() {
+    // Arrange
+    let mut closed = transfer();
+    closed.receiver_open = false;
+    let invariants =
+        ClusterInvariants::new(vec![closed], vec![node(1, Vec::new()), node(2, Vec::new())]);
+
+    // Act
+    let violations = invariants.gaps(&[Output::MissingChunksListed {
+        missing: runs(&[(3, 4)]),
+    }]);
+
+    // Assert
+    assert_eq!(violations.len(), 1, "{violations:#?}");
+}
+
+#[test]
+fn gaps_name_a_receiver_answering_other_chunks_lacking_from_a_session_it_holds_open() {
+    // Arrange
+    let invariants = ClusterInvariants::new(vec![transfer()], cluster(&[1, 2]));
+
+    // Act
+    let violations = invariants.gaps(&[Output::MissingChunksListed {
+        missing: runs(&[(4, 4)]),
+    }]);
+
+    // Assert
+    assert_eq!(violations.len(), 1, "{violations:#?}");
+}
+
+#[test]
+fn gaps_of_a_receiver_answering_for_a_session_it_does_not_hold_above_retention_0_are_none() {
+    // Arrange
+    let mut closed = transfer();
+    closed.receiver_open = false;
+    let keeping = Checkpoint {
+        retention: 3,
+        ..node(1, Vec::new())
+    };
+    let invariants = ClusterInvariants::new(vec![closed], vec![keeping, node(2, Vec::new())]);
+
+    // Act
+    let violations = invariants.gaps(&[Output::MissingChunksListed {
+        missing: runs(&[(3, 4)]),
+    }]);
+
+    // Assert
+    assert!(violations.is_empty(), "{violations:#?}");
+}
+
+#[test]
+fn gaps_of_receivers_answering_what_has_not_reached_them_are_none() {
+    // Arrange
+    let mut closed = transfer();
+    closed.session_id = SessionId {
+        count: 2,
+        ..SESSION
+    };
+    closed.receiver_open = false;
+    let invariants = ClusterInvariants::new(vec![transfer(), closed], cluster(&[1, 2]));
+
+    // Act
+    let violations = invariants.gaps(&[
+        Output::MissingChunksListed {
+            missing: runs(&[(3, 4)]),
+        },
+        Output::RecoveryNotStarted,
+    ]);
+
+    // Assert
+    assert!(violations.is_empty(), "{violations:#?}");
 }
 
 #[test]

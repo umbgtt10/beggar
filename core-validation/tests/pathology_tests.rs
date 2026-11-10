@@ -8,7 +8,7 @@ use beggar_core_validation::transport::message_kind::MessageKind;
 
 // Six transfers among four nodes, pulled and pushed, in pages of two.
 fn loaded(policy: FaultPolicy) -> ClusterSimulation {
-    let mut simulation = ClusterSimulation::new(4, policy, 2, 6, None);
+    let mut simulation = ClusterSimulation::new(4, policy, 2, 6, None, 0);
     simulation.push(1, 2, 6);
     simulation.pull(3, 1, 6);
     simulation.push(2, 4, 5);
@@ -62,6 +62,7 @@ fn run_checked_across_a_partition_loses_what_crossed_it_and_completes_what_follo
         2,
         6,
         None,
+        0,
     );
     simulation.push(1, 2, 4);
     let cut = simulation.run_checked(100);
@@ -147,6 +148,7 @@ fn run_checked_under_full_duplication_reopens_a_completed_session_once_by_its_la
         2,
         6,
         None,
+        0,
     );
     simulation.push(1, 2, 4);
 
@@ -239,6 +241,7 @@ fn run_checked_with_impatient_receivers_under_delay_reopens_cancelled_sessions_b
         1,
         6,
         Some(1),
+        0,
     );
     simulation.push(1, 2, 6);
     simulation.push(3, 2, 6);

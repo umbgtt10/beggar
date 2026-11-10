@@ -17,24 +17,30 @@ use beggar::output::Output;
 use beggar::receipt::Receipt;
 use core::cell::RefCell;
 
-// One node of a scenario: the instance it runs now, fresh at retention 0 with
-// no bound, and the trace of every call made to any of its instances. A
+// One node of a scenario: the instance it runs now, fresh at its retention
+// with no bound, and the trace of every call made to any of its instances. A
 // restart replaces the instance by a new one, empty, under the next
-// incarnation; the trace carries on.
+// incarnation and at the same retention; the trace carries on.
 pub struct ScenarioNode {
     node: u64,
     incarnation: u64,
+    retention: u64,
     beggar: Beggar<ScenarioReason>,
     trace: Rc<RefCell<Vec<ScenarioTraceEntry>>>,
 }
 
 impl ScenarioNode {
-    pub fn new(node: u64) -> Self {
+    pub fn new(node: u64, retention: u64) -> Self {
         let trace = Rc::new(RefCell::new(Vec::new()));
+        let instance = InstanceId {
+            node,
+            incarnation: 1,
+        };
         Self {
             node,
             incarnation: 1,
-            beggar: Self::fresh(node, 1, &trace),
+            retention,
+            beggar: Self::fresh(instance, retention, &trace),
             trace,
         }
     }
@@ -60,7 +66,7 @@ impl ScenarioNode {
 
     pub fn restart(&mut self) {
         self.incarnation += 1;
-        self.beggar = Self::fresh(self.node, self.incarnation, &self.trace);
+        self.beggar = Self::fresh(self.instance(), self.retention, &self.trace);
     }
 
     pub fn trace(&self) -> Vec<ScenarioTraceEntry> {
@@ -68,15 +74,14 @@ impl ScenarioNode {
     }
 
     fn fresh(
-        node: u64,
-        incarnation: u64,
+        instance: InstanceId,
+        retention: u64,
         trace: &Rc<RefCell<Vec<ScenarioTraceEntry>>>,
     ) -> Beggar<ScenarioReason> {
-        let instance = InstanceId { node, incarnation };
         Beggar::new(
             Origin::Fresh(Fresh {
                 instance,
-                retention: 0,
+                retention,
                 bound: None,
             }),
             Box::new(TraceObserver::new(instance, Rc::clone(trace))),

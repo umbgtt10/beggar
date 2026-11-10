@@ -40,7 +40,7 @@ fn cluster(
     restarts: &[(u64, u64)],
     patience: Option<u64>,
 ) -> ClusterSimulation {
-    let mut simulation = ClusterSimulation::new(nodes, policy, 2, 6, patience);
+    let mut simulation = ClusterSimulation::new(nodes, policy, 2, 6, patience, 0);
     for (pull, first, second, chunks) in transfers {
         let (first, second) = (first % nodes + 1, second % nodes + 1);
         if first == second {

@@ -1,13 +1,16 @@
 // Copyright (c) 2026 Umberto Gotti
 // SPDX-License-Identifier: MIT
 
+use crate::scenario_reason::ScenarioReason;
 use crate::transfer::Transfer;
 use alloc::collections::BTreeSet;
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 use beggar::checkpoint::Checkpoint;
+use beggar::output::Output;
 use beggar::session_id::SessionId;
+use core::ops::RangeInclusive;
 
 // What a recovery must keep across a cluster, checked against what the
 // cluster knows of each transfer from outside its nodes and against what each
@@ -135,6 +138,36 @@ impl ClusterInvariants {
                 )
             })
             .collect()
+    }
+
+    // Each transfer's receiver, asked what it lacks of the session, answers: of
+    // one it holds open, the chunks that have not reached it since it opened
+    // there; of one it does not, at retention 0, that it never started it, and
+    // above, that or what a finished one it keeps lacked.
+    pub fn gaps(&self, missing: &[Output<ScenarioReason>]) -> Vec<String> {
+        let mut violations = Vec::new();
+        for (transfer, answer) in self.transfers.iter().zip(missing) {
+            let sound = if transfer.receiver_open {
+                *answer
+                    == Output::MissingChunksListed {
+                        missing: Self::lacking(transfer),
+                    }
+            } else if self.retention(transfer.receiver) == 0 {
+                *answer == Output::RecoveryNotStarted
+            } else {
+                matches!(
+                    answer,
+                    Output::RecoveryNotStarted | Output::MissingChunksListed { .. }
+                )
+            };
+            if !sound {
+                violations.push(format!(
+                    "{:?}: its receiver, holding it open {}, answers {answer:?} for what it lacks, having held {:?}",
+                    transfer.session_id, transfer.receiver_open, transfer.held
+                ));
+            }
+        }
+        violations
     }
 
     // Every transfer completed at both ends, and no session left open but one
@@ -283,6 +316,27 @@ impl ClusterInvariants {
             .filter(|checkpoint| checkpoint.instance.node == node)
             .flat_map(|checkpoint| &checkpoint.open)
             .any(|record| record.session_id == session_id)
+    }
+
+    // The chunks of a transfer that have not reached its receiver since it
+    // opened there, gathered into runs.
+    fn lacking(transfer: &Transfer) -> Vec<RangeInclusive<u64>> {
+        let mut runs: Vec<RangeInclusive<u64>> = Vec::new();
+        for id in (1..=transfer.chunks).filter(|id| !transfer.held.contains(id)) {
+            match runs.last_mut() {
+                Some(run) if *run.end() + 1 == id => *run = *run.start()..=id,
+                _ => runs.push(id..=id),
+            }
+        }
+        runs
+    }
+
+    // The retention of the node's instance as its checkpoint shows it.
+    fn retention(&self, node: u64) -> u64 {
+        self.checkpoints
+            .iter()
+            .find(|checkpoint| checkpoint.instance.node == node)
+            .map_or(0, |checkpoint| checkpoint.retention)
     }
 
     fn transfer(&self, session_id: SessionId) -> Option<&Transfer> {

@@ -54,9 +54,12 @@ impl ClusterSimulation {
         page: u64,
         holding: u64,
         patience: Option<u64>,
+        retention: u64,
     ) -> Self {
         Self {
-            nodes: (1..=nodes).map(ScenarioNode::new).collect(),
+            nodes: (1..=nodes)
+                .map(|node| ScenarioNode::new(node, retention))
+                .collect(),
             transport: FaultyTransport::new(policy),
             transfers: Vec::new(),
             pending: VecDeque::new(),
@@ -67,12 +70,20 @@ impl ClusterSimulation {
         }
     }
 
-    // The policy's last word: every session still open, at either end,
-    // cancelled by the node holding it.
+    // The policy's last word: every node asked which sessions it holds open,
+    // and each it receives cancelled, its sender told.
     pub fn cancel_abandoned(&mut self) {
-        for index in 0..self.transfers.len() {
-            if self.transfers[index].receiver_open {
-                self.cancel(index);
+        let nodes: Vec<u64> = self.nodes.iter().map(|node| node.instance().node).collect();
+        for node in nodes {
+            let sessions = match self.process(node, Command::ListRecoveries).output {
+                Output::RecoveriesListed { sessions } => sessions,
+                other => panic!("ListRecoveries answered {other:?}"),
+            };
+            for session_id in sessions {
+                let index = self.transfer(session_id);
+                if self.transfers[index].receiver == node {
+                    self.cancel(index);
+                }
             }
         }
     }
@@ -82,9 +93,14 @@ impl ClusterSimulation {
         ClusterInvariants::new(self.transfers.clone(), self.checkpoints()).violations()
     }
 
-    // Abandonment, checked once nothing is in flight.
+    // Abandonment and what each receiver lacks, checked once nothing is in
+    // flight.
     pub fn check_quiescent(&mut self) -> Vec<String> {
-        ClusterInvariants::new(self.transfers.clone(), self.checkpoints()).abandonment()
+        let missing = self.missing_chunks();
+        let invariants = ClusterInvariants::new(self.transfers.clone(), self.checkpoints());
+        let mut violations = invariants.abandonment();
+        violations.extend(invariants.gaps(&missing));
+        violations
     }
 
     // Each node's checkpoint, in the order of the nodes.
@@ -101,6 +117,23 @@ impl ClusterSimulation {
 
     pub fn heal(&mut self) {
         self.transport.heal();
+    }
+
+    // Each transfer's receiver asked what it lacks of the transfer's session,
+    // in the order of the transfers.
+    pub fn missing_chunks(&mut self) -> Vec<Output<ScenarioReason>> {
+        let asked: Vec<(u64, SessionId)> = self
+            .transfers
+            .iter()
+            .map(|transfer| (transfer.receiver, transfer.session_id))
+            .collect();
+        asked
+            .into_iter()
+            .map(|(receiver, session_id)| {
+                self.process(receiver, Command::ListMissingChunks { session_id })
+                    .output
+            })
+            .collect()
     }
 
     pub fn pull(&mut self, requester: u64, server: u64, wanted: u64) {
