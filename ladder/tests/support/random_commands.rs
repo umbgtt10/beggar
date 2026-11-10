@@ -12,34 +12,49 @@ use proptest::prelude::prop_oneof;
 use proptest::prelude::Just;
 use proptest::prelude::Strategy;
 
+const PEER_INCARNATION: u64 = 5;
+
 // The random instances and commands the property and replay tiers drive the
-// crate with: starts and partials mostly between this node and its usual peer,
-// so partials often find their session, otherwise between any two of three
-// nodes; a partial naming one of the instance's first five names, its run
-// mostly well formed.
+// crate with: starts and sends mostly from this node to its usual peer, adopts
+// and receives mostly from that peer to this node, so partials often find
+// their session, otherwise between any two of three nodes; a partial naming
+// one of the first five names, this instance's to send, the peer's to receive;
+// an adopt naming the peer's, now and then this instance's own; runs mostly
+// well formed.
 pub struct RandomCommands;
 
 impl RandomCommands {
     pub fn command(instance: InstanceId) -> impl Strategy<Value = Command> {
-        let run = prop_oneof![
-            4 => (0u64..=7, 0u64..=3).prop_map(|(first, span)| (first, first + span)),
-            1 => (0u64..=7, 0u64..=7),
-        ];
+        let node = instance.node;
+        let peer = node % 3 + 1;
         prop_oneof![
-            3 => (0u64..=6, Self::ends(instance.node)).prop_map(|(chunks, (sender, receiver))| {
+            3 => (0u64..=6, Self::ends(node, peer)).prop_map(|(chunks, (sender, receiver))| {
                 Command::StartRecovery {
                     chunks,
                     sender,
                     receiver,
                 }
             }),
-            4 => (1u64..=5, run, Self::ends(instance.node)).prop_map(
-                move |(count, (first, last), (sender, receiver))| Command::SendRecoveryPartial {
-                    session_id: SessionId {
-                        node: instance.node,
-                        incarnation: instance.incarnation,
-                        count,
-                    },
+            3 => (Self::adopted_name(instance, peer), 0u64..=6, Self::ends(peer, node)).prop_map(
+                |(session_id, chunks, (sender, receiver))| Command::AdoptRecovery {
+                    session_id,
+                    chunks,
+                    sender,
+                    receiver,
+                }
+            ),
+            3 => (Self::own_name(instance), Self::run(), Self::ends(node, peer)).prop_map(
+                |(session_id, (first, last), (sender, receiver))| Command::SendRecoveryPartial {
+                    session_id,
+                    first,
+                    last,
+                    sender,
+                    receiver,
+                }
+            ),
+            3 => (Self::peers_name(peer), Self::run(), Self::ends(peer, node)).prop_map(
+                |(session_id, (first, last), (sender, receiver))| Command::ReceiveRecoveryPartial {
+                    session_id,
                     first,
                     last,
                     sender,
@@ -68,12 +83,50 @@ impl RandomCommands {
         })
     }
 
-    // A command's sender and receiver: this node and its usual peer, three
-    // times in four, otherwise any two of three nodes.
-    fn ends(node: u64) -> impl Strategy<Value = (u64, u64)> {
+    // An adopt's name: the peer's, four times in six; this instance's own,
+    // which an adopt is refused; or one from its node's previous incarnation,
+    // another instance's, which is adopted.
+    fn adopted_name(instance: InstanceId, peer: u64) -> impl Strategy<Value = SessionId> {
+        let previous = InstanceId {
+            node: instance.node,
+            incarnation: instance.incarnation.wrapping_sub(1),
+        };
         prop_oneof![
-            3 => Just((node, node % 3 + 1)),
+            4 => Self::peers_name(peer),
+            1 => Self::own_name(instance),
+            1 => Self::own_name(previous),
+        ]
+    }
+
+    // A command's sender and receiver: the usual pair, three times in four,
+    // otherwise any two of three nodes.
+    fn ends(sender: u64, receiver: u64) -> impl Strategy<Value = (u64, u64)> {
+        prop_oneof![
+            3 => Just((sender, receiver)),
             1 => (1u64..=3, 1u64..=3),
+        ]
+    }
+
+    fn own_name(instance: InstanceId) -> impl Strategy<Value = SessionId> {
+        (1u64..=5).prop_map(move |count| SessionId {
+            node: instance.node,
+            incarnation: instance.incarnation,
+            count,
+        })
+    }
+
+    fn peers_name(peer: u64) -> impl Strategy<Value = SessionId> {
+        (1u64..=5).prop_map(move |count| SessionId {
+            node: peer,
+            incarnation: PEER_INCARNATION,
+            count,
+        })
+    }
+
+    fn run() -> impl Strategy<Value = (u64, u64)> {
+        prop_oneof![
+            4 => (0u64..=7, 0u64..=3).prop_map(|(first, span)| (first, first + span)),
+            1 => (0u64..=7, 0u64..=7),
         ]
     }
 }

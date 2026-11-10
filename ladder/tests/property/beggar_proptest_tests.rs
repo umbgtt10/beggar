@@ -1,7 +1,8 @@
 // Copyright (c) 2026 Umberto Gotti
 // SPDX-License-Identifier: MIT
 
-// The property tier: random sequences on random instances, the crate against
+// The property tier: random sequences on random instances -- both ends of
+// transfers, started and adopted, sent and received -- the crate against
 // the naive model after every call, the invariants on every state shown,
 // receipts one more on every call, every call reported to the observer as it
 // was answered, a checkpoint taken at any point carrying on as the instance it
@@ -23,6 +24,7 @@ use beggar::receipt::Receipt;
 use beggar::session_id::SessionId;
 use proptest::collection::btree_set;
 use proptest::collection::vec;
+use proptest::prelude::any;
 use proptest::prelude::prop_assert;
 use proptest::prelude::prop_assert_eq;
 use proptest::prelude::proptest;
@@ -34,34 +36,34 @@ use std::cell::RefCell;
 use std::collections::BTreeSet;
 use std::rc::Rc;
 
-// What every state 0.3.0 can reach holds: the bound; as many names minted as
-// starts answered; open exactly the sessions started and not completed, in the
-// order of their names; every record well formed, its chunk set within its
-// chunks and never full while it is open; and the next receipt following the
-// one that showed it.
+// What every state 0.4.0 can reach holds: the bound; as many names minted as
+// starts answered; open exactly the sessions started or adopted and not
+// completed, in the order of their names and none sharing one, this
+// instance's own among them never beyond the names it minted; every record
+// well formed, its chunk set within its chunks and never full while it is
+// open; and the next receipt following the one that showed it.
 fn holds(
     checkpoint: &Checkpoint,
     shown_by: u64,
     minted: u64,
-    open: &[u64],
+    open: &BTreeSet<SessionId>,
 ) -> Result<(), TestCaseError> {
-    let counts: Vec<u64> = checkpoint
+    let names: Vec<SessionId> = checkpoint
         .open
         .iter()
-        .map(|record| record.session_id.count)
+        .map(|record| record.session_id)
         .collect();
     prop_assert!(checkpoint
         .bound
-        .is_none_or(|bound| counts.len() as u64 <= bound));
+        .is_none_or(|bound| names.len() as u64 <= bound));
     prop_assert_eq!(checkpoint.name_count, minted);
-    prop_assert_eq!(counts.as_slice(), open);
+    prop_assert_eq!(names, open.iter().copied().collect::<Vec<SessionId>>());
     prop_assert_eq!(checkpoint.next_receipt, shown_by + 1);
+    let instance = checkpoint.instance;
     for record in &checkpoint.open {
-        prop_assert_eq!(record.session_id.node, checkpoint.instance.node);
-        prop_assert_eq!(
-            record.session_id.incarnation,
-            checkpoint.instance.incarnation
-        );
+        let own = record.session_id.node == instance.node
+            && record.session_id.incarnation == instance.incarnation;
+        prop_assert!(!own || record.session_id.count <= checkpoint.name_count);
         prop_assert!(record.chunks > 0);
         prop_assert!(record.sender != record.receiver);
         let node = checkpoint.instance.node;
@@ -147,17 +149,24 @@ proptest! {
 
         // Assert
         let mut minted = 0;
-        let mut open: Vec<u64> = Vec::new();
+        let mut open: BTreeSet<SessionId> = BTreeSet::new();
         for (index, (command, from_crate, from_model)) in answers.iter().enumerate() {
             prop_assert_eq!(from_crate, from_model);
             prop_assert_eq!(from_crate.number, index as u64 + 1);
             match (&from_crate.output, command) {
-                (Output::RecoveryStarted { session_id }, _) => {
+                (Output::RecoveryStarted { session_id }, Command::StartRecovery { .. }) => {
                     minted += 1;
-                    open.push(session_id.count);
+                    open.insert(*session_id);
                 }
-                (Output::RecoveryCompleted, Command::SendRecoveryPartial { session_id, .. }) => {
-                    open.retain(|count| *count != session_id.count);
+                (Output::RecoveryStarted { session_id }, _) => {
+                    open.insert(*session_id);
+                }
+                (
+                    Output::RecoveryCompleted,
+                    Command::SendRecoveryPartial { session_id, .. }
+                    | Command::ReceiveRecoveryPartial { session_id, .. },
+                ) => {
+                    open.remove(session_id);
                 }
                 (Output::RegistryShown(checkpoint), _) => {
                     holds(checkpoint, from_crate.number, minted, &open)?;
@@ -190,6 +199,7 @@ proptest! {
 
     #[test]
     fn process_of_runs_on_one_session_completes_exactly_when_every_chunk_is_held_and_keeps_no_record_after(
+        receiving in any::<bool>(),
         chunks in 1u64..=24,
         runs in vec((1u64..=24, 0u64..=6), 1..40),
     ) {
@@ -199,7 +209,14 @@ proptest! {
             Origin::Fresh(Fresh { instance, retention: 0, bound: None }),
             Box::new(NoOpObserver),
         );
-        beggar.process(Command::StartRecovery { chunks, sender: 1, receiver: 2 });
+        let peers = SessionId { node: 2, incarnation: 5, count: 1 };
+        let (session_id, sender, receiver) = if receiving {
+            beggar.process(Command::AdoptRecovery { session_id: peers, chunks, sender: 2, receiver: 1 });
+            (peers, 2, 1)
+        } else {
+            beggar.process(Command::StartRecovery { chunks, sender: 1, receiver: 2 });
+            (SessionId { node: 1, incarnation: 7, count: 1 }, 1, 2)
+        };
         let runs: Vec<(u64, u64)> = runs
             .into_iter()
             .map(|(first, span)| {
@@ -212,15 +229,13 @@ proptest! {
         let outputs: Vec<Output> = runs
             .iter()
             .map(|(first, last)| {
-                beggar
-                    .process(Command::SendRecoveryPartial {
-                        session_id: SessionId { node: 1, incarnation: 7, count: 1 },
-                        first: *first,
-                        last: *last,
-                        sender: 1,
-                        receiver: 2,
-                    })
-                    .output
+                let (first, last) = (*first, *last);
+                let partial = if receiving {
+                    Command::ReceiveRecoveryPartial { session_id, first, last, sender, receiver }
+                } else {
+                    Command::SendRecoveryPartial { session_id, first, last, sender, receiver }
+                };
+                beggar.process(partial).output
             })
             .collect();
         let open_after = match beggar.process(Command::ShowRegistry).output {
