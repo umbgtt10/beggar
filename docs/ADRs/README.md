@@ -29,7 +29,7 @@ the matrix, the semantics, retention, observability and memory.
 | [P1-ADR-AnOptionalBoundOnOpenSessions](P1-ADR-AnOptionalBoundOnOpenSessions.md) | An optional bound on open sessions, given at construction; past it an open is refused with `RegistryFull`. Configuration, like retention, not policy. |
 | [P1-ADR-CancelEvictsWithoutATombstone](P1-ADR-CancelEvictsWithoutATombstone.md) | A cancel evicts and wins; no tombstones; ending abandoned sessions is the caller's stated policy. |
 | [P1-ADR-NoLineTheSpecificationDoesNotAskFor](P1-ADR-NoLineTheSpecificationDoesNotAskFor.md) | 100% coverage from the first function — no uncovered line, region or function — under all tiers and under the vectors alone. |
-| [P2-ADR-TestingLadder](P2-ADR-TestingLadder.md) | Seven tiers — unit, conformance, exhaustive matrix, property, simulation, replay, memory — all run by the gates. |
+| [P2-ADR-TestingLadder](P2-ADR-TestingLadder.md) | Seven tiers — unit, conformance, exhaustive matrix, property, cluster simulation, replay, memory — all run by the gates. |
 
 ## Template
 

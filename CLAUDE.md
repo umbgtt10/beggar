@@ -30,8 +30,8 @@ all, which `rust-toolchain.toml` installs.
 Stage 2 is `cargo xtask stage2`, ported from etheram-core's: stern4rust, then
 dry4rust against `dry4rust-baseline.json`, crap4rust, the coverage gate twice,
 twin4rust, iceberg4rust and cargo-deny, in that order, for the reasons
-etheram-core records. stern runs over `beggar`, `beggar-ladder`,
-`beggar-memory` **and** `xtask`; the rest over `beggar`.
+etheram-core records. stern runs over `beggar`, `beggar-core-validation`,
+`beggar-ladder`, `beggar-memory` **and** `xtask`; the rest over `beggar`.
 
 The tests climb a ladder of seven tiers — `docs/ADRs/P2-ADR-TestingLadder.md`.
 The coverage gate, `cargo llvm-cov` over `beggar` and `beggar-ladder`, fails on
@@ -48,16 +48,21 @@ of it.
 ## Layout
 
 A workspace: `core/` holds the crate, `ladder/` the testing ladder's scenario
-tiers, `memory/` its memory tier, and `xtask/` runs the gates. A crate at the repository root would put
+tiers, `core-validation/` its cluster simulation, `memory/` its memory tier, and
+`xtask/` runs the gates. A crate at the repository root would put
 `xtask/tests/**` inside its package directory, and stern would read them as the
 crate's.
 
 `core/tests/` is the unit tier, one test file per source file, under every rule.
 The tiers that are scenarios rather than mirrors of a file -- conformance, the
-exhaustive matrix, property, simulation, replay -- live in `ladder/`, a package
-with no code of its own (`publish = false`), where stern's `paired-test-file`
-stands down and nowhere else: it pairs `tests/a/b_tests.rs` with `src/a/b.rs`
-by path, and those tiers are named for what they prove. The memory tier is
+exhaustive matrix, property, replay -- live in `ladder/`, a package with no code
+of its own (`publish = false`), where stern's `paired-test-file` stands down:
+it pairs `tests/a/b_tests.rs` with `src/a/b.rs` by path, and those tiers are
+named for what they prove. The cluster simulation is `core-validation/`, laid
+out as faction's: its harness -- `ScenarioHarness`, `ClusterSimulation` over a
+seeded `FaultyTransport`, and `ClusterInvariants`, each check shown firing on
+a crafted violation -- is its `src/`, `no_std`, and its tests, named for what
+they prove, skip `paired-test-file` too. The memory tier is
 `memory/`, a package of its own because a `#[global_allocator]` is per binary
 and a tests folder has one door: the counting allocator and the run it measures
 are its `src/`, mirrored by its tests under every rule -- and the workspace's

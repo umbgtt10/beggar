@@ -1,8 +1,8 @@
 # beggar — implementation plan
 
-**Status: planned 2026-11-06; slice 1 built 2026-11-09, slice 2 on 2026-11-10.** Its specification is `spec/` at
-version 0.3.0; the ladder's scenario tiers live in `ladder/`, a package of their own, the memory tier in `memory/`,
-another, and the coverage gate stands at 100% over every tier and over the conformance tier alone. The decisions are the ADRs in [`ADRs/`](ADRs/README.md) and the
+**Status: planned 2026-11-06; slice 1 built 2026-11-09, slices 2 and 3 on 2026-11-10.** Its specification is
+`spec/` at version 0.4.0; the ladder's scenario tiers live in `ladder/`, a package of their own, the cluster
+simulation in `core-validation/`, laid out as faction's, the memory tier in `memory/`, and the coverage gate stands at 100% over every tier and over the conformance tier alone. The decisions are the ADRs in [`ADRs/`](ADRs/README.md) and the
 how is [`DESIGN.md`](DESIGN.md); this is the order of building it.
 
 ## Vertical slices
@@ -77,14 +77,19 @@ The serving end: the side that holds the chunks opens the session and sends them
 - **A caller can then:** account a whole answer on the node that sends it — IBFT's answer to a request for blocks,
   a Raft leader's push — duplicates, strays and garbage included.
 
-### 3. The receiving end
+### 3. The receiving end — built 2026-11-10
 
 - **Adds:** `AdoptRecovery` with its rows, sharing `StartRecovery`'s checks of a well-formed session, then not
   open, open with the same parameters, open with different ones; and `ReceiveRecoveryPartial` with all its rows.
+  The specification, at 0.4.0, adds a row the design's matrix lacked: an adopt of a name this instance minted is
+  refused (`OwnSession`), or a later start would mint it again and two open sessions share it. `RecoveryConflicted`
+  carries the open session's terms. The registry's state and operations become a type of their own, `Registry`.
 - **Proves:** a host test of two registries joining both ends of a transfer, the sender starting it and the
   receiver adopting it under pull and push alike: B answers A — start on B, adopt on A, sends on B, receives on A,
-  both complete. The simulation tier arrives: several registries whose reports to one another a seeded harness
-  loses, duplicates, reorders and withholds, and the replay tier takes its logs.
+  both complete. The cluster simulation tier arrives, laid out as faction's `core-validation`: a scenario harness
+  for the two-ended scenarios, and a cluster of three to five registries whose reports to one another a seeded
+  faulty transport loses, duplicates, delays, reorders, cuts and withholds, with restarts, every cross-node
+  invariant checked after every delivery. The replay tier takes its logs; the memory tier goes two-ended.
 - **A caller can then:** account both ends of a transfer, pulled or pushed, for IBFT or for Raft.
 
 ### 4. Abandon it

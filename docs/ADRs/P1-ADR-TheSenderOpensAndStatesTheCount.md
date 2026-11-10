@@ -61,7 +61,7 @@ bound on open sessions where the caller set one.
 
 ## Enforcement
 
-The two-ended host tests and the simulation tier open every transfer on its
+The two-ended scenarios and the cluster simulation tier open every transfer on its
 sender and adopt it on its receiver; the matrix is unchanged by it.
 
 ## Related

@@ -17,7 +17,7 @@ one kind of test and skips the rest.
 
 Beggar's correctness rests on a fixed ladder of seven tiers, each with an
 obligation of its own, all run by the gates: unit, conformance, exhaustive
-matrix, property, simulation, replay and memory.
+matrix, property, cluster simulation, replay and memory.
 
 ## Forcing constraints / Evidence
 
@@ -29,8 +29,8 @@ Each tier is the only one that catches its class of failure:
 | 2. conformance | every vector, every vector valid against the schema, every row of the matrix exercised | a departure from the specification |
 | 3. exhaustive matrix | every command in every situation over small bounds — `chunks` up to 3, every run within, across and beyond them — against the naive model | a situation no vector names |
 | 4. property | the invariants after every call, receipts one more on every call, the crate against the naive model over random sequences | a sequence nobody wrote down |
-| 5. simulation | several registries whose reports to one another a seeded harness loses, duplicates, reorders and withholds — pull, push, cancels, restarts under a new incarnation | what happens between two ends |
-| 6. replay | the property and simulation tiers' logs written in the specification's JSON and replayed into a fresh instance: every receipt matches, a dropped line is detected, the replay resynchronises from a checkpoint | a log that cannot rebuild the state |
+| 5. cluster simulation | several registries whose reports to one another a seeded harness loses, duplicates, reorders and withholds — pull, push, cancels, restarts under a new incarnation | what happens between two ends |
+| 6. replay | the property and cluster simulation tiers' logs written in the specification's JSON and replayed into a fresh instance: every receipt matches, a dropped line is detected, the replay resynchronises from a checkpoint | a log that cannot rebuild the state |
 | 7. memory | a counting allocator in a test target of its own: a positive control, then peak and residue over 100 recoveries | growth no other tier sees |
 
 ## Rejected alternatives
@@ -48,7 +48,7 @@ Raft's system tests, once it is integrated.
 
 A command lands in every tier that applies to it, in the slice that brings it:
 a unit test for each new type, its rows in the vectors, its situations in the
-exhaustive matrix, its effect in the naive model, and a simulation scenario and
+exhaustive matrix, its effect in the naive model, and a cluster simulation scenario and
 a replay where it changes what passes between two ends.
 
 The ladder is slower than unit tests alone; tier 3's bounds keep it exhaustive
@@ -62,7 +62,12 @@ file, and the scenario tiers in `ladder/`, a package of their own (decided
 named for what they prove, not for a source file. The memory tier needs a
 binary of its own, a global allocator being per binary, and is `memory/`, a
 package of its own (decided 2026-11-10) whose instrument and run are its source
-and mirrored by its tests. Stage 2's coverage gate measures the unit and
+and mirrored by its tests. The cluster simulation is `core-validation/`, laid
+out as faction's (decided 2026-11-10): its harness is its source, its tests are
+named for what they prove and skip `paired-test-file` as the ladder's do, and
+the cross-node invariants are a type of their own, each check shown firing on a
+crafted violation, so a checker that never fires cannot pass for one that
+holds. Stage 2's coverage gate measures the unit and
 scenario tiers together and the conformance tier alone
 ([P1-ADR-NoLineTheSpecificationDoesNotAskFor](P1-ADR-NoLineTheSpecificationDoesNotAskFor.md)).
 

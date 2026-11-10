@@ -3,6 +3,40 @@
 The crate's versions. The specification in [`spec/`](spec/SPEC.md) is versioned on its own; each release names the
 version it conforms to.
 
+## [0.3.0] — 2026-11-10
+
+### Slice 3 — the receiving end
+
+Both ends of a transfer, conformant to the specification's version 0.4.0.
+
+#### Added
+- `AdoptRecovery`: the other side takes on the session its peer started, under the peer's name and count,
+  minting nothing. Its rows: the start's form rows (`NoChunks`, `SelfAddressed`, `NotAParty`); `OwnSession`;
+  `RecoveryUnaffected` for the same adopt repeated; `RecoveryConflicted { chunks, sender, receiver }`, carrying the
+  open session's terms; `RegistryFull`; and `RecoveryStarted`. An adopt after its session completed reopens it.
+- `ReceiveRecoveryPartial`, with every partial row, the wrong side mirrored: a receive where this node is the
+  session's sender.
+- `RecoveryConflicted` and `Rejection::OwnSession`. `OwnSession` closes a gap in the design's matrix: adopting a
+  name this instance minted would let a later start mint it again, and two open sessions share one name.
+- `Registry`, the registry's state and its operations — open in name order, mint, account, count a call, the
+  checkpoint — as a type of its own; `OpeningRows`, the rows a start or an adopt meets before a session opens;
+  `Side`, which end a partial is reported on.
+- The specification's 0.4.0: the two commands, their rows and 15 new vectors, 54 in all.
+- `core-validation/`, the cluster simulation tier, laid out as `faction`'s: `ScenarioHarness` for the two-ended
+  scenarios — pull and push, out of order, a short answer, fan-out, a node on both sides — and `ClusterSimulation`
+  of three to five nodes over a seeded `FaultyTransport` (loss, duplication, delay, reordering, partitions,
+  asymmetric and selective cuts, healing) with restarts. `ClusterInvariants`, each check shown firing on a crafted
+  violation, holds after every delivery: receipts as the chunks call for, records on their transfer's terms, held
+  by its two ends alone and in name order, receivers holding only what was delivered, names unique and minted only
+  by starts, reopens only by late copies; abandonment exact at quiescence, and liveness where nothing was lost.
+- The exhaustive matrix over every adopt (3,780 situations) and every partial at both ends (41,760); the property
+  tier's random sequences adopting and receiving; the replay tier over the cluster's logs; and the memory tier
+  two-ended — five instances, one transfer, nothing per session after 100.
+
+#### Changed
+- `StartRows` is `OpeningRows`, its start refusal `start_refusal`; `PartialRows::attribution` takes a `Side`.
+- `Beggar` keeps numbering, dispatch and the observer; the state and what commands do to it are `Registry`'s.
+
 ## [0.2.0] — 2026-11-10
 
 ### Slice 2 — send it to completion

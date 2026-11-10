@@ -2,10 +2,10 @@
 
 A `no_std`, protocol-independent **recovery registry**.
 
-**Slices 1 and 2 of five are built** (2026-11-10): an instance, created fresh or from a checkpoint, with an
-observer told of every call; `StartRecovery` and `SendRecoveryPartial`, each with every row it has — a session
-opened, and its chunks accounted on the sending end to completion; and `ShowRegistry`, the checkpoint — conformant
-to the specification's version 0.3.0, in [`spec/`](spec/SPEC.md). Version 0.0.1 on crates.io only reserves the name, and nothing should depend on this crate
+**Slices 1 to 3 of five are built** (2026-11-10): an instance, created fresh or from a checkpoint, with an
+observer told of every call; both ends of a transfer — `StartRecovery` and `SendRecoveryPartial` on the side that
+holds the chunks, `AdoptRecovery` and `ReceiveRecoveryPartial` on the other — each with every row it has; and
+`ShowRegistry`, the checkpoint — conformant to the specification's version 0.4.0, in [`spec/`](spec/SPEC.md). Version 0.0.1 on crates.io only reserves the name, and nothing should depend on this crate
 until the slices are done.
 
 The foundations are four ADRs in [`docs/ADRs/`](docs/ADRs/README.md); the design is

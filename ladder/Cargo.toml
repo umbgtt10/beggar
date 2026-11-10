@@ -1,7 +1,7 @@
 # The testing ladder's tiers that are scenarios rather than mirrors of a source
-# file -- conformance, the exhaustive matrix, property, replay, and later
-# simulation -- in a package of their own, so stern's paired-test-file can stand
-# down here and nowhere else: `core/` keeps its mirrored unit tier under every
+# file -- conformance, the exhaustive matrix, property and replay -- in a
+# package of their own, so stern's paired-test-file can stand down here, as it
+# does in core-validation: `core/` keeps its mirrored unit tier under every
 # rule. It tests the crate from outside, as a consumer would, and the coverage
 # gate measures beggar's lines over these tests as well as core's.
 [package]
