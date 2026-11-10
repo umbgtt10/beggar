@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:beggar:spec:0.2.0:schema",
-  "title": "beggar 0.2.0 -- the data model",
+  "$id": "urn:beggar:spec:0.3.0:schema",
+  "title": "beggar 0.3.0 -- the data model",
   "description": "Every command, receipt, output, rejection and the checkpoint, and the forms of a conformance vector and of the decision table. Normative with SPEC.md.",
   "$ref": "#/$defs/vector",
   "$defs": {
@@ -40,16 +40,16 @@
       "oneOf": [{ "$ref": "#/$defs/u64" }, { "type": "null" }]
     },
     "record": {
-      "description": "A session's record. The chunks received are a set of chunk ids, in ascending order.",
+      "description": "A session's record. Its chunk set is the chunk ids the session has accounted at this end, in ascending order.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["session_id", "chunks", "sender", "receiver", "received"],
+      "required": ["session_id", "chunks", "sender", "receiver", "chunk_set"],
       "properties": {
         "session_id": { "$ref": "#/$defs/session_id" },
         "chunks": { "$ref": "#/$defs/u64" },
         "sender": { "$ref": "#/$defs/u64" },
         "receiver": { "$ref": "#/$defs/u64" },
-        "received": {
+        "chunk_set": {
           "type": "array",
           "uniqueItems": true,
           "items": { "$ref": "#/$defs/u64" }
@@ -119,6 +119,25 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "required": ["SendRecoveryPartial"],
+          "properties": {
+            "SendRecoveryPartial": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["session_id", "first", "last", "sender", "receiver"],
+              "properties": {
+                "session_id": { "$ref": "#/$defs/session_id" },
+                "first": { "$ref": "#/$defs/u64" },
+                "last": { "$ref": "#/$defs/u64" },
+                "sender": { "$ref": "#/$defs/u64" },
+                "receiver": { "$ref": "#/$defs/u64" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "required": ["ShowRegistry"],
           "properties": { "ShowRegistry": { "$ref": "#/$defs/nothing" } }
         }
@@ -156,6 +175,62 @@
               "properties": { "capacity": { "$ref": "#/$defs/u64" } }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["EmptyRun"],
+          "properties": {
+            "EmptyRun": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["first", "last"],
+              "properties": {
+                "first": { "$ref": "#/$defs/u64" },
+                "last": { "$ref": "#/$defs/u64" }
+              }
+            }
+          }
+        },
+        {
+          "description": "A partial whose ends differ from its session's; carries the session's own.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Misattributed"],
+          "properties": {
+            "Misattributed": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["sender", "receiver"],
+              "properties": {
+                "sender": { "$ref": "#/$defs/u64" },
+                "receiver": { "$ref": "#/$defs/u64" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["WrongSide"],
+          "properties": { "WrongSide": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ChunkOutOfRange"],
+          "properties": {
+            "ChunkOutOfRange": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["first", "last", "chunks"],
+              "properties": {
+                "first": { "$ref": "#/$defs/u64" },
+                "last": { "$ref": "#/$defs/u64" },
+                "chunks": { "$ref": "#/$defs/u64" }
+              }
+            }
+          }
         }
       ]
     },
@@ -173,6 +248,41 @@
               "properties": { "session_id": { "$ref": "#/$defs/session_id" } }
             }
           }
+        },
+        {
+          "description": "A partial added at least one chunk and the chunk set is not full: how many chunks it now holds, and the session's chunks.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["RecoveryAdvanced"],
+          "properties": {
+            "RecoveryAdvanced": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["held", "chunks"],
+              "properties": {
+                "held": { "$ref": "#/$defs/u64" },
+                "chunks": { "$ref": "#/$defs/u64" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["RecoveryCompleted"],
+          "properties": { "RecoveryCompleted": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["RecoveryUnaffected"],
+          "properties": { "RecoveryUnaffected": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["RecoveryNotStarted"],
+          "properties": { "RecoveryNotStarted": { "$ref": "#/$defs/nothing" } }
         },
         {
           "type": "object",

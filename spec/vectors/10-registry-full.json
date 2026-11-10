@@ -73,7 +73,7 @@
         "chunks": "8",
         "sender": "1",
         "receiver": "2",
-        "received": []
+        "chunk_set": []
       }
     ],
     "retained": [],

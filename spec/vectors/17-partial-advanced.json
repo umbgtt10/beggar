@@ -1,0 +1,92 @@
+{
+  "description": "A run sent on an open session adds its chunks to the chunk set; it is not yet full, so the session advances, carrying how many chunks it holds and how many it expects.",
+  "rows": [
+    "start-started",
+    "partial-advanced"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "8",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "SendRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "first": "1",
+          "last": "3",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryAdvanced": {
+            "held": "3",
+            "chunks": "8"
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "8",
+        "sender": "1",
+        "receiver": "2",
+        "chunk_set": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    ],
+    "retained": [],
+    "name_count": "1",
+    "next_receipt": "4"
+  }
+}

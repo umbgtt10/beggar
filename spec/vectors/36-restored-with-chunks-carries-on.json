@@ -1,0 +1,96 @@
+{
+  "description": "An instance restored from a checkpoint whose session holds chunks carries on from them: the runs it adds join those it was restored with.",
+  "rows": [
+    "partial-advanced",
+    "partial-completed"
+  ],
+  "origin": {
+    "Checkpoint": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null,
+      "open": [
+        {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "3"
+          },
+          "chunks": "6",
+          "sender": "1",
+          "receiver": "2",
+          "chunk_set": [
+            "1",
+            "2",
+            "5"
+          ]
+        }
+      ],
+      "retained": [],
+      "name_count": "3",
+      "next_receipt": "20"
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "SendRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "3"
+          },
+          "first": "3",
+          "last": "4",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "20",
+        "output": {
+          "RecoveryAdvanced": {
+            "held": "5",
+            "chunks": "6"
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "SendRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "3"
+          },
+          "first": "6",
+          "last": "6",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "21",
+        "output": {
+          "RecoveryCompleted": {}
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [],
+    "retained": [],
+    "name_count": "3",
+    "next_receipt": "23"
+  }
+}

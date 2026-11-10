@@ -1,14 +1,14 @@
 # beggar — the specification
 
-**Version 0.2.0.** The four parts of this specification are versioned together: this prose, the data model in
+**Version 0.3.0.** The four parts of this specification are versioned together: this prose, the data model in
 [`schema.json`](schema.json), the decision table in [`matrix.json`](matrix.json) and the conformance vectors in
 [`vectors/`](vectors/). It is normative; the `beggar` crate is one implementation of it, and where the two disagree
 the specification is right ([`P0-ADR-SpecificationIsNormativeCrateIsReference`](../docs/ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md)).
 
-**What 0.2.0 covers:** an instance, created fresh or from a checkpoint, and the observer it reports every call to;
-`StartRecovery` with every row it has; and `ShowRegistry`, the checkpoint. The other commands arrive in later
-versions, each with all of its rows. 0.2.0 is 0.1.0 with the observer: the matrix, the schema and the vectors are
-unchanged but for the version.
+**What 0.3.0 covers:** an instance, created fresh or from a checkpoint, and the observer it reports every call to;
+`StartRecovery` and `SendRecoveryPartial`, each with every row it has; and `ShowRegistry`, the checkpoint. The other
+commands arrive in later versions, each with all of its rows. 0.3.0 is 0.2.0 with `SendRecoveryPartial`, and with
+a record's `received` renamed `chunk_set`.
 
 ## 1. Conventions
 
@@ -22,9 +22,12 @@ from a nanosecond timestamp is already past it.
 **Names are the vocabulary's.** Commands are imperative and outputs past participle, so what a caller asked for
 and what happened cannot be confused.
 
+**A run is `first..=last`:** the chunk ids from `first` to `last`, both included, as a partial carries them. A
+single chunk is a run of one, `n..=n`. A run whose `last` is below its `first` is empty, and malformed.
+
 **Canonical order.** Wherever an answer lists records, they come in ascending order of their names, compared as
-`(node, incarnation, count)` numerically; a list of chunk ids comes in ascending order. An answer has exactly one
-form, so two implementations' logs of the same calls are identical.
+`(node, incarnation, count)` numerically; a chunk set comes as its chunk ids in ascending order. An answer has
+exactly one form, so two implementations' logs of the same calls are identical.
 
 ## 2. An instance
 
@@ -41,8 +44,9 @@ form, so two implementations' logs of the same calls are identical.
   restart, since a checkpoint's name count may be behind the one the instance had reached
   ([`P1-ADR-TheLogIsTheRecord`](../docs/ADRs/P1-ADR-TheLogIsTheRecord.md)).
 
-**The retention** is how many finished sessions the instance keeps for its queries. In 0.1.0 no session finishes,
-so the retained records are always none; the retention is carried and shown.
+**The retention** is how many finished sessions the instance keeps for its queries. In 0.3.0 a session finishes
+when it completes (§6), and is evicted; what a retention keeps, and for which queries, arrives in a later version.
+So the retained records are always none, whatever the retention, and the retention is carried and shown.
 
 **The bound** is how many sessions may be open at once, or none for no bound. It counts open sessions only, and a
 bound of 0 is a bound like any other: every start is refused.
@@ -62,7 +66,9 @@ receipt, exactly once, by the time the receipt is returned — a refused command
 observer is told and answers nothing, so it cannot change an output; an instance with no use for one is given an
 observer that does nothing ([`P1-ADR-EveryCallIsObserved`](../docs/ADRs/P1-ADR-EveryCallIsObserved.md)).
 
-**A refusal changes nothing** but the receipt number: no record is made, no name is minted.
+**A refusal changes nothing** but the receipt number: no record is made or changed, and no name is minted. Nor do
+`RecoveryNotStarted` and `RecoveryUnaffected`: an output describes what happened to a session, and those two say
+that nothing did.
 
 ## 4. Names
 
@@ -71,7 +77,7 @@ instance's first session is 1, and every session it opens takes the next. No two
 count, and no two instances share an instance id, so no two sessions anywhere share a name.
 
 The **name count** is how many names the instance has minted; the next session it opens is named with the name count
-plus one.
+plus one. A session's eviction does not take its name back: the name count never goes down.
 
 ## 5. `StartRecovery`
 
@@ -91,9 +97,48 @@ beggar does not check which side starts, so `sender` has no default.
 | `start-started` | otherwise | `RecoveryStarted`, carrying the new session's name |
 
 **Started:** the instance mints the next name, and opens a session under it: its `chunks`, `sender` and
-`receiver` as given, and no chunk received.
+`receiver` as given, and an empty chunk set.
 
-## 6. `ShowRegistry`, the checkpoint
+## 6. `SendRecoveryPartial`
+
+**Carries:** `session_id`, the session's name; `first` and `last`, the run of chunks sent, which the caller moved and
+validated as one unit ([`P1-ADR-APartialIsARunOfChunks`](../docs/ADRs/P1-ADR-APartialIsARunOfChunks.md)); and
+`sender` and `receiver`, the session's ends as the caller has them. It is reported on the session's sender, once
+the run is sent.
+
+**Checked in this order:**
+
+| row | situation | output |
+|---|---|---|
+| `empty-run` | `last` is below `first` | `RecoveryRejected(EmptyRun { first, last })`, the run's |
+| `partial-not-started` | no open session has the name `session_id` | `RecoveryNotStarted` |
+| `misattributed` | `sender` or `receiver` differs from the session's | `RecoveryRejected(Misattributed { sender, receiver })`, the session's |
+| `wrong-side` | this instance's node is the session's receiver | `RecoveryRejected(WrongSide)` |
+| `chunk-out-of-range` | the run reaches outside `1..=chunks`: `first` is 0, or `last` is above the session's `chunks` | `RecoveryRejected(ChunkOutOfRange { first, last, chunks })`, the run's and the session's `chunks` |
+| `partial-advanced` | the run holds a chunk not yet in the chunk set, and the chunk set is not then full | `RecoveryAdvanced { held, chunks }` |
+| `partial-completed` | the run holds a chunk not yet in the chunk set, and the chunk set is then full | `RecoveryCompleted` |
+| `partial-unaffected` | otherwise: every chunk of the run is already in the chunk set | `RecoveryUnaffected` |
+
+**The chunk set** is the chunk ids the session has accounted at this end — on the session's sender, the chunks it
+has sent. A run adds those of its chunks the chunk set does not hold yet. A chunk is held once however often it is
+reported, and runs may arrive in any order: overlapping, repeated, or leaving gaps.
+
+**The wrong side.** Every open session has this instance's node as exactly one of its ends; a send belongs on the
+session's sender, so one reported where the node is the session's receiver is on the wrong end.
+
+**A run out of range is refused whole**, even where part of it lies within `1..=chunks`: the caller presented it as
+one unit, and nothing of it is added.
+
+**Advanced** carries `held`, how many chunks the chunk set holds once the run is added, and `chunks`, the
+session's.
+
+**Completed:** the chunk set is full when it holds every chunk of `1..=chunks` — when it holds `chunks` of them, and never
+merely because a run's `last` reached `chunks`. The session is evicted: it is no longer open, its record is gone,
+and it leaves no trace, so a later partial naming it answers `RecoveryNotStarted`
+([`P1-ADR-CancelEvictsWithoutATombstone`](../docs/ADRs/P1-ADR-CancelEvictsWithoutATombstone.md)). Its place under
+the bound is free again; its name stays minted.
+
+## 7. `ShowRegistry`, the checkpoint
 
 **Changes nothing** but the receipt number. **Answers `RegistryShown`**, carrying the checkpoint: the instance id,
 the retention and the bound; every open session's record and every retained one's; the name count; and the next
@@ -102,10 +147,11 @@ receipt's number.
 **The checkpoint describes the state after its own call:** its next receipt number is one more than the number of
 the receipt that carries it. An instance restored from it carries on from the next call.
 
-**A session's record** is its name, `chunks`, `sender`, `receiver`, and the chunks received: a set of chunk ids,
-given in ascending order, each within `1..=chunks`. In 0.1.0 it is always empty.
+**A session's record** is its name, `chunks`, `sender`, `receiver`, and its chunk set: chunk ids, each within
+`1..=chunks`, in ascending order. An open session's chunk set is never full: the run that fills it completes the
+session and evicts it.
 
-## 7. Conformance
+## 8. Conformance
 
 **A vector is an initial state, steps, and a final state.** The initial state is an origin: fresh, or a checkpoint.
 Each step is a command and the receipt it must be answered with. The final state is the checkpoint a

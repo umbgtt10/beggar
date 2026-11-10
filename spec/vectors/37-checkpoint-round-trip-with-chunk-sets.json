@@ -1,0 +1,146 @@
+{
+  "description": "A checkpoint whose sessions hold chunks with gaps between them, and none, is answered back as it was restored, but for the next receipt's number.",
+  "rows": [
+    "show-registry"
+  ],
+  "origin": {
+    "Checkpoint": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "2",
+      "bound": "4",
+      "open": [
+        {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "9",
+          "sender": "1",
+          "receiver": "2",
+          "chunk_set": [
+            "1",
+            "2",
+            "4",
+            "7",
+            "8",
+            "9"
+          ]
+        },
+        {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "2"
+          },
+          "chunks": "3",
+          "sender": "3",
+          "receiver": "1",
+          "chunk_set": []
+        }
+      ],
+      "retained": [],
+      "name_count": "2",
+      "next_receipt": "41"
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "ShowRegistry": {}
+      },
+      "receipt": {
+        "number": "41",
+        "output": {
+          "RegistryShown": {
+            "instance": {
+              "node": "1",
+              "incarnation": "7"
+            },
+            "retention": "2",
+            "bound": "4",
+            "open": [
+              {
+                "session_id": {
+                  "node": "1",
+                  "incarnation": "7",
+                  "count": "1"
+                },
+                "chunks": "9",
+                "sender": "1",
+                "receiver": "2",
+                "chunk_set": [
+                  "1",
+                  "2",
+                  "4",
+                  "7",
+                  "8",
+                  "9"
+                ]
+              },
+              {
+                "session_id": {
+                  "node": "1",
+                  "incarnation": "7",
+                  "count": "2"
+                },
+                "chunks": "3",
+                "sender": "3",
+                "receiver": "1",
+                "chunk_set": []
+              }
+            ],
+            "retained": [],
+            "name_count": "2",
+            "next_receipt": "42"
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "2",
+    "bound": "4",
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "9",
+        "sender": "1",
+        "receiver": "2",
+        "chunk_set": [
+          "1",
+          "2",
+          "4",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "2"
+        },
+        "chunks": "3",
+        "sender": "3",
+        "receiver": "1",
+        "chunk_set": []
+      }
+    ],
+    "retained": [],
+    "name_count": "2",
+    "next_receipt": "43"
+  }
+}

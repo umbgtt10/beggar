@@ -1,0 +1,149 @@
+{
+  "description": "A partial affects only the session it names: two open sessions keep chunk sets of their own, shown in the order of their names.",
+  "rows": [
+    "start-started",
+    "partial-advanced"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "3",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "3",
+          "sender": "1",
+          "receiver": "3"
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "2"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "SendRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "2"
+          },
+          "first": "1",
+          "last": "1",
+          "sender": "1",
+          "receiver": "3"
+        }
+      },
+      "receipt": {
+        "number": "3",
+        "output": {
+          "RecoveryAdvanced": {
+            "held": "1",
+            "chunks": "3"
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "SendRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "first": "2",
+          "last": "3",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "4",
+        "output": {
+          "RecoveryAdvanced": {
+            "held": "2",
+            "chunks": "3"
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "3",
+        "sender": "1",
+        "receiver": "2",
+        "chunk_set": [
+          "2",
+          "3"
+        ]
+      },
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "2"
+        },
+        "chunks": "3",
+        "sender": "1",
+        "receiver": "3",
+        "chunk_set": [
+          "1"
+        ]
+      }
+    ],
+    "retained": [],
+    "name_count": "2",
+    "next_receipt": "6"
+  }
+}

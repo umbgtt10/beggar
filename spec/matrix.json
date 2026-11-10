@@ -1,5 +1,5 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "rows": [
     {
       "id": "no-chunks",
@@ -34,6 +34,58 @@
       "commands": ["StartRecovery"],
       "situation": "otherwise: the next name is minted and a session opened under it",
       "output": "RecoveryStarted"
+    },
+    {
+      "id": "empty-run",
+      "commands": ["SendRecoveryPartial"],
+      "situation": "`last` is below `first`",
+      "output": "RecoveryRejected",
+      "rejection": "EmptyRun"
+    },
+    {
+      "id": "partial-not-started",
+      "commands": ["SendRecoveryPartial"],
+      "situation": "no open session has the name `session_id`",
+      "output": "RecoveryNotStarted"
+    },
+    {
+      "id": "misattributed",
+      "commands": ["SendRecoveryPartial"],
+      "situation": "`sender` or `receiver` differs from the session's",
+      "output": "RecoveryRejected",
+      "rejection": "Misattributed"
+    },
+    {
+      "id": "wrong-side",
+      "commands": ["SendRecoveryPartial"],
+      "situation": "reported on the wrong end: a send where this instance's node is the session's receiver",
+      "output": "RecoveryRejected",
+      "rejection": "WrongSide"
+    },
+    {
+      "id": "chunk-out-of-range",
+      "commands": ["SendRecoveryPartial"],
+      "situation": "the run reaches outside `1..=chunks`, at either end",
+      "output": "RecoveryRejected",
+      "rejection": "ChunkOutOfRange"
+    },
+    {
+      "id": "partial-advanced",
+      "commands": ["SendRecoveryPartial"],
+      "situation": "the run holds a chunk not yet in the chunk set, and the chunk set is not then full",
+      "output": "RecoveryAdvanced"
+    },
+    {
+      "id": "partial-completed",
+      "commands": ["SendRecoveryPartial"],
+      "situation": "the run holds a chunk not yet in the chunk set, and the chunk set is then full: the session is evicted",
+      "output": "RecoveryCompleted"
+    },
+    {
+      "id": "partial-unaffected",
+      "commands": ["SendRecoveryPartial"],
+      "situation": "otherwise: every chunk of the run is already in the chunk set",
+      "output": "RecoveryUnaffected"
     },
     {
       "id": "show-registry",

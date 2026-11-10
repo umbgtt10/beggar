@@ -21,7 +21,7 @@
           "chunks": "8",
           "sender": "1",
           "receiver": "2",
-          "received": []
+          "chunk_set": []
         },
         {
           "session_id": {
@@ -32,7 +32,7 @@
           "chunks": "4",
           "sender": "3",
           "receiver": "1",
-          "received": []
+          "chunk_set": []
         }
       ],
       "retained": [],
@@ -78,7 +78,7 @@
         "chunks": "8",
         "sender": "1",
         "receiver": "2",
-        "received": []
+        "chunk_set": []
       },
       {
         "session_id": {
@@ -89,7 +89,7 @@
         "chunks": "4",
         "sender": "3",
         "receiver": "1",
-        "received": []
+        "chunk_set": []
       }
     ],
     "retained": [],
