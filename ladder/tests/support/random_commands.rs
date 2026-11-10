@@ -21,7 +21,8 @@ const PEER_INCARNATION: u64 = 5;
 // their session, otherwise between any two of three nodes; a partial naming
 // one of the first five names, this instance's to send, the peer's to receive;
 // an adopt naming the peer's, now and then this instance's own; a cancel of
-// either, for any of the four reasons; runs mostly well formed.
+// either, for any of the four reasons; ShowRecovery and ListMissingChunks of
+// either, and ListRecoveries; runs mostly well formed.
 pub struct RandomCommands;
 
 impl RandomCommands {
@@ -62,9 +63,14 @@ impl RandomCommands {
                     receiver,
                 }
             ),
-            2 => (Self::cancelled_name(instance, peer), Self::reason()).prop_map(
+            2 => (Self::either_name(instance, peer), Self::reason()).prop_map(
                 |(session_id, reason)| Command::CancelRecovery { session_id, reason }
             ),
+            1 => Just(Command::ListRecoveries),
+            1 => Self::either_name(instance, peer)
+                .prop_map(|session_id| Command::ShowRecovery { session_id }),
+            1 => Self::either_name(instance, peer)
+                .prop_map(|session_id| Command::ListMissingChunks { session_id }),
             1 => Just(Command::ShowRegistry),
         ]
     }
@@ -104,8 +110,8 @@ impl RandomCommands {
         ]
     }
 
-    // A cancel's name: this instance's or the peer's, alike.
-    fn cancelled_name(instance: InstanceId, peer: u64) -> impl Strategy<Value = SessionId> {
+    // A cancel's or a query's name: this instance's or the peer's, alike.
+    fn either_name(instance: InstanceId, peer: u64) -> impl Strategy<Value = SessionId> {
         prop_oneof![Self::own_name(instance), Self::peers_name(peer)]
     }
 

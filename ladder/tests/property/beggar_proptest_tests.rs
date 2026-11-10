@@ -2,19 +2,24 @@
 // SPDX-License-Identifier: MIT
 
 // The property tier: random sequences on random instances -- both ends of
-// transfers, started and adopted, sent, received and cancelled -- the crate
-// against the naive model after every call, a well-formed partial after an
-// accepted cancel never finding its session, the invariants on every state
-// shown, receipts one more on every call, every call reported to the observer
-// as it was answered, a checkpoint taken at any point carrying on as the
-// instance it was taken from, names never shared between instances, and a
-// session completing exactly when every chunk is held, with no record after it.
+// transfers, started and adopted, sent, received and cancelled, and queried --
+// the crate against the naive model after every call, a well-formed partial
+// after an accepted cancel never finding its session, the invariants on every
+// state shown, the queries answering for the open and the finished sessions,
+// receipts one more on every call, every call reported to the observer as it
+// was answered, every command but a query answered alike at retention 0 and at
+// the top of u64, one name finished again and again kept for each of its last
+// finishes and read at the latest, a checkpoint taken at any point carrying on
+// as the instance it was taken from, names never shared between instances, and
+// a session completing exactly when every chunk is held, with no record after
+// it.
 
 use crate::support::naive_registry::NaiveRegistry;
 use crate::support::random_commands::RandomCommands;
 use crate::support::recording_observer::RecordingObserver;
 use beggar::beggar::Beggar;
 use beggar::checkpoint::Checkpoint;
+use beggar::chunk_set::ChunkSet;
 use beggar::command::Command;
 use beggar::fresh::Fresh;
 use beggar::instance_id::InstanceId;
@@ -22,7 +27,9 @@ use beggar::no_op_observer::NoOpObserver;
 use beggar::origin::Origin;
 use beggar::output::Output;
 use beggar::receipt::Receipt;
+use beggar::retained_record::RetainedRecord;
 use beggar::session_id::SessionId;
+use beggar::session_record::SessionRecord;
 use beggar_core_validation::scenario_reason::ScenarioReason;
 use proptest::collection::btree_set;
 use proptest::collection::vec;
@@ -38,17 +45,28 @@ use std::cell::RefCell;
 use std::collections::BTreeSet;
 use std::rc::Rc;
 
-// What every state 0.4.0 can reach holds: the bound; as many names minted as
+// A session finished: its name, the number of the receipt that finished it,
+// and whether it completed rather than being cancelled.
+struct Finish {
+    session_id: SessionId,
+    number: u64,
+    completed: bool,
+}
+
+// What every state 0.6.0 can reach holds: the bound; as many names minted as
 // starts answered; open exactly the sessions started or adopted and not
-// completed, in the order of their names and none sharing one, this
+// finished, in the order of their names and none sharing one, this
 // instance's own among them never beyond the names it minted; every record
 // well formed, its chunk set within its chunks and never full while it is
-// open; and the next receipt following the one that showed it.
+// open; retained exactly the last sessions to finish, as many as the
+// retention keeps, by name and then by finish, each full exactly when it
+// completed; and the next receipt following the one that showed it.
 fn holds(
     checkpoint: &Checkpoint,
     shown_by: u64,
     minted: u64,
     open: &BTreeSet<SessionId>,
+    finished: &[Finish],
 ) -> Result<(), TestCaseError> {
     let names: Vec<SessionId> = checkpoint
         .open
@@ -74,6 +92,25 @@ fn holds(
         prop_assert!(ids.iter().all(|id| (1..=record.chunks).contains(id)));
         prop_assert_eq!(record.chunk_set.count(), ids.len() as u64);
         prop_assert!(record.chunk_set.count() < record.chunks);
+    }
+    let kept = usize::try_from(checkpoint.retention).unwrap_or(usize::MAX);
+    let mut expected: Vec<(SessionId, u64)> = finished[finished.len().saturating_sub(kept)..]
+        .iter()
+        .map(|finish| (finish.session_id, finish.number))
+        .collect();
+    expected.sort();
+    let retained: Vec<(SessionId, u64)> = checkpoint
+        .retained
+        .iter()
+        .map(|kept| (kept.record.session_id, kept.finished))
+        .collect();
+    prop_assert_eq!(retained, expected);
+    for kept in &checkpoint.retained {
+        let completed = finished
+            .iter()
+            .any(|finish| finish.number == kept.finished && finish.completed);
+        let full = kept.record.chunk_set.count() == kept.record.chunks;
+        prop_assert_eq!(full, completed);
     }
     Ok(())
 }
@@ -153,6 +190,7 @@ proptest! {
         let mut minted = 0;
         let mut open: BTreeSet<SessionId> = BTreeSet::new();
         let mut cancelled: BTreeSet<SessionId> = BTreeSet::new();
+        let mut finished: Vec<Finish> = Vec::new();
         for (index, (command, from_crate, from_model)) in answers.iter().enumerate() {
             prop_assert_eq!(from_crate, from_model);
             prop_assert_eq!(from_crate.number, index as u64 + 1);
@@ -168,6 +206,7 @@ proptest! {
                 (Output::RecoveryCancelled(_), Command::CancelRecovery { session_id, .. }) => {
                     open.remove(session_id);
                     cancelled.insert(*session_id);
+                    finished.push(Finish { session_id: *session_id, number: from_crate.number, completed: false });
                 }
                 (
                     Output::RecoveryCompleted,
@@ -175,9 +214,22 @@ proptest! {
                     | Command::ReceiveRecoveryPartial { session_id, .. },
                 ) => {
                     open.remove(session_id);
+                    finished.push(Finish { session_id: *session_id, number: from_crate.number, completed: true });
+                }
+                (Output::RecoveriesListed { sessions }, _) => {
+                    prop_assert_eq!(sessions, &open.iter().copied().collect::<Vec<SessionId>>());
+                }
+                (Output::RecoveryShown { record, finished: None }, _) => {
+                    prop_assert!(open.contains(&record.session_id));
+                }
+                (Output::RecoveryShown { record, finished: Some(number) }, _) => {
+                    prop_assert!(!open.contains(&record.session_id));
+                    prop_assert!(finished
+                        .iter()
+                        .any(|finish| finish.session_id == record.session_id && finish.number == *number));
                 }
                 (Output::RegistryShown(checkpoint), _) => {
-                    holds(checkpoint, from_crate.number, minted, &open)?;
+                    holds(checkpoint, from_crate.number, minted, &open, &finished)?;
                 }
                 _ => {}
             }
@@ -202,6 +254,56 @@ proptest! {
     }
 
     #[test]
+    fn process_at_the_highest_retention_answers_all_but_queries_as_at_retention_0(
+        (fresh, commands) in RandomCommands::fresh_and_commands(60),
+    ) {
+        // Arrange
+        let mut keeping_none: Beggar<ScenarioReason> = Beggar::new(
+            Origin::Fresh(Fresh { retention: 0, ..fresh.clone() }),
+            Box::new(NoOpObserver),
+        );
+        let mut keeping_all: Beggar<ScenarioReason> = Beggar::new(
+            Origin::Fresh(Fresh { retention: u64::MAX, ..fresh }),
+            Box::new(NoOpObserver),
+        );
+
+        // Act
+        let answers: Vec<(Command<ScenarioReason>, Receipt<ScenarioReason>, Receipt<ScenarioReason>)> = commands
+            .into_iter()
+            .chain([Command::ShowRegistry])
+            .map(|command| {
+                let none = keeping_none.process(command.clone());
+                let all = keeping_all.process(command.clone());
+                (command, none, all)
+            })
+            .collect();
+
+        // Assert
+        for (command, none, all) in answers {
+            prop_assert_eq!(none.number, all.number);
+            match (command, none.output, all.output) {
+                (
+                    Command::ShowRecovery { .. } | Command::ListMissingChunks { .. },
+                    none,
+                    all,
+                ) if none != all => {
+                    prop_assert_eq!(none, Output::RecoveryNotStarted);
+                    let of_a_finished = matches!(
+                        all,
+                        Output::RecoveryShown { finished: Some(_), .. } | Output::MissingChunksListed { .. }
+                    );
+                    prop_assert!(of_a_finished);
+                }
+                (Command::ShowRegistry, Output::RegistryShown(none), Output::RegistryShown(all)) => {
+                    prop_assert!(none.retained.is_empty());
+                    prop_assert_eq!(none, Checkpoint { retention: 0, retained: Vec::new(), ..all });
+                }
+                (_, none, all) => prop_assert_eq!(none, all),
+            }
+        }
+    }
+
+    #[test]
     fn process_of_any_sequence_reports_every_call_to_the_observer_as_answered(
         (fresh, commands) in RandomCommands::fresh_and_commands(60),
     ) {
@@ -220,6 +322,84 @@ proptest! {
 
         // Assert
         prop_assert_eq!(&*calls.borrow(), &answered);
+    }
+
+    #[test]
+    fn process_of_one_name_adopted_and_finished_again_and_again_keeps_its_last_finishes_and_reads_the_latest(
+        retention in 0u64..=4,
+        rounds in vec((1u64..=4, vec((1u64..=4, 0u64..=3), 0..6)), 1..7),
+    ) {
+        // Arrange
+        let instance = InstanceId { node: 1, incarnation: 7 };
+        let peers = SessionId { node: 2, incarnation: 5, count: 1 };
+        let mut beggar: Beggar<ScenarioReason> = Beggar::new(
+            Origin::Fresh(Fresh { instance, retention, bound: None }),
+            Box::new(NoOpObserver),
+        );
+        let rounds: Vec<(u64, Vec<(u64, u64)>)> = rounds
+            .into_iter()
+            .map(|(chunks, runs)| {
+                let runs = runs
+                    .into_iter()
+                    .map(|(first, span)| {
+                        let first = (first - 1) % chunks + 1;
+                        (first, (first + span).min(chunks))
+                    })
+                    .collect();
+                (chunks, runs)
+            })
+            .collect();
+        let commands: Vec<Command<ScenarioReason>> = rounds
+            .iter()
+            .flat_map(|(chunks, runs)| {
+                let adopt = Command::AdoptRecovery { session_id: peers, chunks: *chunks, sender: 2, receiver: 1 };
+                let receives = runs.iter().map(move |(first, last)| Command::ReceiveRecoveryPartial {
+                    session_id: peers,
+                    first: *first,
+                    last: *last,
+                    sender: 2,
+                    receiver: 1,
+                });
+                let cancel = Command::CancelRecovery { session_id: peers, reason: ScenarioReason::PeerFailed };
+                [adopt].into_iter().chain(receives).chain([cancel])
+            })
+            .collect();
+
+        // Act
+        let finishes: Vec<u64> = commands
+            .into_iter()
+            .map(|command| beggar.process(command))
+            .filter(|receipt| matches!(receipt.output, Output::RecoveryCompleted | Output::RecoveryCancelled(_)))
+            .map(|receipt| receipt.number)
+            .collect();
+        let shown = beggar.process(Command::ShowRecovery { session_id: peers }).output;
+        let retained = match beggar.process(Command::ShowRegistry).output {
+            Output::RegistryShown(checkpoint) => checkpoint.retained,
+            other => panic!("ShowRegistry answered {other:?}"),
+        };
+
+        // Assert
+        prop_assert_eq!(finishes.len(), rounds.len());
+        let kept: Vec<RetainedRecord> = rounds
+            .iter()
+            .zip(&finishes)
+            .map(|((chunks, runs), finished)| {
+                let mut chunk_set = ChunkSet::new();
+                for (first, last) in runs {
+                    chunk_set.add(*first, *last);
+                }
+                RetainedRecord {
+                    record: SessionRecord { session_id: peers, chunks: *chunks, sender: 2, receiver: 1, chunk_set },
+                    finished: *finished,
+                }
+            })
+            .collect();
+        let last = usize::try_from(retention).unwrap_or(usize::MAX).min(kept.len());
+        prop_assert_eq!(&retained, &kept[kept.len() - last..].to_vec());
+        let latest = kept.last().filter(|_| retention > 0).map_or(Output::RecoveryNotStarted, |latest| {
+            Output::RecoveryShown { record: latest.record.clone(), finished: Some(latest.finished) }
+        });
+        prop_assert_eq!(shown, latest);
     }
 
     #[test]
