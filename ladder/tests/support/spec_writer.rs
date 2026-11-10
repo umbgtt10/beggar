@@ -7,11 +7,13 @@ use beggar::instance_id::InstanceId;
 use beggar::output::Output;
 use beggar::receipt::Receipt;
 use beggar::rejection::Rejection;
+use beggar::retained_record::RetainedRecord;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
 use beggar_core_validation::scenario_reason::ScenarioReason;
 use serde_json::json;
 use serde_json::Value;
+use std::ops::RangeInclusive;
 
 // Beggar's answers written in the specification's JSON, so a receipt compares
 // with a vector's as the specification states it.
@@ -24,7 +26,7 @@ impl SpecWriter {
             "retention": Self::number(checkpoint.retention),
             "bound": checkpoint.bound.map_or(Value::Null, Self::number),
             "open": Self::records(&checkpoint.open),
-            "retained": Self::records(&checkpoint.retained),
+            "retained": Self::retained(&checkpoint.retained),
             "name_count": Self::number(checkpoint.name_count),
             "next_receipt": Self::number(checkpoint.next_receipt),
         })
@@ -82,6 +84,13 @@ impl SpecWriter {
                 "session_id": Self::session_id(session_id),
                 "reason": Self::reason(reason),
             } }),
+            Command::ListRecoveries => json!({ "ListRecoveries": {} }),
+            Command::ShowRecovery { session_id } => {
+                json!({ "ShowRecovery": { "session_id": Self::session_id(session_id) } })
+            }
+            Command::ListMissingChunks { session_id } => {
+                json!({ "ListMissingChunks": { "session_id": Self::session_id(session_id) } })
+            }
             Command::ShowRegistry => json!({ "ShowRegistry": {} }),
         }
     }
@@ -138,6 +147,16 @@ impl SpecWriter {
             Output::RecoveryRejected(rejection) => {
                 json!({ "RecoveryRejected": Self::rejection(rejection) })
             }
+            Output::RecoveriesListed { sessions } => json!({ "RecoveriesListed": {
+                "sessions": sessions.iter().map(Self::session_id).collect::<Vec<Value>>(),
+            } }),
+            Output::RecoveryShown { record, finished } => json!({ "RecoveryShown": {
+                "record": Self::record(record),
+                "finished": finished.map_or(Value::Null, Self::number),
+            } }),
+            Output::MissingChunksListed { missing } => json!({ "MissingChunksListed": {
+                "missing": missing.iter().map(Self::run).collect::<Vec<Value>>(),
+            } }),
             Output::RegistryShown(checkpoint) => {
                 json!({ "RegistryShown": Self::checkpoint(checkpoint) })
             }
@@ -155,21 +174,18 @@ impl SpecWriter {
         }
     }
 
+    fn record(record: &SessionRecord) -> Value {
+        json!({
+            "session_id": Self::session_id(&record.session_id),
+            "chunks": Self::number(record.chunks),
+            "sender": Self::number(record.sender),
+            "receiver": Self::number(record.receiver),
+            "chunk_set": record.chunk_set.ids().into_iter().map(Self::number).collect::<Vec<Value>>(),
+        })
+    }
+
     fn records(records: &[SessionRecord]) -> Value {
-        Value::Array(
-            records
-                .iter()
-                .map(|record| {
-                    json!({
-                        "session_id": Self::session_id(&record.session_id),
-                        "chunks": Self::number(record.chunks),
-                        "sender": Self::number(record.sender),
-                        "receiver": Self::number(record.receiver),
-                        "chunk_set": record.chunk_set.ids().into_iter().map(Self::number).collect::<Vec<Value>>(),
-                    })
-                })
-                .collect(),
-        )
+        Value::Array(records.iter().map(Self::record).collect())
     }
 
     fn rejection(rejection: &Rejection) -> Value {
@@ -198,6 +214,24 @@ impl SpecWriter {
                 "chunks": Self::number(*chunks),
             } }),
         }
+    }
+
+    fn retained(retained: &[RetainedRecord]) -> Value {
+        Value::Array(
+            retained
+                .iter()
+                .map(|kept| {
+                    json!({
+                        "record": Self::record(&kept.record),
+                        "finished": Self::number(kept.finished),
+                    })
+                })
+                .collect(),
+        )
+    }
+
+    fn run(run: &RangeInclusive<u64>) -> Value {
+        json!({ "first": Self::number(*run.start()), "last": Self::number(*run.end()) })
     }
 
     fn session_id(session_id: &SessionId) -> Value {

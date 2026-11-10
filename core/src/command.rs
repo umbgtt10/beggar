@@ -36,5 +36,12 @@ pub enum Command<R> {
         session_id: SessionId,
         reason: R,
     },
+    ListRecoveries,
+    ShowRecovery {
+        session_id: SessionId,
+    },
+    ListMissingChunks {
+        session_id: SessionId,
+    },
     ShowRegistry,
 }

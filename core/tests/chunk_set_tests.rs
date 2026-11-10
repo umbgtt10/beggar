@@ -153,3 +153,75 @@ fn ids_of_a_new_set_are_none() {
     // Assert
     assert!(ids.is_empty());
 }
+
+#[test]
+fn missing_of_a_full_set_is_none() {
+    // Arrange
+    let set = holding(&[(1, 4)]);
+
+    // Act
+    let missing = set.missing(4);
+
+    // Assert
+    assert!(missing.is_empty());
+}
+
+#[test]
+fn missing_of_a_new_set_is_one_run_of_every_chunk() {
+    // Arrange
+    let set = ChunkSet::new();
+
+    // Act
+    let missing = set.missing(1_000_000);
+
+    // Assert
+    assert_eq!(missing, vec![1..=1_000_000]);
+}
+
+#[test]
+fn missing_of_a_set_holding_its_first_and_last_chunks_is_the_gap_between() {
+    // Arrange
+    let set = holding(&[(1, 2), (9, 10)]);
+
+    // Act
+    let missing = set.missing(10);
+
+    // Assert
+    assert_eq!(missing, vec![3..=8]);
+}
+
+#[test]
+fn missing_of_a_set_holding_the_top_of_u64_ends_below_it() {
+    // Arrange
+    let set = holding(&[(3, TOP)]);
+
+    // Act
+    let missing = set.missing(TOP);
+
+    // Assert
+    assert_eq!(missing, vec![1..=2]);
+}
+
+#[test]
+fn missing_of_a_set_with_gaps_is_its_gaps_as_maximal_runs() {
+    // Arrange
+    let set = holding(&[(3, 4), (7, 7)]);
+
+    // Act
+    let missing = set.missing(10);
+
+    // Assert
+    assert_eq!(missing, vec![1..=2, 5..=6, 8..=10]);
+}
+
+#[test]
+fn missing_up_to_the_top_of_u64_reaches_it() {
+    // Arrange
+    let set = holding(&[(TOP - 1, TOP - 1)]);
+
+    // Act
+    let missing = set.missing(TOP);
+
+    // Assert
+    assert_eq!(missing, vec![1..=TOP - 2, TOP..=TOP]);
+}

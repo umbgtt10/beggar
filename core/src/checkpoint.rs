@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use crate::instance_id::InstanceId;
+use crate::retained_record::RetainedRecord;
 use crate::session_record::SessionRecord;
 use alloc::vec::Vec;
 
@@ -15,7 +16,7 @@ pub struct Checkpoint {
     pub retention: u64,
     pub bound: Option<u64>,
     pub open: Vec<SessionRecord>,
-    pub retained: Vec<SessionRecord>,
+    pub retained: Vec<RetainedRecord>,
     pub name_count: u64,
     pub next_receipt: u64,
 }

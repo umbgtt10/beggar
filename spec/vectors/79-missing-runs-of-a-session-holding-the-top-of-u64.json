@@ -1,0 +1,116 @@
+{
+  "description": "A session holding the top of u64 is missing nothing after it: its missing runs end below the run it holds.",
+  "rows": [
+    "start-started",
+    "partial-advanced",
+    "missing-chunks-listed"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "18446744073709551615",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "SendRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "first": "18446744073709551614",
+          "last": "18446744073709551615",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryAdvanced": {
+            "held": "2",
+            "chunks": "18446744073709551615"
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "ListMissingChunks": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          }
+        }
+      },
+      "receipt": {
+        "number": "3",
+        "output": {
+          "MissingChunksListed": {
+            "missing": [
+              {
+                "first": "1",
+                "last": "18446744073709551613"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "18446744073709551615",
+        "sender": "1",
+        "receiver": "2",
+        "chunk_set": [
+          "18446744073709551614",
+          "18446744073709551615"
+        ]
+      }
+    ],
+    "retained": [],
+    "name_count": "1",
+    "next_receipt": "5"
+  }
+}

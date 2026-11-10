@@ -6,13 +6,17 @@ use crate::chunk_set::ChunkSet;
 use crate::opening_rows::OpeningRows;
 use crate::output::Output;
 use crate::partial_rows::PartialRows;
+use crate::query_rows::QueryRows;
+use crate::retained_record::RetainedRecord;
 use crate::session_id::SessionId;
 use crate::session_record::SessionRecord;
 
 // The registry: its state, kept in the checkpoint's own shape so ShowRegistry
 // answers it as it stands, and what a command does to it -- a start or an
-// adopt opens a session, a partial updates one, a completion evicts it -- with
-// the rows each command meets before it does anything.
+// adopt opens a session, a partial updates one, a completion or a cancel
+// evicts it, and the retention keeps what was evicted -- with the rows each
+// command meets before it does anything. Every change is made inside a call
+// already counted, so the call that finishes a session is the last counted.
 pub struct Registry {
     state: Checkpoint,
 }
@@ -34,7 +38,8 @@ impl Registry {
         if held == before {
             Output::RecoveryUnaffected
         } else if held == chunks {
-            self.state.open.remove(index);
+            let record = self.state.open.remove(index);
+            self.finish(record);
             Output::RecoveryCompleted
         } else {
             Output::RecoveryAdvanced { held, chunks }
@@ -55,11 +60,17 @@ impl Registry {
 
     // The open session named evicted, if there is one: whether there was.
     pub fn evict(&mut self, session_id: SessionId) -> bool {
-        let before = self.state.open.len();
-        self.state
+        let Some(index) = self
+            .state
             .open
-            .retain(|record| record.session_id != session_id);
-        self.state.open.len() < before
+            .iter()
+            .position(|record| record.session_id == session_id)
+        else {
+            return false;
+        };
+        let record = self.state.open.remove(index);
+        self.finish(record);
+        true
     }
 
     // The next name this instance mints.
@@ -96,5 +107,37 @@ impl Registry {
 
     pub fn partial_rows(&self) -> PartialRows<'_> {
         PartialRows::new(self.state.instance.node, &self.state.open)
+    }
+
+    pub fn query_rows(&self) -> QueryRows<'_> {
+        QueryRows::new(&self.state.open, &self.state.retained)
+    }
+
+    // A finished session's record kept, if the retention keeps any, finished
+    // by the call counted last, after the records of the names before its own
+    // and its own earlier finishes; the one that finished earliest let go
+    // first when the retained are already as many as the retention.
+    fn finish(&mut self, record: SessionRecord) {
+        let retention = self.state.retention;
+        if retention == 0 {
+            return;
+        }
+        let retained = &mut self.state.retained;
+        if retained.len() as u64 >= retention {
+            let earliest = retained
+                .iter()
+                .enumerate()
+                .min_by_key(|(_, kept)| kept.finished)
+                .map_or(0, |(index, _)| index);
+            retained.remove(earliest);
+        }
+        let at = retained.partition_point(|kept| kept.record.session_id <= record.session_id);
+        retained.insert(
+            at,
+            RetainedRecord {
+                record,
+                finished: self.state.next_receipt - 1,
+            },
+        );
     }
 }

@@ -7,13 +7,14 @@ use beggar::command::Command;
 use beggar::fresh::Fresh;
 use beggar::instance_id::InstanceId;
 use beggar::origin::Origin;
+use beggar::retained_record::RetainedRecord;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
 use beggar_core_validation::scenario_reason::ScenarioReason;
 use serde_json::Value;
 
 // The specification's JSON read into beggar's types, by the data model's own
-// names: the crate knows nothing of JSON. A form 0.5.0 does not have is a
+// names: the crate knows nothing of JSON. A form 0.6.0 does not have is a
 // broken vector, and panics saying which.
 pub struct SpecReader;
 
@@ -24,7 +25,7 @@ impl SpecReader {
             retention: Self::number(&value["retention"]),
             bound: Self::bound(&value["bound"]),
             open: Self::records(&value["open"]),
-            retained: Self::records(&value["retained"]),
+            retained: Self::retained(&value["retained"]),
             name_count: Self::number(&value["name_count"]),
             next_receipt: Self::number(&value["next_receipt"]),
         }
@@ -62,8 +63,15 @@ impl SpecReader {
                 session_id: Self::session_id(&carried["session_id"]),
                 reason: Self::reason(&carried["reason"]),
             },
+            "ListRecoveries" => Command::ListRecoveries,
+            "ShowRecovery" => Command::ShowRecovery {
+                session_id: Self::session_id(&carried["session_id"]),
+            },
+            "ListMissingChunks" => Command::ListMissingChunks {
+                session_id: Self::session_id(&carried["session_id"]),
+            },
             "ShowRegistry" => Command::ShowRegistry,
-            other => panic!("not a command of 0.5.0: {other}"),
+            other => panic!("not a command of 0.6.0: {other}"),
         }
     }
 
@@ -136,7 +144,7 @@ impl SpecReader {
             "Stalled" => ScenarioReason::Stalled {
                 held: Self::number(&carried["held"]),
             },
-            other => panic!("not a reason of 0.5.0: {other}"),
+            other => panic!("not a reason of 0.6.0: {other}"),
         }
     }
 
@@ -156,6 +164,18 @@ impl SpecReader {
             .unwrap_or_else(|| panic!("records are a list: {value}"))
             .iter()
             .map(Self::record)
+            .collect()
+    }
+
+    fn retained(value: &Value) -> Vec<RetainedRecord> {
+        value
+            .as_array()
+            .unwrap_or_else(|| panic!("retained records are a list: {value}"))
+            .iter()
+            .map(|kept| RetainedRecord {
+                record: Self::record(&kept["record"]),
+                finished: Self::number(&kept["finished"]),
+            })
             .collect()
     }
 

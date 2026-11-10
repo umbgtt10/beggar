@@ -76,6 +76,9 @@ fn kind(output: &Output<ScenarioReason>) -> String {
         Output::RecoveryConflicted { .. } => String::from("conflicted"),
         Output::RecoveryRejected(Rejection::RegistryFull { .. }) => String::from("registry-full"),
         Output::RecoveryRejected(rejection) => format!("{rejection:?}"),
+        Output::RecoveriesListed { .. } => String::from("recoveries-listed"),
+        Output::RecoveryShown { .. } => String::from("recovery-shown"),
+        Output::MissingChunksListed { .. } => String::from("missing-chunks-listed"),
         Output::RegistryShown(_) => String::from("shown"),
     }
 }

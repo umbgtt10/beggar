@@ -4,6 +4,9 @@
 use crate::checkpoint::Checkpoint;
 use crate::rejection::Rejection;
 use crate::session_id::SessionId;
+use crate::session_record::SessionRecord;
+use alloc::vec::Vec;
+use core::ops::RangeInclusive;
 
 // What happened: past participle, as every output is.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,5 +28,15 @@ pub enum Output<R> {
         receiver: u64,
     },
     RecoveryRejected(Rejection),
+    RecoveriesListed {
+        sessions: Vec<SessionId>,
+    },
+    RecoveryShown {
+        record: SessionRecord,
+        finished: Option<u64>,
+    },
+    MissingChunksListed {
+        missing: Vec<RangeInclusive<u64>>,
+    },
     RegistryShown(Checkpoint),
 }

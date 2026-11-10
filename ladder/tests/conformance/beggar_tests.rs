@@ -4,9 +4,10 @@
 // The conformance tier: every vector of the specification, run against the
 // crate as the specification states it -- each step's receipt, then the final
 // state a closing ShowRegistry answers, with an observer that does nothing;
-// every call reported, with the receipt answered, to one that keeps them --
-// every vector and the matrix valid against the schema, and every row of the
-// matrix exercised.
+// every call reported, with the receipt answered, to one that keeps them; and
+// every step but a query's answered alike with the retention raised to the
+// top of u64 -- every vector and the matrix valid against the schema, and
+// every row of the matrix exercised.
 
 use crate::support::recording_observer::RecordingObserver;
 use crate::support::spec_files::SpecFiles;
@@ -14,8 +15,11 @@ use crate::support::spec_reader::SpecReader;
 use crate::support::spec_schema::SpecSchema;
 use crate::support::spec_writer::SpecWriter;
 use beggar::beggar::Beggar;
+use beggar::checkpoint::Checkpoint;
 use beggar::command::Command;
+use beggar::fresh::Fresh;
 use beggar::no_op_observer::NoOpObserver;
+use beggar::origin::Origin;
 use beggar::receipt::Receipt;
 use beggar_core_validation::scenario_reason::ScenarioReason;
 use serde_json::json;
@@ -50,6 +54,45 @@ fn departures(name: &str, vector: &Value) -> Vec<String> {
             "{name}, final state: answered {}, not {expected}",
             closing["output"]
         ));
+    }
+    departures
+}
+
+// What a vector's run answered otherwise, with its retention raised to the
+// top of u64, at a step that is not a query: nothing for a conforming
+// implementation, for which what is kept changes what a query answers and
+// nothing else.
+fn departures_at_the_highest_retention(name: &str, vector: &Value) -> Vec<String> {
+    let origin = match SpecReader::origin(&vector["origin"]) {
+        Origin::Fresh(fresh) => Origin::Fresh(Fresh {
+            retention: u64::MAX,
+            ..fresh
+        }),
+        Origin::Checkpoint(checkpoint) => Origin::Checkpoint(Checkpoint {
+            retention: u64::MAX,
+            ..checkpoint
+        }),
+    };
+    let mut beggar: Beggar<ScenarioReason> = Beggar::new(origin, Box::new(NoOpObserver));
+    let steps = vector["steps"].as_array().expect("a vector's steps");
+    let mut departures = Vec::new();
+    for (index, step) in steps.iter().enumerate() {
+        let command = SpecReader::command(&step["command"]);
+        let query = matches!(
+            command,
+            Command::ListRecoveries
+                | Command::ShowRecovery { .. }
+                | Command::ListMissingChunks { .. }
+                | Command::ShowRegistry
+        );
+        let receipt = SpecWriter::receipt(&beggar.process(command));
+        if !query && receipt != step["receipt"] {
+            departures.push(format!(
+                "{name}, step {} at the highest retention: answered {receipt}, not {}",
+                index + 1,
+                step["receipt"]
+            ));
+        }
     }
     departures
 }
@@ -120,6 +163,22 @@ fn process_of_every_vector_answers_its_receipts_and_its_final_state() {
     let departures: Vec<String> = vectors
         .iter()
         .flat_map(|(name, vector)| departures(name, vector))
+        .collect();
+
+    // Assert
+    assert!(!vectors.is_empty(), "no vector was read");
+    assert!(departures.is_empty(), "{departures:#?}");
+}
+
+#[test]
+fn process_of_every_vector_at_the_highest_retention_answers_every_step_but_a_querys_alike() {
+    // Arrange
+    let vectors = SpecFiles::vectors();
+
+    // Act
+    let departures: Vec<String> = vectors
+        .iter()
+        .flat_map(|(name, vector)| departures_at_the_highest_retention(name, vector))
         .collect();
 
     // Assert

@@ -9,6 +9,7 @@ use beggar::instance_id::InstanceId;
 use beggar::output::Output;
 use beggar::receipt::Receipt;
 use beggar::rejection::Rejection;
+use beggar::retained_record::RetainedRecord;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
 use beggar_core_validation::scenario_reason::ScenarioReason;
@@ -18,13 +19,16 @@ use std::ops::RangeInclusive;
 // A second implementation of the specification, deliberately naive and
 // shaped otherwise than the crate: the matrix read as a table, its rows tried
 // top to bottom, the first that applies answering, and a run walked chunk by
-// chunk -- so it is for small chunk counts only. What the two agree on is what
-// the specification says, not what one of them happens to do.
+// chunk -- so it is for small chunk counts only. Finished sessions are kept in
+// the order they finished, each with its number, and the oldest dropped once
+// they outnumber the retention. What the two agree on is what the
+// specification says, not what one of them happens to do.
 pub struct NaiveRegistry {
     instance: InstanceId,
     retention: u64,
     bound: Option<u64>,
     open: Vec<NaiveSession>,
+    finished: Vec<(NaiveSession, u64)>,
     names_minted: u64,
     receipts_issued: u64,
 }
@@ -36,6 +40,7 @@ impl NaiveRegistry {
             retention: fresh.retention,
             bound: fresh.bound,
             open: Vec::new(),
+            finished: Vec::new(),
             names_minted: 0,
             receipts_issued: 0,
         }
@@ -46,16 +51,11 @@ impl NaiveRegistry {
             instance: checkpoint.instance,
             retention: checkpoint.retention,
             bound: checkpoint.bound,
-            open: checkpoint
-                .open
+            open: checkpoint.open.iter().map(NaiveSession::of).collect(),
+            finished: checkpoint
+                .retained
                 .iter()
-                .map(|record| NaiveSession {
-                    session_id: record.session_id,
-                    chunks: record.chunks,
-                    sender: record.sender,
-                    receiver: record.receiver,
-                    ids: record.chunk_set.ids().into_iter().collect(),
-                })
+                .map(|kept| (NaiveSession::of(&kept.record), kept.finished))
                 .collect(),
             names_minted: checkpoint.name_count,
             receipts_issued: checkpoint.next_receipt - 1,
@@ -64,35 +64,57 @@ impl NaiveRegistry {
 
     pub fn answer(&mut self, command: &Command<ScenarioReason>) -> Receipt<ScenarioReason> {
         self.receipts_issued += 1;
-        let output = match command {
-            Command::StartRecovery {
-                chunks,
-                sender,
-                receiver,
-            } => self.start(*chunks, *sender, *receiver),
-            Command::AdoptRecovery {
-                session_id,
-                chunks,
-                sender,
-                receiver,
-            } => self.adopt(*session_id, *chunks, *sender, *receiver),
-            Command::SendRecoveryPartial {
-                session_id,
-                first,
-                last,
-                sender,
-                receiver,
-            } => self.partial(false, *session_id, *first..=*last, (*sender, *receiver)),
-            Command::ReceiveRecoveryPartial {
-                session_id,
-                first,
-                last,
-                sender,
-                receiver,
-            } => self.partial(true, *session_id, *first..=*last, (*sender, *receiver)),
-            Command::CancelRecovery { session_id, reason } => self.cancel(*session_id, *reason),
-            Command::ShowRegistry => Output::RegistryShown(self.checkpoint()),
-        };
+        let output =
+            match command {
+                Command::StartRecovery {
+                    chunks,
+                    sender,
+                    receiver,
+                } => self.start(*chunks, *sender, *receiver),
+                Command::AdoptRecovery {
+                    session_id,
+                    chunks,
+                    sender,
+                    receiver,
+                } => self.adopt(*session_id, *chunks, *sender, *receiver),
+                Command::SendRecoveryPartial {
+                    session_id,
+                    first,
+                    last,
+                    sender,
+                    receiver,
+                } => self.partial(false, *session_id, *first..=*last, (*sender, *receiver)),
+                Command::ReceiveRecoveryPartial {
+                    session_id,
+                    first,
+                    last,
+                    sender,
+                    receiver,
+                } => self.partial(true, *session_id, *first..=*last, (*sender, *receiver)),
+                Command::CancelRecovery { session_id, reason } => self.cancel(*session_id, *reason),
+                Command::ListRecoveries => {
+                    let mut sessions: Vec<SessionId> =
+                        self.open.iter().map(|session| session.session_id).collect();
+                    sessions.sort();
+                    Output::RecoveriesListed { sessions }
+                }
+                Command::ShowRecovery { session_id } => self.read(*session_id).map_or(
+                    Output::RecoveryNotStarted,
+                    |(session, finished)| Output::RecoveryShown {
+                        record: session.record(),
+                        finished,
+                    },
+                ),
+                Command::ListMissingChunks { session_id } => {
+                    self.read(*session_id)
+                        .map_or(Output::RecoveryNotStarted, |(session, _)| {
+                            Output::MissingChunksListed {
+                                missing: session.missing(),
+                            }
+                        })
+                }
+                Command::ShowRegistry => Output::RegistryShown(self.checkpoint()),
+            };
         Receipt {
             number: self.receipts_issued,
             output,
@@ -153,12 +175,17 @@ impl NaiveRegistry {
     // A cancel's two rows: the session named, if open, evicted with the reason
     // given; otherwise nothing.
     fn cancel(&mut self, session_id: SessionId, reason: ScenarioReason) -> Output<ScenarioReason> {
-        let before = self.open.len();
-        self.open.retain(|session| session.session_id != session_id);
-        if self.open.len() < before {
-            Output::RecoveryCancelled(reason)
-        } else {
-            Output::RecoveryUnaffected
+        match self
+            .open
+            .iter()
+            .position(|session| session.session_id == session_id)
+        {
+            Some(index) => {
+                let session = self.open.remove(index);
+                self.finish(session);
+                Output::RecoveryCancelled(reason)
+            }
+            None => Output::RecoveryUnaffected,
         }
     }
 
@@ -167,29 +194,38 @@ impl NaiveRegistry {
     fn checkpoint(&self) -> Checkpoint {
         let mut open: Vec<&NaiveSession> = self.open.iter().collect();
         open.sort_by_key(|session| session.session_id);
+        let mut finished: Vec<&(NaiveSession, u64)> = self.finished.iter().collect();
+        finished.sort_by_key(|(session, number)| (session.session_id, *number));
         Checkpoint {
             instance: self.instance,
             retention: self.retention,
             bound: self.bound,
-            open: open
+            open: open.into_iter().map(NaiveSession::record).collect(),
+            retained: finished
                 .into_iter()
-                .map(|session| {
-                    let mut chunk_set = ChunkSet::new();
-                    for id in &session.ids {
-                        chunk_set.add(*id, *id);
-                    }
-                    SessionRecord {
-                        session_id: session.session_id,
-                        chunks: session.chunks,
-                        sender: session.sender,
-                        receiver: session.receiver,
-                        chunk_set,
-                    }
+                .map(|(session, number)| RetainedRecord {
+                    record: session.record(),
+                    finished: *number,
                 })
                 .collect(),
-            retained: Vec::new(),
             name_count: self.names_minted,
             next_receipt: self.receipts_issued + 1,
+        }
+    }
+
+    // A finished session kept with this call's number, when the retention
+    // keeps any, and the one that finished first dropped if they then
+    // outnumber the retention.
+    fn finish(&mut self, session: NaiveSession) {
+        if self.retention == 0 {
+            return;
+        }
+        self.finished.push((session, self.receipts_issued));
+        if self.finished.len() as u64 > self.retention {
+            let first = (0..self.finished.len())
+                .min_by_key(|index| self.finished[*index].1)
+                .unwrap_or(0);
+            self.finished.remove(first);
         }
     }
 
@@ -248,13 +284,31 @@ impl NaiveRegistry {
         session.ids.extend(new);
         let held = session.ids.len() as u64;
         if held == session.chunks {
-            self.open.remove(index);
+            let session = self.open.remove(index);
+            self.finish(session);
             return Output::RecoveryCompleted;
         }
         Output::RecoveryAdvanced {
             held,
             chunks: session.chunks,
         }
+    }
+
+    // The session of the name, open, else the retained one with the highest
+    // number, and that number.
+    fn read(&self, session_id: SessionId) -> Option<(&NaiveSession, Option<u64>)> {
+        if let Some(session) = self
+            .open
+            .iter()
+            .find(|session| session.session_id == session_id)
+        {
+            return Some((session, None));
+        }
+        self.finished
+            .iter()
+            .filter(|(session, _)| session.session_id == session_id)
+            .max_by_key(|(_, number)| *number)
+            .map(|(session, number)| (session, Some(*number)))
     }
 
     fn start(&mut self, chunks: u64, sender: u64, receiver: u64) -> Output<ScenarioReason> {
@@ -301,4 +355,42 @@ struct NaiveSession {
     sender: u64,
     receiver: u64,
     ids: BTreeSet<u64>,
+}
+
+impl NaiveSession {
+    fn of(record: &SessionRecord) -> Self {
+        Self {
+            session_id: record.session_id,
+            chunks: record.chunks,
+            sender: record.sender,
+            receiver: record.receiver,
+            ids: record.chunk_set.ids().into_iter().collect(),
+        }
+    }
+
+    // The chunks it lacks, walked one by one and gathered into runs.
+    fn missing(&self) -> Vec<RangeInclusive<u64>> {
+        let mut runs: Vec<RangeInclusive<u64>> = Vec::new();
+        for id in (1..=self.chunks).filter(|id| !self.ids.contains(id)) {
+            match runs.last_mut() {
+                Some(run) if *run.end() + 1 == id => *run = *run.start()..=id,
+                _ => runs.push(id..=id),
+            }
+        }
+        runs
+    }
+
+    fn record(&self) -> SessionRecord {
+        let mut chunk_set = ChunkSet::new();
+        for id in &self.ids {
+            chunk_set.add(*id, *id);
+        }
+        SessionRecord {
+            session_id: self.session_id,
+            chunks: self.chunks,
+            sender: self.sender,
+            receiver: self.receiver,
+            chunk_set,
+        }
+    }
 }

@@ -85,6 +85,17 @@ fn record(count: u64, chunks: u64, sender: u64, receiver: u64) -> SessionRecord 
     }
 }
 
+fn retaining(retention: u64) -> Beggar<()> {
+    Beggar::new(
+        Origin::Fresh(Fresh {
+            instance: INSTANCE,
+            retention,
+            bound: None,
+        }),
+        Box::new(NoOpObserver),
+    )
+}
+
 fn send(count: u64, first: u64, last: u64, sender: u64, receiver: u64) -> Command<()> {
     Command::SendRecoveryPartial {
         session_id: name(count),
@@ -142,6 +153,34 @@ fn new_from_a_checkpoint_carries_on_from_its_next_receipt_and_its_next_name() {
 }
 
 #[test]
+fn process_of_a_cancel_at_a_retention_keeps_the_session_as_it_stood_finished_by_its_receipt() {
+    // Arrange
+    let mut beggar = retaining(1);
+    beggar.process(start(4, 1, 2));
+    beggar.process(send(1, 2, 3, 1, 2));
+    beggar.process(Command::CancelRecovery {
+        session_id: name(1),
+        reason: (),
+    });
+    let mut expected = record(1, 4, 1, 2);
+    expected.chunk_set.add(2, 3);
+
+    // Act
+    let receipt = beggar.process(Command::ShowRecovery {
+        session_id: name(1),
+    });
+
+    // Assert
+    assert_eq!(
+        receipt.output,
+        Output::RecoveryShown {
+            record: expected,
+            finished: Some(3)
+        }
+    );
+}
+
+#[test]
 fn process_of_a_cancel_of_an_open_session_answers_cancelled_with_its_reason_and_evicts_it() {
     // Arrange
     let mut beggar: Beggar<u8> = Beggar::new(
@@ -185,6 +224,49 @@ fn process_of_a_cancel_of_no_open_session_answers_unaffected() {
 
     // Assert
     assert_eq!(receipt.output, Output::RecoveryUnaffected);
+}
+
+#[test]
+fn process_of_a_completed_session_at_a_retention_shows_it_finished_by_the_receipt_completing_it() {
+    // Arrange
+    let mut beggar = retaining(1);
+    beggar.process(start(2, 1, 2));
+    beggar.process(send(1, 1, 1, 1, 2));
+    beggar.process(send(1, 2, 2, 1, 2));
+    let mut expected = record(1, 2, 1, 2);
+    expected.chunk_set.add(1, 2);
+
+    // Act
+    let outputs = [
+        beggar
+            .process(Command::ShowRecovery {
+                session_id: name(1),
+            })
+            .output,
+        beggar
+            .process(Command::ListMissingChunks {
+                session_id: name(1),
+            })
+            .output,
+        beggar.process(Command::ListRecoveries).output,
+    ];
+
+    // Assert
+    assert_eq!(
+        outputs,
+        [
+            Output::RecoveryShown {
+                record: expected,
+                finished: Some(3)
+            },
+            Output::MissingChunksListed {
+                missing: Vec::new()
+            },
+            Output::RecoveriesListed {
+                sessions: Vec::new()
+            },
+        ]
+    );
 }
 
 #[test]
@@ -287,6 +369,20 @@ fn process_of_a_partial_on_the_receivers_end_answers_wrong_side() {
 }
 
 #[test]
+fn process_of_a_partial_to_a_retained_session_answers_not_started() {
+    // Arrange
+    let mut beggar = retaining(5);
+    beggar.process(start(2, 1, 2));
+    beggar.process(send(1, 1, 2, 1, 2));
+
+    // Act
+    let receipt = beggar.process(send(1, 1, 1, 1, 2));
+
+    // Assert
+    assert_eq!(receipt.output, Output::RecoveryNotStarted);
+}
+
+#[test]
 fn process_of_a_partial_with_new_chunks_advances_carrying_held_and_chunks() {
     // Arrange
     let mut beggar = fresh(None);
@@ -319,6 +415,70 @@ fn process_of_a_partial_with_other_ends_answers_misattributed_carrying_the_sessi
             sender: 1,
             receiver: 2
         })
+    );
+}
+
+#[test]
+fn process_of_a_query_changes_nothing_but_the_receipt_number() {
+    // Arrange
+    let mut beggar = retaining(2);
+    beggar.process(start(4, 1, 2));
+    beggar.process(start(1, 1, 3));
+    beggar.process(send(2, 1, 1, 1, 3));
+    let before = shown(&mut beggar);
+
+    // Act
+    for query in [
+        Command::ListRecoveries,
+        Command::ShowRecovery {
+            session_id: name(1),
+        },
+        Command::ShowRecovery {
+            session_id: name(2),
+        },
+        Command::ListMissingChunks {
+            session_id: name(1),
+        },
+    ] {
+        beggar.process(query);
+    }
+
+    // Assert
+    let after = shown(&mut beggar);
+    assert_eq!(after.next_receipt, before.next_receipt + 5);
+    assert_eq!(
+        after,
+        Checkpoint {
+            next_receipt: after.next_receipt,
+            ..before
+        }
+    );
+}
+
+#[test]
+fn process_of_a_query_of_a_session_never_opened_answers_not_started() {
+    // Arrange
+    let mut beggar = retaining(1);
+    beggar.process(start(4, 1, 2));
+
+    // Act
+    let outputs = [
+        beggar
+            .process(Command::ShowRecovery {
+                session_id: name(2),
+            })
+            .output,
+        beggar
+            .process(Command::ListMissingChunks {
+                session_id: name(2),
+            })
+            .output,
+    ];
+
+    // Assert
+    assert_eq!(
+        outputs,
+        [Output::RecoveryNotStarted, Output::RecoveryNotStarted]
     );
 }
 
@@ -577,6 +737,76 @@ fn process_of_every_call_reports_it_and_its_receipt_to_the_observer() {
     // Assert
     assert_eq!(answered.len(), 4);
     assert_eq!(*calls.borrow(), answered);
+}
+
+#[test]
+fn process_of_list_missing_chunks_answers_the_chunks_not_held_as_maximal_runs() {
+    // Arrange
+    let mut beggar = fresh(None);
+    beggar.process(start(10, 1, 2));
+    beggar.process(send(1, 3, 4, 1, 2));
+    beggar.process(send(1, 7, 7, 1, 2));
+
+    // Act
+    let receipt = beggar.process(Command::ListMissingChunks {
+        session_id: name(1),
+    });
+
+    // Assert
+    assert_eq!(
+        receipt,
+        Receipt {
+            number: 4,
+            output: Output::MissingChunksListed {
+                missing: vec![1..=2, 5..=6, 8..=10]
+            },
+        }
+    );
+}
+
+#[test]
+fn process_of_list_recoveries_answers_the_names_of_the_open_sessions_in_order() {
+    // Arrange
+    let mut beggar = fresh(None);
+    beggar.process(adopt(peers(1), 3, 2, 1));
+    beggar.process(start(4, 1, 2));
+    beggar.process(start(1, 1, 2));
+    beggar.process(send(2, 1, 1, 1, 2));
+
+    // Act
+    let receipt = beggar.process(Command::ListRecoveries);
+
+    // Assert
+    assert_eq!(
+        receipt.output,
+        Output::RecoveriesListed {
+            sessions: vec![name(1), peers(1)]
+        }
+    );
+}
+
+#[test]
+fn process_of_show_recovery_of_an_open_session_answers_its_record_unfinished() {
+    // Arrange
+    let mut beggar = fresh(None);
+    beggar.process(start(4, 1, 2));
+    beggar.process(send(1, 2, 2, 1, 2));
+    let mut expected = record(1, 4, 1, 2);
+    expected.chunk_set.add(2, 2);
+
+    // Act
+    let receipt = beggar.process(Command::ShowRecovery {
+        session_id: name(1),
+    });
+
+    // Assert
+    assert_eq!(
+        receipt.output,
+        Output::RecoveryShown {
+            record: expected,
+            finished: None
+        }
+    );
 }
 
 #[test]

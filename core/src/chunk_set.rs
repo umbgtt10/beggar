@@ -46,4 +46,22 @@ impl ChunkSet {
     pub fn ids(&self) -> Vec<u64> {
         self.runs.iter().flat_map(|run| run.clone()).collect()
     }
+
+    // The chunk ids of 1..=chunks not held, as their maximal runs.
+    // Each gap before a run, then what follows the last run up to chunks; a
+    // run ending at the top of u64 leaves nothing after it.
+    pub fn missing(&self, chunks: u64) -> Vec<RangeInclusive<u64>> {
+        let mut missing = Vec::new();
+        let mut next = Some(1);
+        for run in &self.runs {
+            if let Some(from) = next.filter(|from| from < run.start()) {
+                missing.push(from..=run.start() - 1);
+            }
+            next = run.end().checked_add(1);
+        }
+        if let Some(from) = next.filter(|from| *from <= chunks) {
+            missing.push(from..=chunks);
+        }
+        missing
+    }
 }

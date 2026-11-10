@@ -87,6 +87,13 @@ impl<R: Clone> Beggar<R> {
                 *receiver,
             ),
             Command::CancelRecovery { session_id, reason } => self.cancel(*session_id, reason),
+            Command::ListRecoveries => self.registry.query_rows().recoveries(),
+            Command::ShowRecovery { session_id } => {
+                self.registry.query_rows().recovery(*session_id)
+            }
+            Command::ListMissingChunks { session_id } => {
+                self.registry.query_rows().missing_chunks(*session_id)
+            }
             Command::ShowRegistry => Output::RegistryShown(self.registry.checkpoint()),
         };
         let receipt = Receipt { number, output };
