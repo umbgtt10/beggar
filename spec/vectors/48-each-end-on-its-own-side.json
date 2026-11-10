@@ -1,0 +1,201 @@
+{
+  "description": "A node sending one session and receiving another: a receive on the session it sends, or a send on the one it receives, is on the wrong side; each on its own side advances.",
+  "rows": [
+    "start-started",
+    "adopt-started",
+    "wrong-side",
+    "partial-advanced"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "2",
+        "incarnation": "3"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "4",
+          "sender": "2",
+          "receiver": "1"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "2",
+              "incarnation": "3",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "ReceiveRecoveryPartial": {
+          "session_id": {
+            "node": "2",
+            "incarnation": "3",
+            "count": "1"
+          },
+          "first": "1",
+          "last": "1",
+          "sender": "2",
+          "receiver": "1"
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryRejected": {
+            "WrongSide": {}
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "SendRecoveryPartial": {
+          "session_id": {
+            "node": "2",
+            "incarnation": "3",
+            "count": "1"
+          },
+          "first": "1",
+          "last": "1",
+          "sender": "2",
+          "receiver": "1"
+        }
+      },
+      "receipt": {
+        "number": "3",
+        "output": {
+          "RecoveryAdvanced": {
+            "held": "1",
+            "chunks": "4"
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "4",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "4",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "SendRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "first": "1",
+          "last": "1",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "5",
+        "output": {
+          "RecoveryRejected": {
+            "WrongSide": {}
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "ReceiveRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "first": "1",
+          "last": "1",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "6",
+        "output": {
+          "RecoveryAdvanced": {
+            "held": "1",
+            "chunks": "4"
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "2",
+      "incarnation": "3"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "4",
+        "sender": "1",
+        "receiver": "2",
+        "chunk_set": [
+          "1"
+        ]
+      },
+      {
+        "session_id": {
+          "node": "2",
+          "incarnation": "3",
+          "count": "1"
+        },
+        "chunks": "4",
+        "sender": "2",
+        "receiver": "1",
+        "chunk_set": [
+          "1"
+        ]
+      }
+    ],
+    "retained": [],
+    "name_count": "1",
+    "next_receipt": "8"
+  }
+}

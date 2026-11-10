@@ -1,0 +1,120 @@
+{
+  "description": "An adopt is checked for its form as a start is — no chunks, one end twice, this node not a party — before its name is looked at.",
+  "rows": [
+    "no-chunks",
+    "self-addressed",
+    "not-a-party"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "2",
+        "incarnation": "3"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "0",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryRejected": {
+            "NoChunks": {}
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "4",
+          "sender": "2",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryRejected": {
+            "SelfAddressed": {}
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "4",
+          "sender": "1",
+          "receiver": "3"
+        }
+      },
+      "receipt": {
+        "number": "3",
+        "output": {
+          "RecoveryRejected": {
+            "NotAParty": {}
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "2",
+            "incarnation": "3",
+            "count": "1"
+          },
+          "chunks": "0",
+          "sender": "2",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "4",
+        "output": {
+          "RecoveryRejected": {
+            "NoChunks": {}
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "2",
+      "incarnation": "3"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "6"
+  }
+}

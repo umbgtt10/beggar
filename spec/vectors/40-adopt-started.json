@@ -1,0 +1,68 @@
+{
+  "description": "The other side adopts a session its peer started, under the peer's name and count, with an empty chunk set; adopting mints no name.",
+  "rows": [
+    "adopt-started"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "2",
+        "incarnation": "3"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "4",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "2",
+      "incarnation": "3"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "4",
+        "sender": "1",
+        "receiver": "2",
+        "chunk_set": []
+      }
+    ],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "3"
+  }
+}

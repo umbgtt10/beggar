@@ -1,0 +1,178 @@
+{
+  "description": "An instance never adopts a name it minted — one it started, or the next it would start — so names stay unique; a name its node's previous incarnation minted is another instance's, and is adopted.",
+  "rows": [
+    "start-started",
+    "own-session",
+    "adopt-started"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "2",
+        "incarnation": "3"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "4",
+          "sender": "2",
+          "receiver": "1"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "2",
+              "incarnation": "3",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "2",
+            "incarnation": "3",
+            "count": "1"
+          },
+          "chunks": "4",
+          "sender": "2",
+          "receiver": "1"
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryRejected": {
+            "OwnSession": {}
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "2",
+            "incarnation": "3",
+            "count": "2"
+          },
+          "chunks": "4",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "3",
+        "output": {
+          "RecoveryRejected": {
+            "OwnSession": {}
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "2",
+            "incarnation": "2",
+            "count": "1"
+          },
+          "chunks": "4",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "4",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "2",
+              "incarnation": "2",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "4",
+          "sender": "2",
+          "receiver": "1"
+        }
+      },
+      "receipt": {
+        "number": "5",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "2",
+              "incarnation": "3",
+              "count": "2"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "2",
+      "incarnation": "3"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "2",
+          "incarnation": "2",
+          "count": "1"
+        },
+        "chunks": "4",
+        "sender": "1",
+        "receiver": "2",
+        "chunk_set": []
+      },
+      {
+        "session_id": {
+          "node": "2",
+          "incarnation": "3",
+          "count": "1"
+        },
+        "chunks": "4",
+        "sender": "2",
+        "receiver": "1",
+        "chunk_set": []
+      },
+      {
+        "session_id": {
+          "node": "2",
+          "incarnation": "3",
+          "count": "2"
+        },
+        "chunks": "4",
+        "sender": "2",
+        "receiver": "1",
+        "chunk_set": []
+      }
+    ],
+    "retained": [],
+    "name_count": "2",
+    "next_receipt": "7"
+  }
+}

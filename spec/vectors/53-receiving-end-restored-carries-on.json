@@ -1,0 +1,96 @@
+{
+  "description": "A receiving end restored from a checkpoint whose adopted session holds chunks carries on from them.",
+  "rows": [
+    "partial-advanced",
+    "partial-completed"
+  ],
+  "origin": {
+    "Checkpoint": {
+      "instance": {
+        "node": "2",
+        "incarnation": "3"
+      },
+      "retention": "0",
+      "bound": null,
+      "open": [
+        {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "5",
+          "sender": "1",
+          "receiver": "2",
+          "chunk_set": [
+            "1",
+            "2",
+            "5"
+          ]
+        }
+      ],
+      "retained": [],
+      "name_count": "0",
+      "next_receipt": "12"
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "ReceiveRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "first": "3",
+          "last": "3",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "12",
+        "output": {
+          "RecoveryAdvanced": {
+            "held": "4",
+            "chunks": "5"
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "ReceiveRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "first": "4",
+          "last": "4",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "13",
+        "output": {
+          "RecoveryCompleted": {}
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "2",
+      "incarnation": "3"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "15"
+  }
+}

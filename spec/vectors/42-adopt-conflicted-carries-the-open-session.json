@@ -1,0 +1,141 @@
+{
+  "description": "An adopt disagreeing with the open session of its name — on its count, its sender, or its ends swapped — changes nothing and answers with what the open session holds.",
+  "rows": [
+    "adopt-started",
+    "adopt-conflicted"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "2",
+        "incarnation": "3"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "4",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "5",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryConflicted": {
+            "chunks": "4",
+            "sender": "1",
+            "receiver": "2"
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "4",
+          "sender": "3",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "3",
+        "output": {
+          "RecoveryConflicted": {
+            "chunks": "4",
+            "sender": "1",
+            "receiver": "2"
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "4",
+          "sender": "2",
+          "receiver": "1"
+        }
+      },
+      "receipt": {
+        "number": "4",
+        "output": {
+          "RecoveryConflicted": {
+            "chunks": "4",
+            "sender": "1",
+            "receiver": "2"
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "2",
+      "incarnation": "3"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "4",
+        "sender": "1",
+        "receiver": "2",
+        "chunk_set": []
+      }
+    ],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "6"
+  }
+}

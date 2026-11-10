@@ -1,23 +1,23 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "rows": [
     {
       "id": "no-chunks",
-      "commands": ["StartRecovery"],
+      "commands": ["StartRecovery", "AdoptRecovery"],
       "situation": "`chunks` is 0",
       "output": "RecoveryRejected",
       "rejection": "NoChunks"
     },
     {
       "id": "self-addressed",
-      "commands": ["StartRecovery"],
+      "commands": ["StartRecovery", "AdoptRecovery"],
       "situation": "`sender` is `receiver`",
       "output": "RecoveryRejected",
       "rejection": "SelfAddressed"
     },
     {
       "id": "not-a-party",
-      "commands": ["StartRecovery"],
+      "commands": ["StartRecovery", "AdoptRecovery"],
       "situation": "this instance's node is neither `sender` nor `receiver`",
       "output": "RecoveryRejected",
       "rejection": "NotAParty"
@@ -36,54 +36,86 @@
       "output": "RecoveryStarted"
     },
     {
+      "id": "own-session",
+      "commands": ["AdoptRecovery"],
+      "situation": "`session_id` was minted by this instance: its node and incarnation are this instance's",
+      "output": "RecoveryRejected",
+      "rejection": "OwnSession"
+    },
+    {
+      "id": "adopt-unaffected",
+      "commands": ["AdoptRecovery"],
+      "situation": "a session named `session_id` is open, with the same `chunks`, `sender` and `receiver`",
+      "output": "RecoveryUnaffected"
+    },
+    {
+      "id": "adopt-conflicted",
+      "commands": ["AdoptRecovery"],
+      "situation": "a session named `session_id` is open, with a different `chunks`, `sender` or `receiver`",
+      "output": "RecoveryConflicted"
+    },
+    {
+      "id": "adopt-registry-full",
+      "commands": ["AdoptRecovery"],
+      "situation": "no session named `session_id` is open, and the open sessions number the bound",
+      "output": "RecoveryRejected",
+      "rejection": "RegistryFull"
+    },
+    {
+      "id": "adopt-started",
+      "commands": ["AdoptRecovery"],
+      "situation": "otherwise: a session is opened under `session_id`, minting nothing",
+      "output": "RecoveryStarted"
+    },
+    {
       "id": "empty-run",
-      "commands": ["SendRecoveryPartial"],
+      "commands": ["SendRecoveryPartial", "ReceiveRecoveryPartial"],
       "situation": "`last` is below `first`",
       "output": "RecoveryRejected",
       "rejection": "EmptyRun"
     },
     {
       "id": "partial-not-started",
-      "commands": ["SendRecoveryPartial"],
+      "commands": ["SendRecoveryPartial", "ReceiveRecoveryPartial"],
       "situation": "no open session has the name `session_id`",
       "output": "RecoveryNotStarted"
     },
     {
       "id": "misattributed",
-      "commands": ["SendRecoveryPartial"],
+      "commands": ["SendRecoveryPartial", "ReceiveRecoveryPartial"],
       "situation": "`sender` or `receiver` differs from the session's",
       "output": "RecoveryRejected",
       "rejection": "Misattributed"
     },
     {
       "id": "wrong-side",
-      "commands": ["SendRecoveryPartial"],
-      "situation": "reported on the wrong end: a send where this instance's node is the session's receiver",
+      "commands": ["SendRecoveryPartial", "ReceiveRecoveryPartial"],
+      "situation": "reported on the wrong end: a send where this instance's node is the session's receiver, a receive where it is the session's sender",
       "output": "RecoveryRejected",
       "rejection": "WrongSide"
     },
     {
       "id": "chunk-out-of-range",
-      "commands": ["SendRecoveryPartial"],
+      "commands": ["SendRecoveryPartial", "ReceiveRecoveryPartial"],
       "situation": "the run reaches outside `1..=chunks`, at either end",
       "output": "RecoveryRejected",
       "rejection": "ChunkOutOfRange"
     },
     {
       "id": "partial-advanced",
-      "commands": ["SendRecoveryPartial"],
+      "commands": ["SendRecoveryPartial", "ReceiveRecoveryPartial"],
       "situation": "the run holds a chunk not yet in the chunk set, and the chunk set is not then full",
       "output": "RecoveryAdvanced"
     },
     {
       "id": "partial-completed",
-      "commands": ["SendRecoveryPartial"],
+      "commands": ["SendRecoveryPartial", "ReceiveRecoveryPartial"],
       "situation": "the run holds a chunk not yet in the chunk set, and the chunk set is then full: the session is evicted",
       "output": "RecoveryCompleted"
     },
     {
       "id": "partial-unaffected",
-      "commands": ["SendRecoveryPartial"],
+      "commands": ["SendRecoveryPartial", "ReceiveRecoveryPartial"],
       "situation": "otherwise: every chunk of the run is already in the chunk set",
       "output": "RecoveryUnaffected"
     },

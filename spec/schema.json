@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:beggar:spec:0.3.0:schema",
-  "title": "beggar 0.3.0 -- the data model",
+  "$id": "urn:beggar:spec:0.4.0:schema",
+  "title": "beggar 0.4.0 -- the data model",
   "description": "Every command, receipt, output, rejection and the checkpoint, and the forms of a conformance vector and of the decision table. Normative with SPEC.md.",
   "$ref": "#/$defs/vector",
   "$defs": {
@@ -119,9 +119,46 @@
         {
           "type": "object",
           "additionalProperties": false,
+          "required": ["AdoptRecovery"],
+          "properties": {
+            "AdoptRecovery": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["session_id", "chunks", "sender", "receiver"],
+              "properties": {
+                "session_id": { "$ref": "#/$defs/session_id" },
+                "chunks": { "$ref": "#/$defs/u64" },
+                "sender": { "$ref": "#/$defs/u64" },
+                "receiver": { "$ref": "#/$defs/u64" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
           "required": ["SendRecoveryPartial"],
           "properties": {
             "SendRecoveryPartial": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["session_id", "first", "last", "sender", "receiver"],
+              "properties": {
+                "session_id": { "$ref": "#/$defs/session_id" },
+                "first": { "$ref": "#/$defs/u64" },
+                "last": { "$ref": "#/$defs/u64" },
+                "sender": { "$ref": "#/$defs/u64" },
+                "receiver": { "$ref": "#/$defs/u64" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ReceiveRecoveryPartial"],
+          "properties": {
+            "ReceiveRecoveryPartial": {
               "type": "object",
               "additionalProperties": false,
               "required": ["session_id", "first", "last", "sender", "receiver"],
@@ -162,6 +199,13 @@
           "additionalProperties": false,
           "required": ["NotAParty"],
           "properties": { "NotAParty": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "description": "An adopt naming a session this instance minted.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["OwnSession"],
+          "properties": { "OwnSession": { "$ref": "#/$defs/nothing" } }
         },
         {
           "type": "object",
@@ -283,6 +327,24 @@
           "additionalProperties": false,
           "required": ["RecoveryNotStarted"],
           "properties": { "RecoveryNotStarted": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "description": "An adopt disagreeing with the open session of its name; carries what the open session holds.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["RecoveryConflicted"],
+          "properties": {
+            "RecoveryConflicted": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["chunks", "sender", "receiver"],
+              "properties": {
+                "chunks": { "$ref": "#/$defs/u64" },
+                "sender": { "$ref": "#/$defs/u64" },
+                "receiver": { "$ref": "#/$defs/u64" }
+              }
+            }
+          }
         },
         {
           "type": "object",

@@ -1,14 +1,14 @@
 # beggar — the specification
 
-**Version 0.3.0.** The four parts of this specification are versioned together: this prose, the data model in
+**Version 0.4.0.** The four parts of this specification are versioned together: this prose, the data model in
 [`schema.json`](schema.json), the decision table in [`matrix.json`](matrix.json) and the conformance vectors in
 [`vectors/`](vectors/). It is normative; the `beggar` crate is one implementation of it, and where the two disagree
 the specification is right ([`P0-ADR-SpecificationIsNormativeCrateIsReference`](../docs/ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md)).
 
-**What 0.3.0 covers:** an instance, created fresh or from a checkpoint, and the observer it reports every call to;
-`StartRecovery` and `SendRecoveryPartial`, each with every row it has; and `ShowRegistry`, the checkpoint. The other
-commands arrive in later versions, each with all of its rows. 0.3.0 is 0.2.0 with `SendRecoveryPartial`, and with
-a record's `received` renamed `chunk_set`.
+**What 0.4.0 covers:** an instance, created fresh or from a checkpoint, and the observer it reports every call to;
+both ends of a transfer — `StartRecovery` and `AdoptRecovery`, `SendRecoveryPartial` and `ReceiveRecoveryPartial`,
+each with every row it has; and `ShowRegistry`, the checkpoint. The other commands arrive in later versions, each
+with all of its rows. 0.4.0 is 0.3.0 with the receiving end: `AdoptRecovery` and `ReceiveRecoveryPartial`.
 
 ## 1. Conventions
 
@@ -44,12 +44,12 @@ exactly one form, so two implementations' logs of the same calls are identical.
   restart, since a checkpoint's name count may be behind the one the instance had reached
   ([`P1-ADR-TheLogIsTheRecord`](../docs/ADRs/P1-ADR-TheLogIsTheRecord.md)).
 
-**The retention** is how many finished sessions the instance keeps for its queries. In 0.3.0 a session finishes
-when it completes (§6), and is evicted; what a retention keeps, and for which queries, arrives in a later version.
+**The retention** is how many finished sessions the instance keeps for its queries. In 0.4.0 a session finishes
+when it completes (§7), and is evicted; what a retention keeps, and for which queries, arrives in a later version.
 So the retained records are always none, whatever the retention, and the retention is carried and shown.
 
 **The bound** is how many sessions may be open at once, or none for no bound. It counts open sessions only, and a
-bound of 0 is a bound like any other: every start is refused.
+bound of 0 is a bound like any other: every start, and every adopt of a session not open, is refused.
 
 ## 3. One entry point, one output
 
@@ -73,11 +73,15 @@ that nothing did.
 ## 4. Names
 
 **A session's name is the instance id that named it and a count**: node, incarnation, count. The count of an
-instance's first session is 1, and every session it opens takes the next. No two sessions of one instance share a
+instance's first session is 1, and every session it starts takes the next. No two sessions of one instance share a
 count, and no two instances share an instance id, so no two sessions anywhere share a name.
 
-The **name count** is how many names the instance has minted; the next session it opens is named with the name count
-plus one. A session's eviction does not take its name back: the name count never goes down.
+The **name count** is how many names the instance has minted; the next session it starts is named with the name
+count plus one. A session's eviction does not take its name back: the name count never goes down.
+
+**An adopted session keeps its name**: the one its peer's instance minted when it started the session. Adopting
+mints nothing, and an instance never adopts a name it minted itself (§6), so no two of its open sessions ever share
+a name, however they were opened.
 
 ## 5. `StartRecovery`
 
@@ -99,32 +103,69 @@ beggar does not check which side starts, so `sender` has no default.
 **Started:** the instance mints the next name, and opens a session under it: its `chunks`, `sender` and
 `receiver` as given, and an empty chunk set.
 
-## 6. `SendRecoveryPartial`
+## 6. `AdoptRecovery`
 
-**Carries:** `session_id`, the session's name; `first` and `last`, the run of chunks sent, which the caller moved and
-validated as one unit ([`P1-ADR-APartialIsARunOfChunks`](../docs/ADRs/P1-ADR-APartialIsARunOfChunks.md)); and
-`sender` and `receiver`, the session's ends as the caller has them. It is reported on the session's sender, once
-the run is sent.
+**Carries:** `session_id`, the name the session was started under; `chunks`, `sender` and `receiver`, as its starter
+stated them. The other side of a transfer adopts the session its peer started, under that name and with that count,
+which reach it with what the peer sends ([`P1-ADR-TheSenderOpensAndStatesTheCount`](../docs/ADRs/P1-ADR-TheSenderOpensAndStatesTheCount.md)).
 
 **Checked in this order:**
+
+| row | situation | output |
+|---|---|---|
+| `no-chunks` | `chunks` is 0 | `RecoveryRejected(NoChunks)` |
+| `self-addressed` | `sender` is `receiver` | `RecoveryRejected(SelfAddressed)` |
+| `not-a-party` | this instance's node is neither `sender` nor `receiver` | `RecoveryRejected(NotAParty)` |
+| `own-session` | `session_id` was minted by this instance: its node and incarnation are this instance's | `RecoveryRejected(OwnSession)` |
+| `adopt-unaffected` | a session named `session_id` is open, with the same `chunks`, `sender` and `receiver` | `RecoveryUnaffected` |
+| `adopt-conflicted` | a session named `session_id` is open, with a different `chunks`, `sender` or `receiver` | `RecoveryConflicted { chunks, sender, receiver }`, the open session's |
+| `adopt-registry-full` | no session named `session_id` is open, and the open sessions number the bound | `RecoveryRejected(RegistryFull { capacity })`, the bound |
+| `adopt-started` | otherwise | `RecoveryStarted`, carrying `session_id` |
+
+**Started:** the instance opens a session under `session_id`, with its `chunks`, `sender` and `receiver` as given
+and an empty chunk set. It mints nothing: the name count is unchanged.
+
+**Its own session.** A session is adopted from the peer that started it. A name this instance minted is one it
+started, or one it will mint: adopting it would let a later start mint the same name again, and two open sessions
+share it. So it is refused.
+
+**Unaffected and conflicted.** The same adopt reported twice leaves the open session as it was. One that disagrees
+with the open session on its count or its ends changes nothing, and answers with what the open session holds, so the
+log can tell a repeated report from a contradicting one ([`P1-ADR-OneEntryPointOneOutput`](../docs/ADRs/P1-ADR-OneEntryPointOneOutput.md)).
+`RecoveryConflicted` terminates nothing: the open session stays open.
+
+**A late duplicate.** An adopt whose session already completed here finds none open, and opens it again: an
+evicted session leaves no trace to refuse it by. The session reopened never completes unless its chunks come again;
+it is an abandoned session like any other, and the caller's cancellation policy ends it
+([`P1-ADR-CancelEvictsWithoutATombstone`](../docs/ADRs/P1-ADR-CancelEvictsWithoutATombstone.md)).
+
+## 7. `SendRecoveryPartial` and `ReceiveRecoveryPartial`
+
+**Carry:** `session_id`, the session's name; `first` and `last`, the run of chunks, which the caller moved and
+validated as one unit ([`P1-ADR-APartialIsARunOfChunks`](../docs/ADRs/P1-ADR-APartialIsARunOfChunks.md)); and
+`sender` and `receiver`, the session's ends as the caller has them. A send is reported on the session's sender once
+the run is sent; a receive on its receiver once the run has arrived and been validated.
+
+**Checked in this order, both of them:**
 
 | row | situation | output |
 |---|---|---|
 | `empty-run` | `last` is below `first` | `RecoveryRejected(EmptyRun { first, last })`, the run's |
 | `partial-not-started` | no open session has the name `session_id` | `RecoveryNotStarted` |
 | `misattributed` | `sender` or `receiver` differs from the session's | `RecoveryRejected(Misattributed { sender, receiver })`, the session's |
-| `wrong-side` | this instance's node is the session's receiver | `RecoveryRejected(WrongSide)` |
+| `wrong-side` | reported on the wrong end: a send where this instance's node is the session's receiver, a receive where it is the session's sender | `RecoveryRejected(WrongSide)` |
 | `chunk-out-of-range` | the run reaches outside `1..=chunks`: `first` is 0, or `last` is above the session's `chunks` | `RecoveryRejected(ChunkOutOfRange { first, last, chunks })`, the run's and the session's `chunks` |
 | `partial-advanced` | the run holds a chunk not yet in the chunk set, and the chunk set is not then full | `RecoveryAdvanced { held, chunks }` |
 | `partial-completed` | the run holds a chunk not yet in the chunk set, and the chunk set is then full | `RecoveryCompleted` |
 | `partial-unaffected` | otherwise: every chunk of the run is already in the chunk set | `RecoveryUnaffected` |
 
 **The chunk set** is the chunk ids the session has accounted at this end — on the session's sender, the chunks it
-has sent. A run adds those of its chunks the chunk set does not hold yet. A chunk is held once however often it is
+has sent; on its receiver, the chunks it has received. A run adds those of its chunks the chunk set does not hold yet. A chunk is held once however often it is
 reported, and runs may arrive in any order: overlapping, repeated, or leaving gaps.
 
-**The wrong side.** Every open session has this instance's node as exactly one of its ends; a send belongs on the
-session's sender, so one reported where the node is the session's receiver is on the wrong end.
+**The wrong side.** Every open session has this instance's node as exactly one of its ends. A send belongs on the
+session's sender and a receive on its receiver, so a send reported where the node is the receiver, or a receive
+where it is the sender, is on the wrong end.
 
 **A run out of range is refused whole**, even where part of it lies within `1..=chunks`: the caller presented it as
 one unit, and nothing of it is added.
@@ -138,7 +179,7 @@ and it leaves no trace, so a later partial naming it answers `RecoveryNotStarted
 ([`P1-ADR-CancelEvictsWithoutATombstone`](../docs/ADRs/P1-ADR-CancelEvictsWithoutATombstone.md)). Its place under
 the bound is free again; its name stays minted.
 
-## 7. `ShowRegistry`, the checkpoint
+## 8. `ShowRegistry`, the checkpoint
 
 **Changes nothing** but the receipt number. **Answers `RegistryShown`**, carrying the checkpoint: the instance id,
 the retention and the bound; every open session's record and every retained one's; the name count; and the next
@@ -148,10 +189,11 @@ receipt's number.
 the receipt that carries it. An instance restored from it carries on from the next call.
 
 **A session's record** is its name, `chunks`, `sender`, `receiver`, and its chunk set: chunk ids, each within
-`1..=chunks`, in ascending order. An open session's chunk set is never full: the run that fills it completes the
+`1..=chunks`, in ascending order. The records come in the canonical order of their names (§1), started and adopted
+alike. An open session's chunk set is never full: the run that fills it completes the
 session and evicts it.
 
-## 8. Conformance
+## 9. Conformance
 
 **A vector is an initial state, steps, and a final state.** The initial state is an origin: fresh, or a checkpoint.
 Each step is a command and the receipt it must be answered with. The final state is the checkpoint a

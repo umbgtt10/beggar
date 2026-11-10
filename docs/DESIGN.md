@@ -120,7 +120,7 @@ first being 1 (§7).
 | `RecoveryCancelled` | cancelled by the caller; carries the `reason` |
 | `RecoveryUnaffected` | nothing changed |
 | `RecoveryNotStarted` | the command names a session that is not open |
-| `RecoveryConflicted` | an adopt names an open session with a different `chunks`, `sender` or `receiver` |
+| `RecoveryConflicted` | an adopt names an open session with a different `chunks`, `sender` or `receiver`; carries the open session's |
 | `RecoveryRejected` | the command was refused and nothing changed; carries a `Rejection` saying why |
 | `RecoveriesListed`, `RecoveryShown`, `MissingChunksListed`, `RegistryShown` | a query's answer |
 
@@ -129,6 +129,7 @@ first being 1 (§7).
 | `NoChunks` | a start or adopt with `chunks` = 0 |
 | `SelfAddressed` | a start or adopt whose `sender` and `receiver` are the same node |
 | `NotAParty` | a start or adopt in which this node is neither `sender` nor `receiver` |
+| `OwnSession` | an adopt naming a session this instance minted: one it started, or will start, under that name |
 | `Misattributed { sender, receiver }` | a partial whose ends differ from its session's; carries the session's |
 | `WrongSide` | a partial reported on the wrong end: a send on the session's receiver, a receive on its sender |
 | `EmptyRun { first, last }` | a partial whose `last` is below its `first` |
@@ -136,7 +137,7 @@ first being 1 (§7).
 | `RegistryFull { capacity }` | a start, or an adopt of a session not open, while the open sessions number the instance's bound |
 
 **A refusal is an output, never an exception** — [`P1-ADR-OneEntryPointOneOutput`](ADRs/P1-ADR-OneEntryPointOneOutput.md). `NoChunks`,
-`SelfAddressed`, `NotAParty` and `EmptyRun` mark a degenerate command; `Misattributed`, `WrongSide` and
+`SelfAddressed`, `NotAParty`, `OwnSession` and `EmptyRun` mark a degenerate command; `Misattributed`, `WrongSide` and
 `ChunkOutOfRange` a degenerate or a malicious one — a peer's, which is why each carries what the log needs to tell which.
 
 **`chunks` is mode-agnostic, and that is the point.** Under `etheram-ibft`'s deployed profile an answer to a block
@@ -174,6 +175,7 @@ Checked in this order; the first row that applies gives the output.
 | start, adopt | this node neither `sender` nor `receiver` | `RecoveryRejected(NotAParty)` |
 | `StartRecovery` | the open sessions number the bound | `RecoveryRejected(RegistryFull)` |
 | `StartRecovery` | — | `RecoveryStarted`, under a new name |
+| `AdoptRecovery` | `session_id` minted by this instance | `RecoveryRejected(OwnSession)` |
 | `AdoptRecovery` | open, same `chunks`, `sender` and `receiver` | `RecoveryUnaffected` |
 | `AdoptRecovery` | open, any of them different | `RecoveryConflicted` |
 | `AdoptRecovery` | not open, the open sessions number the bound | `RecoveryRejected(RegistryFull)` |
