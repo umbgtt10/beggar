@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: MIT
 
 // The property tier: random sequences on random instances -- both ends of
-// transfers, started and adopted, sent and received -- the crate against
-// the naive model after every call, the invariants on every state shown,
-// receipts one more on every call, every call reported to the observer as it
-// was answered, a checkpoint taken at any point carrying on as the instance it
-// was taken from, names never shared between instances, and a session
-// completing exactly when every chunk is held, with no record after it.
+// transfers, started and adopted, sent, received and cancelled -- the crate
+// against the naive model after every call, a well-formed partial after an
+// accepted cancel never finding its session, the invariants on every state
+// shown, receipts one more on every call, every call reported to the observer
+// as it was answered, a checkpoint taken at any point carrying on as the
+// instance it was taken from, names never shared between instances, and a
+// session completing exactly when every chunk is held, with no record after it.
 
 use crate::support::naive_registry::NaiveRegistry;
 use crate::support::random_commands::RandomCommands;
@@ -151,6 +152,7 @@ proptest! {
         // Assert
         let mut minted = 0;
         let mut open: BTreeSet<SessionId> = BTreeSet::new();
+        let mut cancelled: BTreeSet<SessionId> = BTreeSet::new();
         for (index, (command, from_crate, from_model)) in answers.iter().enumerate() {
             prop_assert_eq!(from_crate, from_model);
             prop_assert_eq!(from_crate.number, index as u64 + 1);
@@ -161,6 +163,11 @@ proptest! {
                 }
                 (Output::RecoveryStarted { session_id }, _) => {
                     open.insert(*session_id);
+                    cancelled.remove(session_id);
+                }
+                (Output::RecoveryCancelled(_), Command::CancelRecovery { session_id, .. }) => {
+                    open.remove(session_id);
+                    cancelled.insert(*session_id);
                 }
                 (
                     Output::RecoveryCompleted,
@@ -173,6 +180,23 @@ proptest! {
                     holds(checkpoint, from_crate.number, minted, &open)?;
                 }
                 _ => {}
+            }
+            if let Command::SendRecoveryPartial {
+                session_id,
+                first,
+                last,
+                ..
+            }
+            | Command::ReceiveRecoveryPartial {
+                session_id,
+                first,
+                last,
+                ..
+            } = command
+            {
+                if first <= last && cancelled.contains(session_id) {
+                    prop_assert_eq!(&from_crate.output, &Output::RecoveryNotStarted);
+                }
             }
         }
     }

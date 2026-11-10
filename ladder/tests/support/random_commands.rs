@@ -20,8 +20,8 @@ const PEER_INCARNATION: u64 = 5;
 // and receives mostly from that peer to this node, so partials often find
 // their session, otherwise between any two of three nodes; a partial naming
 // one of the first five names, this instance's to send, the peer's to receive;
-// an adopt naming the peer's, now and then this instance's own; runs mostly
-// well formed.
+// an adopt naming the peer's, now and then this instance's own; a cancel of
+// either, for any of the four reasons; runs mostly well formed.
 pub struct RandomCommands;
 
 impl RandomCommands {
@@ -62,6 +62,9 @@ impl RandomCommands {
                     receiver,
                 }
             ),
+            2 => (Self::cancelled_name(instance, peer), Self::reason()).prop_map(
+                |(session_id, reason)| Command::CancelRecovery { session_id, reason }
+            ),
             1 => Just(Command::ShowRegistry),
         ]
     }
@@ -101,6 +104,11 @@ impl RandomCommands {
         ]
     }
 
+    // A cancel's name: this instance's or the peer's, alike.
+    fn cancelled_name(instance: InstanceId, peer: u64) -> impl Strategy<Value = SessionId> {
+        prop_oneof![Self::own_name(instance), Self::peers_name(peer)]
+    }
+
     // A command's sender and receiver: the usual pair, three times in four,
     // otherwise any two of three nodes.
     fn ends(sender: u64, receiver: u64) -> impl Strategy<Value = (u64, u64)> {
@@ -124,6 +132,15 @@ impl RandomCommands {
             incarnation: PEER_INCARNATION,
             count,
         })
+    }
+
+    fn reason() -> impl Strategy<Value = ScenarioReason> {
+        prop_oneof![
+            Just(ScenarioReason::Unservable),
+            Just(ScenarioReason::Superseded),
+            Just(ScenarioReason::PeerFailed),
+            (0u64..=6).prop_map(|held| ScenarioReason::Stalled { held }),
+        ]
     }
 
     fn run() -> impl Strategy<Value = (u64, u64)> {
