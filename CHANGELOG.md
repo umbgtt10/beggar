@@ -3,6 +3,34 @@
 The crate's versions. The specification in [`spec/`](spec/SPEC.md) is versioned on its own; each release names the
 version it conforms to.
 
+## [0.2.0] — 2026-11-10
+
+### Slice 2 — send it to completion
+
+The sending end of a transfer, conformant to the specification's version 0.3.0.
+
+#### Added
+- `SendRecoveryPartial`, reporting a run of chunks sent, `first..=last`, with every row of the decision table:
+  `EmptyRun { first, last }`, `RecoveryNotStarted`, `Misattributed { sender, receiver }` carrying the session's
+  own ends, `WrongSide`, `ChunkOutOfRange { first, last, chunks }`, `RecoveryAdvanced { held, chunks }`,
+  `RecoveryCompleted` and `RecoveryUnaffected`. A run out of range is refused whole; a run partly held adds what is
+  new; completion is the chunk set full, never a run's last reaching the chunk count, and evicts the session
+  without a trace, freeing its place under the bound.
+- `ChunkSet`, a session's chunks accounted at this end: maximal runs of ids, sorted, merged in any order, so its
+  size follows its gaps and not its chunks; `add`, `count` and `ids`.
+- `StartRows` and `PartialRows`, the rows a start and a partial meet before anything changes, as types of their own.
+- The specification's 0.3.0: the command, its rows and 23 new vectors, 39 in all.
+- The testing ladder's replay and memory tiers. Replay: logs written in the specification's JSON as the observer
+  is told them, replayed with every receipt rebuilt, a dropped line detected and the replay resynchronised at the
+  next checkpoint. Memory: `memory/`, a package of its own with a counting allocator, measuring 100 recoveries in
+  order and interleaved — no call holding more than the state it leaves, and nothing left per session.
+- The exhaustive matrix over every partial in 12,690 small situations, and the property tier's random sequences
+  sending partials too.
+
+#### Changed
+- `ReceivedChunks` is `ChunkSet`, and a record's `received` its `chunk_set`, as the specification renames them: on
+  the sending end the set holds chunks sent, and the new name is true at both ends.
+
 ## [0.1.0] — 2026-11-09
 
 ### Slice 1 — open a recovery and see it

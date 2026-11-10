@@ -115,7 +115,7 @@ first being 1 (§7).
 | output | meaning |
 |---|---|
 | `RecoveryStarted` | a session was opened; carries its `session_id` |
-| `RecoveryAdvanced` | a partial added at least one new chunk; carries `received` and `expected` (§5) |
+| `RecoveryAdvanced` | a partial added at least one new chunk; carries `held` and `chunks` (§5) |
 | `RecoveryCompleted` | the chunks the partial just added filled the set |
 | `RecoveryCancelled` | cancelled by the caller; carries the `reason` |
 | `RecoveryUnaffected` | nothing changed |
@@ -217,7 +217,8 @@ that fits would accept a piece of a unit the caller presented as one (§17).
 **A run partly present adds what is new.** Any new chunk advances or completes the session; a run every chunk of
 which is already present leaves it unaffected.
 
-**`RecoveryAdvanced` should carry `received` and `expected`.** Not for completion, which has its own tag, but
+**`RecoveryAdvanced` should carry `held` and `chunks`** — how many the chunk set holds, and how many the session
+has. Not for completion, which has its own tag, but
 because a transfer stalling at 97 of 100 is otherwise invisible — and that is exactly what a cancellation policy
 must act on.
 
@@ -254,7 +255,7 @@ provided for a caller with no use for one, as faction provides its own — [`P1-
 **The received set is ranges of chunk ids** — `3..=7`, `9..=12` — merged as chunks arrive; never a bitmap
 ([`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md)).
 
-**A caller sees it as `ReceivedChunks`**, beggar's own type, through behaviour and never its fields: `count`,
+**A caller sees it as `ChunkSet`**, beggar's own type, through behaviour and never its fields: `count`,
 `contains`, `ids`, and `runs` — the maximal runs of consecutive ids, `1..=3`, `5..=6`, `9..=9` for chunks 1, 2, 3, 5,
 6 and 9. A set has exactly one list of maximal runs, so they are a property of the set, not of how beggar stores
 it, and any implementation gives the same. They keep the checkpoint small: chunks 1 to 1,000,000 received in order
@@ -266,7 +267,7 @@ are one run, and a session that has received nothing is missing one run, whateve
 | `sender` | u64 |
 | `receiver` | u64 |
 | `chunks` | u64 — widened from u16, so a caller may make one log entry one chunk without converting |
-| `received` | ranges of chunk ids |
+| `chunk_set` | ranges of chunk ids |
 
 What that costs in bytes is the implementation's to report and the memory test's to measure, never the design's
 to promise.

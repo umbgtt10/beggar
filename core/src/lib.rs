@@ -6,10 +6,11 @@
 
 //! A `no_std`, protocol-independent recovery registry.
 //!
-//! **Slice 1 of five is built:** an instance, created fresh or from a
-//! checkpoint, with an observer told of every call; `StartRecovery`; and
-//! `ShowRegistry`, the checkpoint -- conformant to version 0.2.0 of the
-//! specification in the repository's `spec/`. Nothing should depend on it until the slices are done.
+//! **Slices 1 and 2 of five are built:** an instance, created fresh or from a
+//! checkpoint, with an observer told of every call; `StartRecovery`;
+//! `SendRecoveryPartial`, which accounts a session's chunks on its sending end
+//! to completion; and `ShowRegistry`, the checkpoint -- conformant to version
+//! 0.3.0 of the specification in the repository's `spec/`. Nothing should depend on it until the slices are done.
 //!
 //! # What it does
 //!

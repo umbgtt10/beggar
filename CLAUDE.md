@@ -30,8 +30,8 @@ all, which `rust-toolchain.toml` installs.
 Stage 2 is `cargo xtask stage2`, ported from etheram-core's: stern4rust, then
 dry4rust against `dry4rust-baseline.json`, crap4rust, the coverage gate twice,
 twin4rust, iceberg4rust and cargo-deny, in that order, for the reasons
-etheram-core records. stern runs over `beggar`, `beggar-ladder` **and** `xtask`;
-the rest over `beggar`.
+etheram-core records. stern runs over `beggar`, `beggar-ladder`,
+`beggar-memory` **and** `xtask`; the rest over `beggar`.
 
 The tests climb a ladder of seven tiers — `docs/ADRs/P2-ADR-TestingLadder.md`.
 The coverage gate, `cargo llvm-cov` over `beggar` and `beggar-ladder`, fails on
@@ -40,7 +40,7 @@ once over the conformance tier alone, its tests filtered to `conformance::` —
 the vectors must reach every line by themselves, or the crate holds something
 the specification does not ask for
 (`docs/ADRs/P1-ADR-NoLineTheSpecificationDoesNotAskFor.md`). Derived impls are
-not measured, and a hand-written one is a line like any other: `ReceivedChunks`
+not measured, and a hand-written one is a line like any other: `ChunkSet`
 derives `Default`, which clippy asks for beside its `new`, rather than writing
 it. The specification in `spec/` is normative; the crate is one implementation
 of it.
@@ -48,7 +48,7 @@ of it.
 ## Layout
 
 A workspace: `core/` holds the crate, `ladder/` the testing ladder's scenario
-tiers, and `xtask/` runs the gates. A crate at the repository root would put
+tiers, `memory/` its memory tier, and `xtask/` runs the gates. A crate at the repository root would put
 `xtask/tests/**` inside its package directory, and stern would read them as the
 crate's.
 
@@ -57,7 +57,11 @@ The tiers that are scenarios rather than mirrors of a file -- conformance, the
 exhaustive matrix, property, simulation, replay -- live in `ladder/`, a package
 with no code of its own (`publish = false`), where stern's `paired-test-file`
 stands down and nowhere else: it pairs `tests/a/b_tests.rs` with `src/a/b.rs`
-by path, and those tiers are named for what they prove. The specification,
+by path, and those tiers are named for what they prove. The memory tier is
+`memory/`, a package of its own because a `#[global_allocator]` is per binary
+and a tests folder has one door: the counting allocator and the run it measures
+are its `src/`, mirrored by its tests under every rule -- and the workspace's
+one `unsafe`, the allocator's, since beggar forbids it. The specification,
 `spec/`, sits at the repository root, read by the ladder and never by the
 crate.
 

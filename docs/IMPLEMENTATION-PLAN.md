@@ -1,8 +1,8 @@
 # beggar — implementation plan
 
-**Status: planned 2026-11-06; slice 1 built 2026-11-09.** Its specification is `spec/` at version 0.2.0 — 0.1.0 and the observer, added the same day; the
-ladder's scenario tiers live in `ladder/`, a package of their own, and the coverage gate stands at 100% over every
-tier and over the conformance tier alone. The decisions are the ADRs in [`ADRs/`](ADRs/README.md) and the
+**Status: planned 2026-11-06; slice 1 built 2026-11-09, slice 2 on 2026-11-10.** Its specification is `spec/` at
+version 0.3.0; the ladder's scenario tiers live in `ladder/`, a package of their own, the memory tier in `memory/`,
+another, and the coverage gate stands at 100% over every tier and over the conformance tier alone. The decisions are the ADRs in [`ADRs/`](ADRs/README.md) and the
 how is [`DESIGN.md`](DESIGN.md); this is the order of building it.
 
 ## Vertical slices
@@ -58,20 +58,22 @@ command, and each is total over the commands it has.
 - **A caller can then:** open recoveries under names unique across the cluster, be refused when a command is
   wrong, and log the checkpoint.
 
-### 2. Send it to completion
+### 2. Send it to completion — built 2026-11-10
 
 The serving end: the side that holds the chunks opens the session and sends them
 ([`P1-ADR-TheSenderOpensAndStatesTheCount`](ADRs/P1-ADR-TheSenderOpensAndStatesTheCount.md)).
 
 - **Adds:** `SendRecoveryPartial`, a run of chunks
   ([`P1-ADR-APartialIsARunOfChunks`](ADRs/P1-ADR-APartialIsARunOfChunks.md)), with all its rows — an empty run,
-  not started, misattributed, wrong side, out of range, advanced (with received and expected), completed, and a run
-  already present, unaffected — and the set of chunks recorded, kept as ranges, runs merged in any order.
-  Completion evicts.
+  not started, misattributed, wrong side, out of range, advanced (with `held` and `chunks`), completed, and a run
+  already present, unaffected — and the chunk set, kept as ranges, runs merged in any order. Completion evicts.
+  The specification goes to 0.3.0, a record's `received` renamed `chunk_set`.
 - **Proves:** the invariants on the chunks recorded; completion exactly when every distinct chunk has been
-  recorded; no record after it. The memory tier arrives: its own test target, a counting allocator, a positive control, then
-  100 recoveries in sequence, in order and interleaved. So does the replay tier: the property tier's logs written
-  in the specification's JSON and replayed, a dropped line detected, the replay resynchronised from a checkpoint.
+  recorded; no record after it. The memory tier arrives: its own test target -- `memory/`, a package of its own --
+  a counting allocator, a positive control, then 100 recoveries in sequence, in order and interleaved. So does the
+  replay tier: the property tier's logs written in the specification's JSON and replayed, a dropped line detected,
+  the replay resynchronised from a checkpoint. The rows each command meets before anything changes move to types
+  of their own, `StartRows` and `PartialRows`, when iceberg4rust finds them too much private work for `beggar.rs`.
 - **A caller can then:** account a whole answer on the node that sends it — IBFT's answer to a request for blocks,
   a Raft leader's push — duplicates, strays and garbage included.
 
@@ -121,7 +123,7 @@ The serving end: the side that holds the chunks opens the session and sends them
 - **The sending end first:** slice 2 sends, because a session opens on its sender
   ([`P1-ADR-TheSenderOpensAndStatesTheCount`](ADRs/P1-ADR-TheSenderOpensAndStatesTheCount.md)) and IBFT's control
   layer already exists to integrate against; Raft's catch-up has yet to be split into a control layer and beggar.
-- **The chunks received are a type of beggar's own, `ReceivedChunks`**, showing behaviour, never its fields:
+- **The chunks received are a type of beggar's own, `ChunkSet`**, showing behaviour, never its fields:
   `count`, `contains`, `ids`, and `runs` — the maximal runs of consecutive ids. A set has exactly one set of
   maximal runs, so they are a property of the set and not of a representation, and they keep a checkpoint small:
   a session holding chunks 1 to 1,000,000 is one run. `ListMissingChunks` answers in runs too. The vectors still

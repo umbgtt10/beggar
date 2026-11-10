@@ -59,8 +59,11 @@ and fast, and tier 5 is seeded, so a failure replays.
 Stage 1 runs every tier: the unit tier in `core/tests/`, mirrored file by
 file, and the scenario tiers in `ladder/`, a package of their own (decided
 2026-11-09), where stern's `paired-test-file` stands down because they are
-named for what they prove, not for a source file. Stage 2's coverage gate
-measures them together and the conformance tier alone
+named for what they prove, not for a source file. The memory tier needs a
+binary of its own, a global allocator being per binary, and is `memory/`, a
+package of its own (decided 2026-11-10) whose instrument and run are its source
+and mirrored by its tests. Stage 2's coverage gate measures the unit and
+scenario tiers together and the conformance tier alone
 ([P1-ADR-NoLineTheSpecificationDoesNotAskFor](P1-ADR-NoLineTheSpecificationDoesNotAskFor.md)).
 
 ## Related
