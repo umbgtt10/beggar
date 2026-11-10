@@ -17,7 +17,8 @@ const NODES: usize = 5;
 const RECEIVER: u64 = 2;
 const SENDER: u64 = 1;
 
-// Recoveries one after another between two of five instances at retention 0,
+// Recoveries one after another between two of five instances at the retention
+// given,
 // as DESIGN.md has the memory test: each a session of as many chunks as the
 // order names, started by the sender, adopted by the receiver from its first
 // run, every chunk sent and received a run of one in that order until both
@@ -29,6 +30,7 @@ pub struct TransferSequence<'a> {
     counter: &'a dyn AllocationCounter,
     order: Vec<u64>,
     cancel_after: Option<usize>,
+    retention: u64,
 }
 
 impl<'a> TransferSequence<'a> {
@@ -36,11 +38,13 @@ impl<'a> TransferSequence<'a> {
         counter: &'a dyn AllocationCounter,
         order: Vec<u64>,
         cancel_after: Option<usize>,
+        retention: u64,
     ) -> Self {
         Self {
             counter,
             order,
             cancel_after,
+            retention,
         }
     }
 
@@ -53,7 +57,7 @@ impl<'a> TransferSequence<'a> {
                         node: index as u64 + 1,
                         incarnation: INCARNATION,
                     },
-                    retention: 0,
+                    retention: self.retention,
                     bound: None,
                 }),
                 Box::new(NoOpObserver),
@@ -61,7 +65,8 @@ impl<'a> TransferSequence<'a> {
         });
         let skeleton = self.counter.live();
         let mut held_at_worst = skeleton;
-        let mut after_first = skeleton;
+        let mut after_full = skeleton;
+        let mut peak_while_filling = skeleton;
         let chunks = self.order.len() as u64;
         let (sender, receiver) = (SENDER as usize - 1, RECEIVER as usize - 1);
         for count in 1..=recoveries {
@@ -108,15 +113,18 @@ impl<'a> TransferSequence<'a> {
                 });
                 held_at_worst = held_at_worst.max(self.counter.live());
             }
-            if count == 1 {
-                after_first = self.counter.live();
+            if count == self.retention.max(1) {
+                after_full = self.counter.live();
+                peak_while_filling = self.counter.peak();
+                self.counter.rebase_peak();
             }
         }
         let profile = MemoryProfile {
             skeleton,
             held_at_worst,
-            peak: self.counter.peak(),
-            after_first,
+            peak: peak_while_filling.max(self.counter.peak()),
+            peak_once_full: self.counter.peak(),
+            after_full,
             after_all: self.counter.live(),
         };
         self.counter.stop();

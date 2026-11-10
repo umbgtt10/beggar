@@ -61,6 +61,27 @@ fn dealloc_while_counting_takes_its_size_from_live_and_leaves_the_peak() {
 }
 
 #[test]
+fn rebase_peak_counts_the_peak_again_from_what_is_held_now() {
+    // Arrange
+    let allocator = CountingAllocator;
+    allocator.start();
+    let first = unsafe { allocator.alloc(layout(64)) };
+    let second = unsafe { allocator.alloc(layout(32)) };
+    unsafe { allocator.dealloc(first, layout(64)) };
+
+    // Act
+    allocator.rebase_peak();
+    let third = unsafe { allocator.alloc(layout(16)) };
+
+    // Assert
+    assert_eq!(allocator.live(), 48);
+    assert_eq!(allocator.peak(), 48);
+    allocator.stop();
+    unsafe { allocator.dealloc(second, layout(32)) };
+    unsafe { allocator.dealloc(third, layout(16)) };
+}
+
+#[test]
 fn start_counts_from_zero_again() {
     // Arrange
     let allocator = CountingAllocator;

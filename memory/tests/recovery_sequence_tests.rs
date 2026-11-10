@@ -9,9 +9,52 @@ static ALLOCATOR: CountingAllocator = CountingAllocator;
 const RECOVERIES: u64 = 100;
 
 #[test]
+fn run_of_recoveries_at_a_retention_holds_after_the_last_what_it_held_once_it_kept_as_many() {
+    // Arrange
+    let keeping_none = RecoverySequence::new(&ALLOCATOR, vec![1, 3, 5, 7, 2, 4, 6, 8], None, 0);
+    let keeping = RecoverySequence::new(&ALLOCATOR, vec![1, 3, 5, 7, 2, 4, 6, 8], None, 5);
+
+    // Act
+    let profiles = [keeping_none.run(RECOVERIES), keeping.run(RECOVERIES)];
+
+    // Assert
+    let [none, kept] = profiles;
+    assert!(
+        kept.after_all > none.after_all,
+        "keeping five held no more than keeping none: {kept:?}, {none:?}"
+    );
+    assert!(
+        kept.peak_once_full <= kept.held_at_worst,
+        "bytes held inside a call, once full, beyond the state it left: {kept:?}"
+    );
+    assert_eq!(kept.after_all, kept.after_full, "{kept:?}");
+}
+
+#[test]
+fn run_of_recoveries_cancelled_midway_at_a_retention_holds_after_the_last_what_it_held_once_it_kept_as_many(
+) {
+    // Arrange
+    let sequence = RecoverySequence::new(&ALLOCATOR, vec![1, 3, 5, 7, 2, 4, 6, 8], Some(5), 5);
+
+    // Act
+    let profile = sequence.run(RECOVERIES);
+
+    // Assert
+    assert!(
+        profile.after_full > profile.skeleton,
+        "nothing was kept: {profile:?}"
+    );
+    assert!(
+        profile.peak_once_full <= profile.held_at_worst,
+        "bytes held inside a call, once full, beyond the state it left: {profile:?}"
+    );
+    assert_eq!(profile.after_all, profile.after_full, "{profile:?}");
+}
+
+#[test]
 fn run_of_recoveries_cancelled_midway_holds_after_the_last_what_it_held_after_the_first() {
     // Arrange
-    let sequence = RecoverySequence::new(&ALLOCATOR, vec![1, 3, 5, 7, 2, 4, 6, 8], Some(5));
+    let sequence = RecoverySequence::new(&ALLOCATOR, vec![1, 3, 5, 7, 2, 4, 6, 8], Some(5), 0);
 
     // Act
     let profile = sequence.run(RECOVERIES);
@@ -25,13 +68,13 @@ fn run_of_recoveries_cancelled_midway_holds_after_the_last_what_it_held_after_th
         profile.peak <= profile.held_at_worst,
         "bytes held inside a call beyond the state it left: {profile:?}"
     );
-    assert_eq!(profile.after_all, profile.after_first, "{profile:?}");
+    assert_eq!(profile.after_all, profile.after_full, "{profile:?}");
 }
 
 #[test]
 fn run_of_recoveries_in_order_holds_after_the_last_what_it_held_after_the_first() {
     // Arrange
-    let sequence = RecoverySequence::new(&ALLOCATOR, (1..=8).collect(), None);
+    let sequence = RecoverySequence::new(&ALLOCATOR, (1..=8).collect(), None, 0);
 
     // Act
     let profile = sequence.run(RECOVERIES);
@@ -45,13 +88,13 @@ fn run_of_recoveries_in_order_holds_after_the_last_what_it_held_after_the_first(
         profile.peak <= profile.held_at_worst,
         "bytes held inside a call beyond the state it left: {profile:?}"
     );
-    assert_eq!(profile.after_all, profile.after_first, "{profile:?}");
+    assert_eq!(profile.after_all, profile.after_full, "{profile:?}");
 }
 
 #[test]
 fn run_of_recoveries_interleaved_holds_after_the_last_what_it_held_after_the_first() {
     // Arrange
-    let sequence = RecoverySequence::new(&ALLOCATOR, vec![1, 3, 5, 7, 2, 4, 6, 8], None);
+    let sequence = RecoverySequence::new(&ALLOCATOR, vec![1, 3, 5, 7, 2, 4, 6, 8], None, 0);
 
     // Act
     let profile = sequence.run(RECOVERIES);
@@ -65,5 +108,5 @@ fn run_of_recoveries_interleaved_holds_after_the_last_what_it_held_after_the_fir
         profile.peak <= profile.held_at_worst,
         "bytes held inside a call beyond the state it left: {profile:?}"
     );
-    assert_eq!(profile.after_all, profile.after_first, "{profile:?}");
+    assert_eq!(profile.after_all, profile.after_full, "{profile:?}");
 }

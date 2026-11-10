@@ -63,4 +63,8 @@ impl AllocationCounter for CountingAllocator {
     fn peak(&self) -> isize {
         PEAK.with(Cell::get)
     }
+
+    fn rebase_peak(&self) {
+        PEAK.with(|cell| cell.set(LIVE.with(Cell::get)));
+    }
 }
