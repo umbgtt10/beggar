@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
+  "version": "0.6.0",
   "rows": [
     {
       "id": "no-chunks",
@@ -130,6 +130,30 @@
       "commands": ["CancelRecovery"],
       "situation": "otherwise: no session named `session_id` is open",
       "output": "RecoveryUnaffected"
+    },
+    {
+      "id": "query-not-started",
+      "commands": ["ShowRecovery", "ListMissingChunks"],
+      "situation": "no session named `session_id` is open or retained",
+      "output": "RecoveryNotStarted"
+    },
+    {
+      "id": "recovery-shown",
+      "commands": ["ShowRecovery"],
+      "situation": "otherwise: the open session of that name, or the retained one that finished last",
+      "output": "RecoveryShown"
+    },
+    {
+      "id": "missing-chunks-listed",
+      "commands": ["ListMissingChunks"],
+      "situation": "otherwise: the chunks of the open session of that name, or of the retained one that finished last, not in its chunk set",
+      "output": "MissingChunksListed"
+    },
+    {
+      "id": "recoveries-listed",
+      "commands": ["ListRecoveries"],
+      "situation": "always: the names of the open sessions",
+      "output": "RecoveriesListed"
     },
     {
       "id": "show-registry",

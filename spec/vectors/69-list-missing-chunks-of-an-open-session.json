@@ -1,0 +1,149 @@
+{
+  "description": "ListMissingChunks answers the chunks the session's chunk set does not hold, as their maximal runs.",
+  "rows": [
+    "start-started",
+    "partial-advanced",
+    "missing-chunks-listed"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "10",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "SendRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "first": "3",
+          "last": "4",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryAdvanced": {
+            "held": "2",
+            "chunks": "10"
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "SendRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "first": "7",
+          "last": "7",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "3",
+        "output": {
+          "RecoveryAdvanced": {
+            "held": "3",
+            "chunks": "10"
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "ListMissingChunks": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          }
+        }
+      },
+      "receipt": {
+        "number": "4",
+        "output": {
+          "MissingChunksListed": {
+            "missing": [
+              {
+                "first": "1",
+                "last": "2"
+              },
+              {
+                "first": "5",
+                "last": "6"
+              },
+              {
+                "first": "8",
+                "last": "10"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "10",
+        "sender": "1",
+        "receiver": "2",
+        "chunk_set": [
+          "3",
+          "4",
+          "7"
+        ]
+      }
+    ],
+    "retained": [],
+    "name_count": "1",
+    "next_receipt": "6"
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "description": "A session finished twice under one name is retained twice, in the order they finished, and the queries read the one that finished last.",
+  "rows": [
+    "adopt-started",
+    "partial-completed",
+    "cancel-cancelled",
+    "recovery-shown"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "2",
+        "incarnation": "3"
+      },
+      "retention": "3",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "2",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "ReceiveRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "first": "1",
+          "last": "2",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryCompleted": {}
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "2",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "3",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "CancelRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "reason": {
+            "Stalled": {
+              "held": "0"
+            }
+          }
+        }
+      },
+      "receipt": {
+        "number": "4",
+        "output": {
+          "RecoveryCancelled": {
+            "Stalled": {
+              "held": "0"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "ShowRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          }
+        }
+      },
+      "receipt": {
+        "number": "5",
+        "output": {
+          "RecoveryShown": {
+            "record": {
+              "session_id": {
+                "node": "1",
+                "incarnation": "7",
+                "count": "1"
+              },
+              "chunks": "2",
+              "sender": "1",
+              "receiver": "2",
+              "chunk_set": []
+            },
+            "finished": "4"
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "2",
+      "incarnation": "3"
+    },
+    "retention": "3",
+    "bound": null,
+    "open": [],
+    "retained": [
+      {
+        "record": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "2",
+          "sender": "1",
+          "receiver": "2",
+          "chunk_set": [
+            "1",
+            "2"
+          ]
+        },
+        "finished": "2"
+      },
+      {
+        "record": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "2",
+          "sender": "1",
+          "receiver": "2",
+          "chunk_set": []
+        },
+        "finished": "4"
+      }
+    ],
+    "name_count": "0",
+    "next_receipt": "7"
+  }
+}

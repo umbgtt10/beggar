@@ -1,0 +1,88 @@
+{
+  "description": "A session that has received nothing is missing one run, 1..=chunks, however many chunks it holds.",
+  "rows": [
+    "start-started",
+    "missing-chunks-listed"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "1000000",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "ListMissingChunks": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          }
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "MissingChunksListed": {
+            "missing": [
+              {
+                "first": "1",
+                "last": "1000000"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "1000000",
+        "sender": "1",
+        "receiver": "2",
+        "chunk_set": []
+      }
+    ],
+    "retained": [],
+    "name_count": "1",
+    "next_receipt": "4"
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "description": "ListRecoveries answers the names of the open sessions, started and adopted, in canonical order: none at first, and none that has completed.",
+  "rows": [
+    "recoveries-listed",
+    "start-started",
+    "adopt-started",
+    "partial-completed"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "ListRecoveries": {}
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveriesListed": {
+            "sessions": []
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "4",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "2",
+          "sender": "1",
+          "receiver": "3"
+        }
+      },
+      "receipt": {
+        "number": "3",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "2"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "AdoptRecovery": {
+          "session_id": {
+            "node": "2",
+            "incarnation": "3",
+            "count": "1"
+          },
+          "chunks": "3",
+          "sender": "2",
+          "receiver": "1"
+        }
+      },
+      "receipt": {
+        "number": "4",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "2",
+              "incarnation": "3",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "SendRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "2"
+          },
+          "first": "1",
+          "last": "2",
+          "sender": "1",
+          "receiver": "3"
+        }
+      },
+      "receipt": {
+        "number": "5",
+        "output": {
+          "RecoveryCompleted": {}
+        }
+      }
+    },
+    {
+      "command": {
+        "ListRecoveries": {}
+      },
+      "receipt": {
+        "number": "6",
+        "output": {
+          "RecoveriesListed": {
+            "sessions": [
+              {
+                "node": "1",
+                "incarnation": "7",
+                "count": "1"
+              },
+              {
+                "node": "2",
+                "incarnation": "3",
+                "count": "1"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [
+      {
+        "session_id": {
+          "node": "1",
+          "incarnation": "7",
+          "count": "1"
+        },
+        "chunks": "4",
+        "sender": "1",
+        "receiver": "2",
+        "chunk_set": []
+      },
+      {
+        "session_id": {
+          "node": "2",
+          "incarnation": "3",
+          "count": "1"
+        },
+        "chunks": "3",
+        "sender": "2",
+        "receiver": "1",
+        "chunk_set": []
+      }
+    ],
+    "retained": [],
+    "name_count": "2",
+    "next_receipt": "8"
+  }
+}
