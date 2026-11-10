@@ -36,7 +36,7 @@ fn cluster(
     transfers: &[(bool, u64, u64, u64)],
     restarts: &[(u64, u64)],
 ) -> ClusterSimulation {
-    let mut simulation = ClusterSimulation::new(nodes, policy, 2, 6);
+    let mut simulation = ClusterSimulation::new(nodes, policy, 2, 6, None);
     for (pull, first, second, chunks) in transfers {
         let (first, second) = (first % nodes + 1, second % nodes + 1);
         if first == second {

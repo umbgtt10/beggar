@@ -9,8 +9,11 @@ use beggar::session_id::SessionId;
 // delivered to its receiver, ever and since its session last opened there,
 // and whether it is open there now; whether the sender completed it; how often
 // the receiver completed and reopened it, and how many runs reached the
-// receiver after it first completed; how many receipts, at either end, were
-// not what those chunks called for; and whether a restart interrupted it.
+// receiver after the session first finished there, completed or cancelled;
+// how many receipts, at either end, were not what those chunks called for;
+// whether a restart interrupted it; how often the cancellation policy ended
+// it at its receiver, and whether its sender cancelled the pages it still held
+// on hearing so; and the step a run last reached its receiver.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Transfer {
     pub session_id: SessionId,
@@ -27,4 +30,7 @@ pub struct Transfer {
     pub late_copies: u64,
     pub unsound: u64,
     pub interrupted: bool,
+    pub cancellations: u64,
+    pub last_delivery: u64,
+    pub sender_cancelled: bool,
 }

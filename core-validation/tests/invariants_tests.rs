@@ -75,7 +75,28 @@ fn transfer() -> Transfer {
         late_copies: 0,
         unsound: 0,
         interrupted: false,
+        cancellations: 0,
+        last_delivery: 0,
+        sender_cancelled: false,
     }
+}
+
+#[test]
+fn abandonment_excepts_a_transfer_the_policy_cancelled() {
+    // Arrange
+    let mut cancelled = transfer();
+    cancelled.receiver_open = false;
+    cancelled.cancellations = 1;
+    let invariants = ClusterInvariants::new(
+        vec![cancelled],
+        vec![node(1, Vec::new()), node(2, Vec::new())],
+    );
+
+    // Act
+    let violations = invariants.abandonment();
+
+    // Assert
+    assert!(violations.is_empty(), "{violations:#?}");
 }
 
 #[test]
@@ -214,6 +235,18 @@ fn reopens_name_a_session_reopened_without_a_late_copy() {
 
     // Act
     let violations = invariants.reopens();
+
+    // Assert
+    assert_eq!(violations.len(), 1, "{violations:#?}");
+}
+
+#[test]
+fn settled_names_every_session_still_open() {
+    // Arrange
+    let invariants = ClusterInvariants::new(vec![transfer()], cluster(&[1, 2]));
+
+    // Act
+    let violations = invariants.settled();
 
     // Assert
     assert_eq!(violations.len(), 1, "{violations:#?}");

@@ -30,14 +30,13 @@ impl ClusterInvariants {
 
     // A receiver holds a session open exactly when some of its chunks reached
     // it and not all; a sender exactly when it has not sent them all. A
-    // transfer a restart interrupted, or reopened by a late copy, is excepted.
+    // transfer a restart interrupted, the cancellation policy ended, or a late
+    // run reopened, is excepted.
     pub fn abandonment(&self) -> Vec<String> {
         let mut violations = Vec::new();
-        for transfer in self
-            .transfers
-            .iter()
-            .filter(|transfer| !transfer.interrupted && transfer.reopens == 0)
-        {
+        for transfer in self.transfers.iter().filter(|transfer| {
+            !transfer.interrupted && transfer.reopens == 0 && transfer.cancellations == 0
+        }) {
             let delivered = transfer.delivered.len() as u64;
             let incomplete = delivered > 0 && delivered < transfer.chunks;
             let receiving = self.holds(transfer.receiver, transfer.session_id);
@@ -197,8 +196,8 @@ impl ClusterInvariants {
             .collect()
     }
 
-    // A completed session reopens only by a run that reached its receiver
-    // after it completed.
+    // A finished session reopens only by a run that reached its receiver after
+    // it finished there, completed or cancelled.
     pub fn reopens(&self) -> Vec<String> {
         self.transfers
             .iter()
@@ -208,6 +207,22 @@ impl ClusterInvariants {
                     "{:?}: reopened {} times by {} late copies",
                     transfer.session_id, transfer.reopens, transfer.late_copies
                 )
+            })
+            .collect()
+    }
+
+    // Nothing is left open anywhere: what the cancellation policy holds once
+    // nothing is in flight.
+    pub fn settled(&self) -> Vec<String> {
+        self.checkpoints
+            .iter()
+            .flat_map(|checkpoint| {
+                checkpoint.open.iter().map(move |record| {
+                    format!(
+                        "node {} still holds {:?} open",
+                        checkpoint.instance.node, record.session_id
+                    )
+                })
             })
             .collect()
     }

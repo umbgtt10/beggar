@@ -9,6 +9,7 @@ pub enum MessageKind {
     Request,
     #[default]
     Run,
+    Abandon,
 }
 
 impl MessageKind {
@@ -16,6 +17,7 @@ impl MessageKind {
         match event {
             ScenarioEvent::Request { .. } => MessageKind::Request,
             ScenarioEvent::Run { .. } => MessageKind::Run,
+            ScenarioEvent::Abandon { .. } => MessageKind::Abandon,
         }
     }
 }

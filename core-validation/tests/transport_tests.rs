@@ -58,15 +58,27 @@ fn deliver_without_faults_hands_events_over_in_the_order_sent() {
 }
 
 #[test]
-fn of_a_request_and_a_run_names_their_kinds() {
+fn of_each_event_names_its_kind() {
     // Arrange
-    let events = [request(1, 2), run(2, 1)];
+    let abandon = ScenarioEvent::Abandon {
+        receiver: 1,
+        sender: 2,
+        session_id: SessionId {
+            node: 2,
+            incarnation: 1,
+            count: 1,
+        },
+    };
+    let events = [request(1, 2), run(2, 1), abandon];
 
     // Act
     let kinds = events.map(|event| MessageKind::of(&event));
 
     // Assert
-    assert_eq!(kinds, [MessageKind::Request, MessageKind::Run]);
+    assert_eq!(
+        kinds,
+        [MessageKind::Request, MessageKind::Run, MessageKind::Abandon]
+    );
 }
 
 #[test]
@@ -129,7 +141,7 @@ fn send_over_asymmetric_cuts_drops_some_links_in_one_direction_only() {
             ScenarioEvent::Request {
                 requester, server, ..
             } => (requester, server),
-            ScenarioEvent::Run { .. } => panic!("only requests were sent"),
+            other => panic!("only requests were sent, not {other:?}"),
         })
         .collect();
 
@@ -220,7 +232,7 @@ fn send_with_reordering_delivers_every_event_out_of_order_and_counts_it() {
     let mut sorted = events.clone();
     sorted.sort_by_key(|event| match event {
         ScenarioEvent::Request { requester, .. } => *requester,
-        ScenarioEvent::Run { .. } => 0,
+        _ => 0,
     });
     assert_eq!(sorted, sent);
     assert!(transport.counts().reordered > 0);

@@ -76,6 +76,9 @@ impl FaultyTransport {
             ScenarioEvent::Run {
                 sender, receiver, ..
             } => (sender, receiver),
+            ScenarioEvent::Abandon {
+                receiver, sender, ..
+            } => (receiver, sender),
         };
         if self.is_cut(
             PARTITION_SALT,

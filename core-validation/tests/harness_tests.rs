@@ -12,8 +12,40 @@ use beggar_core_validation::scenario_harness::ScenarioHarness;
 use beggar_core_validation::scenario_node::ScenarioNode;
 use beggar_core_validation::trace_observer::TraceObserver;
 use beggar_core_validation::transport::fault_policy::FaultPolicy;
+use beggar_core_validation::transport::message_kind::MessageKind;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+#[test]
+fn cancel_abandoned_has_every_node_cancel_what_it_still_holds() {
+    // Arrange
+    let mut simulation = ClusterSimulation::new(
+        2,
+        FaultPolicy {
+            selective: 100,
+            selective_target: MessageKind::Run,
+            ..FaultPolicy::default()
+        },
+        2,
+        6,
+        None,
+    );
+    simulation.push(1, 2, 4);
+    simulation.run_checked(100);
+    simulation.pull(1, 2, 4);
+    simulation.run_checked(100);
+
+    // Act
+    simulation.cancel_abandoned();
+
+    // Assert
+    let violations = simulation.check();
+    assert!(violations.is_empty(), "{violations:#?}");
+    assert!(simulation
+        .checkpoints()
+        .iter()
+        .all(|checkpoint| checkpoint.open.is_empty()));
+}
 
 #[test]
 fn checkpoint_of_every_node_of_a_new_harness_holds_nothing_at_its_first_incarnation() {
@@ -116,7 +148,7 @@ fn restart_of_a_node_replaces_its_instance_by_an_empty_one_and_keeps_its_trace()
 #[test]
 fn run_checked_of_a_pull_answers_with_what_the_server_holds_and_completes_it() {
     // Arrange
-    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 4);
+    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 4, None);
     simulation.pull(1, 2, 6);
 
     // Act
@@ -141,7 +173,7 @@ fn run_checked_of_a_pull_answers_with_what_the_server_holds_and_completes_it() {
 #[test]
 fn run_checked_of_a_push_completes_it_and_leaves_every_node_holding_nothing() {
     // Arrange
-    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 8);
+    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 8, None);
     simulation.push(1, 2, 5);
 
     // Act
@@ -162,7 +194,7 @@ fn run_checked_of_a_push_completes_it_and_leaves_every_node_holding_nothing() {
 #[test]
 fn run_checked_past_its_limit_reports_the_cluster_unsettled() {
     // Arrange
-    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 1, 8);
+    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 1, 8, None);
     simulation.push(1, 2, 8);
 
     // Act
@@ -171,6 +203,31 @@ fn run_checked_past_its_limit_reports_the_cluster_unsettled() {
     // Assert
     assert_eq!(violations.len(), 1);
     assert!(violations[0].contains("not settled"), "{violations:#?}");
+}
+
+#[test]
+fn run_checked_with_an_impatient_receiver_has_its_sender_cancel_the_pages_it_still_holds() {
+    // Arrange
+    let mut simulation = ClusterSimulation::new(
+        2,
+        FaultPolicy {
+            delay: 100,
+            ..FaultPolicy::default()
+        },
+        1,
+        6,
+        Some(1),
+    );
+    simulation.push(1, 2, 6);
+
+    // Act
+    let violations = simulation.run_checked(200);
+
+    // Assert
+    assert!(violations.is_empty(), "{violations:#?}");
+    let transfer = &simulation.transfers()[0];
+    assert!(transfer.sender_cancelled, "{transfer:?}");
+    assert!(!transfer.sender_completed, "{transfer:?}");
 }
 
 #[test]
@@ -199,7 +256,7 @@ fn start_through_the_harness_is_answered_by_the_sender_alone() {
 #[test]
 fn step_of_a_simulation_with_nothing_to_do_is_false() {
     // Arrange
-    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 8);
+    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 2, 8, None);
 
     // Act
     let stepped = simulation.step();
@@ -209,9 +266,33 @@ fn step_of_a_simulation_with_nothing_to_do_is_false() {
 }
 
 #[test]
+fn step_with_patience_has_a_receiver_cancel_the_session_that_stalls() {
+    // Arrange
+    let mut simulation = ClusterSimulation::new(
+        2,
+        FaultPolicy {
+            delay: 100,
+            ..FaultPolicy::default()
+        },
+        1,
+        6,
+        Some(1),
+    );
+    simulation.push(1, 2, 3);
+
+    // Act
+    let violations = simulation.run_checked(100);
+
+    // Assert
+    assert!(violations.is_empty(), "{violations:#?}");
+    let transfer = &simulation.transfers()[0];
+    assert!(transfer.cancellations > 0, "{transfer:?}");
+}
+
+#[test]
 fn traces_of_a_simulation_hold_each_nodes_calls() {
     // Arrange
-    let mut simulation = ClusterSimulation::new(2, FaultPolicy::default(), 4, 8);
+    let mut simulation = ClusterSimulation::new(2, FaultPolicy::default(), 4, 8, None);
     simulation.push(1, 2, 4);
 
     // Act

@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 // The cluster simulation over random clusters, workloads and fault mixes:
-// every invariant after every delivery, abandonment exact at quiescence, every
+// every invariant after every delivery, abandonment exact at quiescence and
+// every abandoned session then ended by the cancellation policy, every
 // transfer completed at both ends when nothing was lost -- a pull's request
 // duplicated being answered twice, as asking again would be -- and no fault
 // counted that was not configured. Each case is its seed: a failure replays.
@@ -12,6 +13,7 @@ use beggar_core_validation::cluster_simulation::ClusterSimulation;
 use beggar_core_validation::transport::fault_policy::FaultPolicy;
 use beggar_core_validation::transport::message_kind::MessageKind;
 use proptest::collection::vec;
+use proptest::option::of;
 use proptest::prelude::any;
 use proptest::prelude::prop_assert;
 use proptest::prelude::proptest;
@@ -58,6 +60,7 @@ proptest! {
         holding in 1u64..=8,
         transfers in transfers(),
         restarts in vec((0u64..60, 0u64..5), 0..3),
+        patience in of(1u64..=20),
     ) {
         // Arrange
         let policy = FaultPolicy {
@@ -71,7 +74,7 @@ proptest! {
             selective_target: if run_kind { MessageKind::Run } else { MessageKind::Request },
             seed,
         };
-        let mut simulation = ClusterSimulation::new(nodes, policy, page, holding);
+        let mut simulation = ClusterSimulation::new(nodes, policy, page, holding, patience);
         load(&mut simulation, nodes, &transfers);
 
         // Act
@@ -88,10 +91,14 @@ proptest! {
             violations.extend(simulation.check());
         }
         violations.extend(simulation.check_quiescent());
+        simulation.cancel_abandoned();
+        violations.extend(simulation.run_checked(LIMIT));
+        let open = ClusterInvariants::new(simulation.transfers(), simulation.checkpoints()).settled();
 
         // Assert
         prop_assert!(steps < LIMIT, "not settled after {steps} steps, seed {seed}");
         prop_assert!(violations.is_empty(), "seed {seed}: {violations:#?}");
+        prop_assert!(open.is_empty(), "seed {seed}: {open:#?}");
         let counts = simulation.counts();
         prop_assert!(policy.loss > 0 || counts.lost == 0);
         prop_assert!(policy.duplication > 0 || counts.duplicated == 0);
@@ -119,7 +126,7 @@ proptest! {
             seed,
             ..FaultPolicy::default()
         };
-        let mut simulation = ClusterSimulation::new(nodes, policy, page, holding);
+        let mut simulation = ClusterSimulation::new(nodes, policy, page, holding, None);
         let made = load(&mut simulation, nodes, &transfers);
 
         // Act
@@ -136,6 +143,11 @@ proptest! {
         let unfinished =
             ClusterInvariants::new(simulation.transfers(), simulation.checkpoints()).liveness();
         prop_assert!(unfinished.is_empty(), "seed {seed}: {unfinished:#?}");
+        simulation.cancel_abandoned();
+        let told = simulation.run_checked(LIMIT);
+        prop_assert!(told.is_empty(), "seed {seed}: {told:#?}");
+        let open = ClusterInvariants::new(simulation.transfers(), simulation.checkpoints()).settled();
+        prop_assert!(open.is_empty(), "seed {seed}: {open:#?}");
     }
 }
 

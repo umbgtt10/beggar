@@ -8,7 +8,7 @@ use beggar_core_validation::transport::message_kind::MessageKind;
 
 // Six transfers among four nodes, pulled and pushed, in pages of two.
 fn loaded(policy: FaultPolicy) -> ClusterSimulation {
-    let mut simulation = ClusterSimulation::new(4, policy, 2, 6);
+    let mut simulation = ClusterSimulation::new(4, policy, 2, 6, None);
     simulation.push(1, 2, 6);
     simulation.pull(3, 1, 6);
     simulation.push(2, 4, 5);
@@ -23,6 +23,34 @@ fn unfinished(simulation: &mut ClusterSimulation) -> Vec<String> {
 }
 
 #[test]
+fn cancel_abandoned_after_loss_ends_every_abandoned_session_and_settles_the_cluster() {
+    // Arrange
+    let mut simulation = loaded(FaultPolicy {
+        loss: 25,
+        seed: 5,
+        ..FaultPolicy::default()
+    });
+    let abandoned = simulation.run_checked(10_000);
+
+    // Act
+    simulation.cancel_abandoned();
+    let told = simulation.run_checked(10_000);
+
+    // Assert
+    assert!(abandoned.is_empty(), "{abandoned:#?}");
+    assert!(told.is_empty(), "{told:#?}");
+    let invariants = ClusterInvariants::new(simulation.transfers(), simulation.checkpoints());
+    let violations = invariants.violations();
+    assert!(violations.is_empty(), "{violations:#?}");
+    let open = invariants.settled();
+    assert!(open.is_empty(), "{open:#?}");
+    assert!(simulation
+        .transfers()
+        .iter()
+        .any(|transfer| transfer.cancellations > 0));
+}
+
+#[test]
 fn run_checked_across_a_partition_loses_what_crossed_it_and_completes_what_follows_the_heal() {
     // Arrange
     let mut simulation = ClusterSimulation::new(
@@ -33,6 +61,7 @@ fn run_checked_across_a_partition_loses_what_crossed_it_and_completes_what_follo
         },
         2,
         6,
+        None,
     );
     simulation.push(1, 2, 4);
     let cut = simulation.run_checked(100);
@@ -117,6 +146,7 @@ fn run_checked_under_full_duplication_reopens_a_completed_session_once_by_its_la
         },
         2,
         6,
+        None,
     );
     simulation.push(1, 2, 4);
 
@@ -194,4 +224,31 @@ fn run_checked_under_selective_loss_of_runs_answers_every_pull_and_delivers_no_c
         .iter()
         .all(|transfer| transfer.delivered.is_empty()));
     assert!(simulation.counts().selective > 0);
+}
+
+#[test]
+fn run_checked_with_impatient_receivers_under_delay_reopens_cancelled_sessions_by_their_late_runs()
+{
+    // Arrange
+    let mut simulation = ClusterSimulation::new(
+        3,
+        FaultPolicy {
+            delay: 100,
+            ..FaultPolicy::default()
+        },
+        1,
+        6,
+        Some(1),
+    );
+    simulation.push(1, 2, 6);
+    simulation.push(3, 2, 6);
+
+    // Act
+    let violations = simulation.run_checked(1_000);
+
+    // Assert
+    assert!(violations.is_empty(), "{violations:#?}");
+    let transfers = simulation.transfers();
+    assert!(transfers.iter().any(|transfer| transfer.cancellations > 0));
+    assert!(transfers.iter().any(|transfer| transfer.reopens > 0));
 }

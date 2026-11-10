@@ -126,7 +126,7 @@ fn restart_of_a_sender_names_its_next_sessions_under_its_next_incarnation() {
 #[test]
 fn restart_of_nodes_mid_transfer_keeps_every_invariant() {
     // Arrange
-    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 1, 6);
+    let mut simulation = ClusterSimulation::new(3, FaultPolicy::default(), 1, 6, None);
     simulation.push(1, 2, 6);
     simulation.push(3, 1, 6);
     simulation.pull(2, 3, 6);
