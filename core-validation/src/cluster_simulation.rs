@@ -4,6 +4,7 @@
 use crate::cluster_invariants::ClusterInvariants;
 use crate::scenario_event::ScenarioEvent;
 use crate::scenario_node::ScenarioNode;
+use crate::scenario_reason::ScenarioReason;
 use crate::scenario_trace_entry::ScenarioTraceEntry;
 use crate::transfer::Transfer;
 use crate::transport::fault_counts::FaultCounts;
@@ -232,7 +233,7 @@ impl ClusterSimulation {
 
     // The output a run calls for, given how many chunks its end held before
     // and after it.
-    fn called_for(before: usize, after: usize, chunks: u64) -> Output {
+    fn called_for(before: usize, after: usize, chunks: u64) -> Output<ScenarioReason> {
         let held = after as u64;
         if after == before {
             Output::RecoveryUnaffected
@@ -310,7 +311,7 @@ impl ClusterSimulation {
         }
     }
 
-    fn process(&mut self, node: u64, command: Command) -> Receipt {
+    fn process(&mut self, node: u64, command: Command<ScenarioReason>) -> Receipt<ScenarioReason> {
         let index = self.index(node);
         self.nodes[index].process(command)
     }

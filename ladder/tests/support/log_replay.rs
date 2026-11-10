@@ -7,6 +7,7 @@ use crate::support::spec_writer::SpecWriter;
 use beggar::beggar::Beggar;
 use beggar::no_op_observer::NoOpObserver;
 use beggar::origin::Origin;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use serde_json::Value;
 
 // A log -- the specification's steps, one line per call -- replayed into an
@@ -62,7 +63,7 @@ impl LogReplay {
         report
     }
 
-    fn instance(origin: Origin) -> Beggar<()> {
+    fn instance(origin: Origin) -> Beggar<ScenarioReason> {
         Beggar::new(origin, Box::new(NoOpObserver))
     }
 
@@ -74,7 +75,7 @@ impl LogReplay {
     }
 
     // An instance restored from the checkpoint a line logged, if it logged one.
-    fn resynchronised(output: &Value) -> Option<Beggar<()>> {
+    fn resynchronised(output: &Value) -> Option<Beggar<ScenarioReason>> {
         output.get("RegistryShown").map(|checkpoint| {
             Self::instance(Origin::Checkpoint(SpecReader::checkpoint(checkpoint)))
         })

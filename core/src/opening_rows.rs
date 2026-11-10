@@ -28,13 +28,13 @@ impl<'a> OpeningRows<'a> {
 
     // The answer of the first row that meets an adopt before a session is
     // opened for it, or none: then it is opened.
-    pub fn adoption(
+    pub fn adoption<R>(
         &self,
         session_id: SessionId,
         chunks: u64,
         sender: u64,
         receiver: u64,
-    ) -> Option<Output> {
+    ) -> Option<Output<R>> {
         if let Some(rejection) = self.form(chunks, sender, receiver) {
             return Some(Output::RecoveryRejected(rejection));
         }

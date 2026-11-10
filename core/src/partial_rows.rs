@@ -21,7 +21,7 @@ impl<'a> PartialRows<'a> {
 
     // The session's place among the open ones when no row answers the partial
     // first, or the output of the first row that does.
-    pub fn attribution(
+    pub fn attribution<R>(
         &self,
         side: Side,
         session_id: SessionId,
@@ -29,7 +29,7 @@ impl<'a> PartialRows<'a> {
         last: u64,
         sender: u64,
         receiver: u64,
-    ) -> Result<usize, Output> {
+    ) -> Result<usize, Output<R>> {
         if last < first {
             return Err(Output::RecoveryRejected(Rejection::EmptyRun {
                 first,

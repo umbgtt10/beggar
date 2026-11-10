@@ -17,6 +17,7 @@ pub mod cluster_simulation;
 pub mod scenario_event;
 pub mod scenario_harness;
 pub mod scenario_node;
+pub mod scenario_reason;
 pub mod scenario_trace_entry;
 pub mod trace_observer;
 pub mod transfer;

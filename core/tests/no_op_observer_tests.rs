@@ -13,7 +13,7 @@ use beggar::receipt::Receipt;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-fn instance(observer: Box<dyn Observer>) -> Beggar<()> {
+fn instance(observer: Box<dyn Observer<()>>) -> Beggar<()> {
     Beggar::new(
         Origin::Fresh(Fresh {
             instance: InstanceId {
@@ -27,7 +27,7 @@ fn instance(observer: Box<dyn Observer>) -> Beggar<()> {
     )
 }
 
-fn start(chunks: u64, sender: u64, receiver: u64) -> Command {
+fn start(chunks: u64, sender: u64, receiver: u64) -> Command<()> {
     Command::StartRecovery {
         chunks,
         sender,
@@ -49,7 +49,7 @@ fn process_given_a_no_op_observer_answers_as_given_one_that_records() {
     ];
 
     // Act
-    let answers: Vec<(Receipt, Receipt)> = commands
+    let answers: Vec<(Receipt<()>, Receipt<()>)> = commands
         .into_iter()
         .map(|command| (silent.process(command.clone()), recorded.process(command)))
         .collect();

@@ -23,6 +23,7 @@ use beggar::output::Output;
 use beggar::receipt::Receipt;
 use beggar::rejection::Rejection;
 use beggar::session_id::SessionId;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use std::collections::BTreeSet;
 
 const BESIDE: SessionId = SessionId {
@@ -54,8 +55,8 @@ const STARTED: SessionId = SessionId {
 
 // What both implementations answered in a situation, and the state each left.
 struct Answers {
-    crate_receipt: Receipt,
-    model_receipt: Receipt,
+    crate_receipt: Receipt<ScenarioReason>,
+    model_receipt: Receipt<ScenarioReason>,
     crate_state: Checkpoint,
     model_state: Checkpoint,
 }
@@ -66,7 +67,7 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
         retention: 0,
         bound: None,
     };
-    let mut crate_side: Beggar<()> =
+    let mut crate_side: Beggar<ScenarioReason> =
         Beggar::new(Origin::Fresh(fresh.clone()), Box::new(NoOpObserver));
     let mut model = NaiveRegistry::fresh(&fresh);
     for command in setup(situation) {
@@ -107,7 +108,7 @@ fn partial(
     run: (u64, u64),
     sender: u64,
     receiver: u64,
-) -> Command {
+) -> Command<ScenarioReason> {
     let (first, last) = run;
     if receiving {
         Command::ReceiveRecoveryPartial {
@@ -129,7 +130,7 @@ fn partial(
 }
 
 // The matrix row an output answers for.
-fn row(output: &Output) -> String {
+fn row(output: &Output<ScenarioReason>) -> String {
     let row = match output {
         Output::RecoveryRejected(Rejection::EmptyRun { .. }) => "empty-run",
         Output::RecoveryNotStarted => "partial-not-started",
@@ -164,7 +165,7 @@ fn rows_for(command: &str) -> BTreeSet<String> {
 // The calls that bring an instance to a situation: the session started and
 // sent, or adopted and received, the second one adopted beside it, and each
 // chunk it holds reported as a run of one.
-fn setup(situation: &Situation) -> Vec<Command> {
+fn setup(situation: &Situation) -> Vec<Command<ScenarioReason>> {
     let mut commands = if situation.sending {
         vec![Command::StartRecovery {
             chunks: situation.chunks,
@@ -204,7 +205,7 @@ fn setup(situation: &Situation) -> Vec<Command> {
     commands
 }
 
-fn shown(beggar: &mut Beggar<()>) -> Checkpoint {
+fn shown(beggar: &mut Beggar<ScenarioReason>) -> Checkpoint {
     state(beggar.process(Command::ShowRegistry))
 }
 
@@ -215,7 +216,7 @@ struct Situation {
     sending: bool,
     held: Vec<u64>,
     beside: bool,
-    command: Command,
+    command: Command<ScenarioReason>,
 }
 
 fn situations() -> Vec<Situation> {
@@ -262,7 +263,7 @@ fn situations() -> Vec<Situation> {
     situations
 }
 
-fn state(receipt: Receipt) -> Checkpoint {
+fn state(receipt: Receipt<ScenarioReason>) -> Checkpoint {
     match receipt.output {
         Output::RegistryShown(checkpoint) => checkpoint,
         other => panic!("ShowRegistry answered {other:?}"),

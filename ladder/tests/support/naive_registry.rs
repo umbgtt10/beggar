@@ -11,6 +11,7 @@ use beggar::receipt::Receipt;
 use beggar::rejection::Rejection;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use std::collections::BTreeSet;
 use std::ops::RangeInclusive;
 
@@ -61,7 +62,7 @@ impl NaiveRegistry {
         }
     }
 
-    pub fn answer(&mut self, command: &Command) -> Receipt {
+    pub fn answer(&mut self, command: &Command<ScenarioReason>) -> Receipt<ScenarioReason> {
         self.receipts_issued += 1;
         let output = match command {
             Command::StartRecovery {
@@ -89,6 +90,7 @@ impl NaiveRegistry {
                 sender,
                 receiver,
             } => self.partial(true, *session_id, *first..=*last, (*sender, *receiver)),
+            Command::CancelRecovery { session_id, reason } => self.cancel(*session_id, *reason),
             Command::ShowRegistry => Output::RegistryShown(self.checkpoint()),
         };
         Receipt {
@@ -98,7 +100,13 @@ impl NaiveRegistry {
     }
 
     // Adopt's rows tried top to bottom, the form rows a start meets first.
-    fn adopt(&mut self, session_id: SessionId, chunks: u64, sender: u64, receiver: u64) -> Output {
+    fn adopt(
+        &mut self,
+        session_id: SessionId,
+        chunks: u64,
+        sender: u64,
+        receiver: u64,
+    ) -> Output<ScenarioReason> {
         let node = self.instance.node;
         let own = session_id.node == node && session_id.incarnation == self.instance.incarnation;
         let rows = [
@@ -142,6 +150,18 @@ impl NaiveRegistry {
         Output::RecoveryStarted { session_id }
     }
 
+    // A cancel's two rows: the session named, if open, evicted with the reason
+    // given; otherwise nothing.
+    fn cancel(&mut self, session_id: SessionId, reason: ScenarioReason) -> Output<ScenarioReason> {
+        let before = self.open.len();
+        self.open.retain(|session| session.session_id != session_id);
+        if self.open.len() < before {
+            Output::RecoveryCancelled(reason)
+        } else {
+            Output::RecoveryUnaffected
+        }
+    }
+
     // The checkpoint, its records sorted by name only now: the model keeps
     // them in the order they were opened.
     fn checkpoint(&self) -> Checkpoint {
@@ -179,7 +199,7 @@ impl NaiveRegistry {
         session_id: SessionId,
         run: RangeInclusive<u64>,
         ends: (u64, u64),
-    ) -> Output {
+    ) -> Output<ScenarioReason> {
         let (first, last) = (*run.start(), *run.end());
         if last < first {
             return Output::RecoveryRejected(Rejection::EmptyRun { first, last });
@@ -237,7 +257,7 @@ impl NaiveRegistry {
         }
     }
 
-    fn start(&mut self, chunks: u64, sender: u64, receiver: u64) -> Output {
+    fn start(&mut self, chunks: u64, sender: u64, receiver: u64) -> Output<ScenarioReason> {
         let node = self.instance.node;
         let full = self
             .bound

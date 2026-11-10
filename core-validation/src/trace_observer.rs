@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Umberto Gotti
 // SPDX-License-Identifier: MIT
 
+use crate::scenario_reason::ScenarioReason;
 use crate::scenario_trace_entry::ScenarioTraceEntry;
 use alloc::rc::Rc;
 use alloc::vec::Vec;
@@ -23,8 +24,8 @@ impl TraceObserver {
     }
 }
 
-impl Observer for TraceObserver {
-    fn observe(&mut self, command: &Command, receipt: &Receipt) {
+impl Observer<ScenarioReason> for TraceObserver {
+    fn observe(&mut self, command: &Command<ScenarioReason>, receipt: &Receipt<ScenarioReason>) {
         self.trace.borrow_mut().push(ScenarioTraceEntry {
             instance: self.instance,
             command: command.clone(),

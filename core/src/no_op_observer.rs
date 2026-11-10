@@ -9,6 +9,6 @@ use crate::receipt::Receipt;
 // does nothing.
 pub struct NoOpObserver;
 
-impl Observer for NoOpObserver {
-    fn observe(&mut self, _command: &Command, _receipt: &Receipt) {}
+impl<R> Observer<R> for NoOpObserver {
+    fn observe(&mut self, _command: &Command<R>, _receipt: &Receipt<R>) {}
 }

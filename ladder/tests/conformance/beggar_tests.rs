@@ -17,6 +17,7 @@ use beggar::beggar::Beggar;
 use beggar::command::Command;
 use beggar::no_op_observer::NoOpObserver;
 use beggar::receipt::Receipt;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use serde_json::json;
 use serde_json::Value;
 use std::cell::RefCell;
@@ -26,7 +27,7 @@ use std::rc::Rc;
 // What a vector's run answered where the vector expected otherwise: nothing
 // for a conforming implementation.
 fn departures(name: &str, vector: &Value) -> Vec<String> {
-    let mut beggar: Beggar<()> = Beggar::new(
+    let mut beggar: Beggar<ScenarioReason> = Beggar::new(
         SpecReader::origin(&vector["origin"]),
         Box::new(NoOpObserver),
     );
@@ -59,11 +60,11 @@ fn departures(name: &str, vector: &Value) -> Vec<String> {
 // nothing else.
 fn misreport(name: &str, vector: &Value) -> Option<String> {
     let calls = Rc::new(RefCell::new(Vec::new()));
-    let mut beggar: Beggar<()> = Beggar::new(
+    let mut beggar: Beggar<ScenarioReason> = Beggar::new(
         SpecReader::origin(&vector["origin"]),
         Box::new(RecordingObserver::new(Rc::clone(&calls))),
     );
-    let answered: Vec<(Command, Receipt)> = vector["steps"]
+    let answered: Vec<(Command<ScenarioReason>, Receipt<ScenarioReason>)> = vector["steps"]
         .as_array()
         .expect("a vector's steps")
         .iter()

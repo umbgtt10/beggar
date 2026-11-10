@@ -6,7 +6,7 @@ use crate::output::Output;
 // Every call's answer: its output, and its number, one more than the
 // instance's last receipt's, the first being 1.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Receipt {
+pub struct Receipt<R> {
     pub number: u64,
-    pub output: Output,
+    pub output: Output<R>,
 }

@@ -20,6 +20,7 @@ use beggar::fresh::Fresh;
 use beggar::instance_id::InstanceId;
 use beggar::origin::Origin;
 use beggar::session_id::SessionId;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use proptest::collection::vec;
 use proptest::prelude::prop_assert;
 use proptest::prelude::prop_assert_eq;
@@ -33,9 +34,9 @@ use std::rc::Rc;
 
 // The log an instance created fresh writes of the commands: one line per call,
 // as its observer is told them.
-fn log(fresh: &Fresh, commands: Vec<Command>) -> Vec<Value> {
+fn log(fresh: &Fresh, commands: Vec<Command<ScenarioReason>>) -> Vec<Value> {
     let calls = Rc::new(RefCell::new(Vec::new()));
-    let mut beggar: Beggar<()> = Beggar::new(
+    let mut beggar: Beggar<ScenarioReason> = Beggar::new(
         Origin::Fresh(fresh.clone()),
         Box::new(RecordingObserver::new(Rc::clone(&calls))),
     );
@@ -73,7 +74,7 @@ proptest! {
             }),
     ) {
         // Arrange
-        let commands: Vec<Command> = before
+        let commands: Vec<Command<ScenarioReason>> = before
             .into_iter()
             .chain([Command::ShowRegistry])
             .chain(after)
@@ -121,7 +122,7 @@ proptest! {
     }
 }
 
-fn send(first: u64, last: u64) -> Command {
+fn send(first: u64, last: u64) -> Command<ScenarioReason> {
     Command::SendRecoveryPartial {
         session_id: SessionId {
             node: 1,

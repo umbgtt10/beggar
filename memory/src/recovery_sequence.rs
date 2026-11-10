@@ -71,7 +71,7 @@ impl<'a> RecoverySequence<'a> {
         profile
     }
 
-    fn send(count: u64, id: u64) -> Command {
+    fn send(count: u64, id: u64) -> Command<()> {
         Command::SendRecoveryPartial {
             session_id: SessionId {
                 node: NODE,

@@ -9,6 +9,7 @@ use beggar::receipt::Receipt;
 use beggar::rejection::Rejection;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use serde_json::json;
 use serde_json::Value;
 
@@ -29,7 +30,7 @@ impl SpecWriter {
         })
     }
 
-    pub fn command(command: &Command) -> Value {
+    pub fn command(command: &Command<ScenarioReason>) -> Value {
         match command {
             Command::StartRecovery {
                 chunks,
@@ -77,11 +78,15 @@ impl SpecWriter {
                 "sender": Self::number(*sender),
                 "receiver": Self::number(*receiver),
             } }),
+            Command::CancelRecovery { session_id, reason } => json!({ "CancelRecovery": {
+                "session_id": Self::session_id(session_id),
+                "reason": Self::reason(reason),
+            } }),
             Command::ShowRegistry => json!({ "ShowRegistry": {} }),
         }
     }
 
-    pub fn receipt(receipt: &Receipt) -> Value {
+    pub fn receipt(receipt: &Receipt<ScenarioReason>) -> Value {
         json!({
             "number": Self::number(receipt.number),
             "output": Self::output(&receipt.output),
@@ -89,7 +94,7 @@ impl SpecWriter {
     }
 
     // A log's line: the call's command and the receipt it was answered with.
-    pub fn step(command: &Command, receipt: &Receipt) -> Value {
+    pub fn step(command: &Command<ScenarioReason>, receipt: &Receipt<ScenarioReason>) -> Value {
         json!({
             "command": Self::command(command),
             "receipt": Self::receipt(receipt),
@@ -107,7 +112,7 @@ impl SpecWriter {
         Value::String(value.to_string())
     }
 
-    fn output(output: &Output) -> Value {
+    fn output(output: &Output<ScenarioReason>) -> Value {
         match output {
             Output::RecoveryStarted { session_id } => {
                 json!({ "RecoveryStarted": { "session_id": Self::session_id(session_id) } })
@@ -116,6 +121,9 @@ impl SpecWriter {
                 json!({ "RecoveryAdvanced": { "held": Self::number(*held), "chunks": Self::number(*chunks) } })
             }
             Output::RecoveryCompleted => json!({ "RecoveryCompleted": {} }),
+            Output::RecoveryCancelled(reason) => {
+                json!({ "RecoveryCancelled": Self::reason(reason) })
+            }
             Output::RecoveryUnaffected => json!({ "RecoveryUnaffected": {} }),
             Output::RecoveryNotStarted => json!({ "RecoveryNotStarted": {} }),
             Output::RecoveryConflicted {
@@ -132,6 +140,17 @@ impl SpecWriter {
             }
             Output::RegistryShown(checkpoint) => {
                 json!({ "RegistryShown": Self::checkpoint(checkpoint) })
+            }
+        }
+    }
+
+    fn reason(reason: &ScenarioReason) -> Value {
+        match reason {
+            ScenarioReason::Unservable => json!({ "Unservable": {} }),
+            ScenarioReason::Superseded => json!({ "Superseded": {} }),
+            ScenarioReason::PeerFailed => json!({ "PeerFailed": {} }),
+            ScenarioReason::Stalled { held } => {
+                json!({ "Stalled": { "held": Self::number(*held) } })
             }
         }
     }

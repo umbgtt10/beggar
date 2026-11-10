@@ -7,7 +7,7 @@ use crate::session_id::SessionId;
 
 // What happened: past participle, as every output is.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Output {
+pub enum Output<R> {
     RecoveryStarted {
         session_id: SessionId,
     },
@@ -16,6 +16,7 @@ pub enum Output {
         chunks: u64,
     },
     RecoveryCompleted,
+    RecoveryCancelled(R),
     RecoveryUnaffected,
     RecoveryNotStarted,
     RecoveryConflicted {

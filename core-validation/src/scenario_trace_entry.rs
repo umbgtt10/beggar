@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Umberto Gotti
 // SPDX-License-Identifier: MIT
 
+use crate::scenario_reason::ScenarioReason;
 use beggar::command::Command;
 use beggar::instance_id::InstanceId;
 use beggar::receipt::Receipt;
@@ -10,6 +11,6 @@ use beggar::receipt::Receipt;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ScenarioTraceEntry {
     pub instance: InstanceId,
-    pub command: Command,
-    pub receipt: Receipt,
+    pub command: Command<ScenarioReason>,
+    pub receipt: Receipt<ScenarioReason>,
 }

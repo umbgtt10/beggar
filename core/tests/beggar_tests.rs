@@ -23,7 +23,7 @@ const INSTANCE: InstanceId = InstanceId {
     incarnation: 7,
 };
 
-fn adopt(session_id: SessionId, chunks: u64, sender: u64, receiver: u64) -> Command {
+fn adopt(session_id: SessionId, chunks: u64, sender: u64, receiver: u64) -> Command<()> {
     Command::AdoptRecovery {
         session_id,
         chunks,
@@ -59,7 +59,13 @@ fn peers(count: u64) -> SessionId {
     }
 }
 
-fn receive(session_id: SessionId, first: u64, last: u64, sender: u64, receiver: u64) -> Command {
+fn receive(
+    session_id: SessionId,
+    first: u64,
+    last: u64,
+    sender: u64,
+    receiver: u64,
+) -> Command<()> {
     Command::ReceiveRecoveryPartial {
         session_id,
         first,
@@ -79,7 +85,7 @@ fn record(count: u64, chunks: u64, sender: u64, receiver: u64) -> SessionRecord 
     }
 }
 
-fn send(count: u64, first: u64, last: u64, sender: u64, receiver: u64) -> Command {
+fn send(count: u64, first: u64, last: u64, sender: u64, receiver: u64) -> Command<()> {
     Command::SendRecoveryPartial {
         session_id: name(count),
         first,
@@ -96,7 +102,7 @@ fn shown(beggar: &mut Beggar<()>) -> Checkpoint {
     }
 }
 
-fn start(chunks: u64, sender: u64, receiver: u64) -> Command {
+fn start(chunks: u64, sender: u64, receiver: u64) -> Command<()> {
     Command::StartRecovery {
         chunks,
         sender,
@@ -133,6 +139,69 @@ fn new_from_a_checkpoint_carries_on_from_its_next_receipt_and_its_next_name() {
             },
         }
     );
+}
+
+#[test]
+fn process_of_a_cancel_of_an_open_session_answers_cancelled_with_its_reason_and_evicts_it() {
+    // Arrange
+    let mut beggar: Beggar<u8> = Beggar::new(
+        Origin::Fresh(Fresh {
+            instance: INSTANCE,
+            retention: 0,
+            bound: None,
+        }),
+        Box::new(NoOpObserver),
+    );
+    beggar.process(Command::StartRecovery {
+        chunks: 4,
+        sender: 1,
+        receiver: 2,
+    });
+
+    // Act
+    let receipt = beggar.process(Command::CancelRecovery {
+        session_id: name(1),
+        reason: 7,
+    });
+
+    // Assert
+    assert_eq!(receipt.output, Output::RecoveryCancelled(7));
+    let after = beggar.process(Command::ShowRegistry);
+    assert!(
+        matches!(after.output, Output::RegistryShown(checkpoint) if checkpoint.open.is_empty())
+    );
+}
+
+#[test]
+fn process_of_a_cancel_of_no_open_session_answers_unaffected() {
+    // Arrange
+    let mut beggar = fresh(None);
+
+    // Act
+    let receipt = beggar.process(Command::CancelRecovery {
+        session_id: name(1),
+        reason: (),
+    });
+
+    // Assert
+    assert_eq!(receipt.output, Output::RecoveryUnaffected);
+}
+
+#[test]
+fn process_of_a_partial_after_an_accepted_cancel_answers_not_started() {
+    // Arrange
+    let mut beggar = fresh(None);
+    beggar.process(start(4, 1, 2));
+    beggar.process(Command::CancelRecovery {
+        session_id: name(1),
+        reason: (),
+    });
+
+    // Act
+    let receipt = beggar.process(send(1, 1, 4, 1, 2));
+
+    // Assert
+    assert_eq!(receipt.output, Output::RecoveryNotStarted);
 }
 
 #[test]
@@ -500,7 +569,7 @@ fn process_of_every_call_reports_it_and_its_receipt_to_the_observer() {
     ];
 
     // Act
-    let answered: Vec<(Command, Receipt)> = commands
+    let answered: Vec<(Command<()>, Receipt<()>)> = commands
         .into_iter()
         .map(|command| (command.clone(), beggar.process(command)))
         .collect();

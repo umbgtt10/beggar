@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Umberto Gotti
 // SPDX-License-Identifier: MIT
 
+use crate::scenario_reason::ScenarioReason;
 use crate::scenario_trace_entry::ScenarioTraceEntry;
 use crate::trace_observer::TraceObserver;
 use alloc::boxed::Box;
@@ -23,7 +24,7 @@ use core::cell::RefCell;
 pub struct ScenarioNode {
     node: u64,
     incarnation: u64,
-    beggar: Beggar<()>,
+    beggar: Beggar<ScenarioReason>,
     trace: Rc<RefCell<Vec<ScenarioTraceEntry>>>,
 }
 
@@ -53,7 +54,7 @@ impl ScenarioNode {
         }
     }
 
-    pub fn process(&mut self, command: Command) -> Receipt {
+    pub fn process(&mut self, command: Command<ScenarioReason>) -> Receipt<ScenarioReason> {
         self.beggar.process(command)
     }
 
@@ -70,7 +71,7 @@ impl ScenarioNode {
         node: u64,
         incarnation: u64,
         trace: &Rc<RefCell<Vec<ScenarioTraceEntry>>>,
-    ) -> Beggar<()> {
+    ) -> Beggar<ScenarioReason> {
         let instance = InstanceId { node, incarnation };
         Beggar::new(
             Origin::Fresh(Fresh {

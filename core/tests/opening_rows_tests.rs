@@ -43,8 +43,8 @@ fn adoption_at_the_bound_is_registry_full_and_a_session_already_open_is_found_fi
     let rows = OpeningRows::new(INSTANCE, &open, Some(2));
 
     // Act
-    let new_session = rows.adoption(peers(3), 4, PEER, INSTANCE.node);
-    let open_session = rows.adoption(peers(1), 4, PEER, INSTANCE.node);
+    let new_session = rows.adoption::<()>(peers(3), 4, PEER, INSTANCE.node);
+    let open_session = rows.adoption::<()>(peers(1), 4, PEER, INSTANCE.node);
 
     // Assert
     assert_eq!(
@@ -63,7 +63,7 @@ fn adoption_between_two_other_nodes_is_not_a_party() {
     let rows = OpeningRows::new(INSTANCE, &open, None);
 
     // Act
-    let adoption = rows.adoption(peers(1), 4, PEER, 3);
+    let adoption = rows.adoption::<()>(peers(1), 4, PEER, 3);
 
     // Assert
     assert_eq!(
@@ -84,7 +84,7 @@ fn adoption_of_a_name_from_this_nodes_previous_incarnation_is_none() {
     };
 
     // Act
-    let adoption = rows.adoption(previous, 4, PEER, INSTANCE.node);
+    let adoption = rows.adoption::<()>(previous, 4, PEER, INSTANCE.node);
 
     // Assert
     assert_eq!(adoption, None);
@@ -102,8 +102,8 @@ fn adoption_of_a_name_this_instance_minted_is_own_session_after_the_form_rows() 
     };
 
     // Act
-    let well_formed = rows.adoption(own, 4, PEER, INSTANCE.node);
-    let no_chunks = rows.adoption(own, 0, PEER, INSTANCE.node);
+    let well_formed = rows.adoption::<()>(own, 4, PEER, INSTANCE.node);
+    let no_chunks = rows.adoption::<()>(own, 0, PEER, INSTANCE.node);
 
     // Assert
     assert_eq!(
@@ -123,7 +123,7 @@ fn adoption_of_a_session_not_open_under_the_bound_is_none() {
     let rows = OpeningRows::new(INSTANCE, &open, Some(2));
 
     // Act
-    let adoption = rows.adoption(peers(2), 4, PEER, INSTANCE.node);
+    let adoption = rows.adoption::<()>(peers(2), 4, PEER, INSTANCE.node);
 
     // Assert
     assert_eq!(adoption, None);
@@ -136,8 +136,8 @@ fn adoption_of_an_open_session_on_other_terms_is_conflicted_carrying_the_open_se
     let rows = OpeningRows::new(INSTANCE, &open, None);
 
     // Act
-    let other_count = rows.adoption(peers(1), 5, PEER, INSTANCE.node);
-    let other_sender = rows.adoption(peers(1), 4, 3, INSTANCE.node);
+    let other_count = rows.adoption::<()>(peers(1), 5, PEER, INSTANCE.node);
+    let other_sender = rows.adoption::<()>(peers(1), 4, 3, INSTANCE.node);
 
     // Assert
     let open_terms = Some(Output::RecoveryConflicted {

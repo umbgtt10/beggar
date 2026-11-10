@@ -41,7 +41,7 @@ fn account_of_a_run_adding_chunks_advances_carrying_held_and_chunks() {
     registry.open(name(1, 7, 1), 4, INSTANCE.node, 2);
 
     // Act
-    let output = registry.account(0, 1, 2);
+    let output = registry.account::<()>(0, 1, 2);
 
     // Assert
     assert_eq!(output, Output::RecoveryAdvanced { held: 2, chunks: 4 });
@@ -53,10 +53,10 @@ fn account_of_a_run_already_held_is_unaffected() {
     // Arrange
     let mut registry = Registry::new(empty(None));
     registry.open(name(1, 7, 1), 4, INSTANCE.node, 2);
-    registry.account(0, 1, 2);
+    registry.account::<()>(0, 1, 2);
 
     // Act
-    let output = registry.account(0, 2, 2);
+    let output = registry.account::<()>(0, 2, 2);
 
     // Assert
     assert_eq!(output, Output::RecoveryUnaffected);
@@ -67,10 +67,10 @@ fn account_of_the_run_filling_the_set_completes_and_evicts_the_session() {
     // Arrange
     let mut registry = Registry::new(empty(None));
     registry.open(name(1, 7, 1), 4, INSTANCE.node, 2);
-    registry.account(0, 3, 4);
+    registry.account::<()>(0, 3, 4);
 
     // Act
-    let output = registry.account(0, 1, 2);
+    let output = registry.account::<()>(0, 1, 2);
 
     // Assert
     assert_eq!(output, Output::RecoveryCompleted);
@@ -88,6 +88,39 @@ fn count_call_numbers_each_call_one_more_than_the_last() {
     // Assert
     assert_eq!(numbers, [5, 6]);
     assert_eq!(registry.checkpoint().next_receipt, 7);
+}
+
+#[test]
+fn evict_of_an_open_session_removes_it_and_is_true() {
+    // Arrange
+    let mut registry = Registry::new(empty(None));
+    registry.open(name(1, 7, 1), 4, INSTANCE.node, 2);
+    registry.open(name(1, 7, 2), 4, INSTANCE.node, 2);
+
+    // Act
+    let evicted = registry.evict(name(1, 7, 1));
+
+    // Assert
+    assert!(evicted);
+    let names: Vec<SessionId> = registry
+        .checkpoint()
+        .open
+        .iter()
+        .map(|record| record.session_id)
+        .collect();
+    assert_eq!(names, vec![name(1, 7, 2)]);
+}
+
+#[test]
+fn evict_of_no_open_session_is_false() {
+    // Arrange
+    let mut registry = Registry::new(empty(None));
+
+    // Act
+    let evicted = registry.evict(name(1, 7, 1));
+
+    // Assert
+    assert!(!evicted);
 }
 
 #[test]
@@ -143,10 +176,14 @@ fn partial_rows_find_the_open_sessions() {
     registry.open(name(1, 7, 1), 4, INSTANCE.node, 2);
 
     // Act
-    let attribution =
-        registry
-            .partial_rows()
-            .attribution(Side::Sending, name(1, 7, 1), 1, 1, INSTANCE.node, 2);
+    let attribution = registry.partial_rows().attribution::<()>(
+        Side::Sending,
+        name(1, 7, 1),
+        1,
+        1,
+        INSTANCE.node,
+        2,
+    );
 
     // Assert
     assert_eq!(attribution, Ok(0));

@@ -22,6 +22,7 @@ use beggar::origin::Origin;
 use beggar::output::Output;
 use beggar::receipt::Receipt;
 use beggar::session_id::SessionId;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use proptest::collection::btree_set;
 use proptest::collection::vec;
 use proptest::prelude::any;
@@ -76,7 +77,7 @@ fn holds(
     Ok(())
 }
 
-fn names(receipts: &[Receipt]) -> Vec<String> {
+fn names(receipts: &[Receipt<ScenarioReason>]) -> Vec<String> {
     receipts
         .iter()
         .filter_map(|receipt| match receipt.output {
@@ -104,7 +105,7 @@ proptest! {
         }),
     ) {
         // Arrange
-        let mut original: Beggar<()> = Beggar::new(Origin::Fresh(fresh), Box::new(NoOpObserver));
+        let mut original: Beggar<ScenarioReason> = Beggar::new(Origin::Fresh(fresh), Box::new(NoOpObserver));
         for command in before {
             original.process(command);
         }
@@ -112,11 +113,11 @@ proptest! {
             Output::RegistryShown(checkpoint) => checkpoint,
             other => panic!("ShowRegistry answered {other:?}"),
         };
-        let mut restored: Beggar<()> =
+        let mut restored: Beggar<ScenarioReason> =
             Beggar::new(Origin::Checkpoint(checkpoint), Box::new(NoOpObserver));
 
         // Act
-        let both: Vec<(Receipt, Receipt)> = after
+        let both: Vec<(Receipt<ScenarioReason>, Receipt<ScenarioReason>)> = after
             .into_iter()
             .map(|command| (original.process(command.clone()), restored.process(command)))
             .collect();
@@ -132,12 +133,12 @@ proptest! {
         (fresh, commands) in RandomCommands::fresh_and_commands(60),
     ) {
         // Arrange
-        let mut beggar: Beggar<()> =
+        let mut beggar: Beggar<ScenarioReason> =
             Beggar::new(Origin::Fresh(fresh.clone()), Box::new(NoOpObserver));
         let mut model = NaiveRegistry::fresh(&fresh);
 
         // Act
-        let answers: Vec<(Command, Receipt, Receipt)> = commands
+        let answers: Vec<(Command<ScenarioReason>, Receipt<ScenarioReason>, Receipt<ScenarioReason>)> = commands
             .into_iter()
             .chain([Command::ShowRegistry])
             .map(|command| {
@@ -182,13 +183,13 @@ proptest! {
     ) {
         // Arrange
         let calls = Rc::new(RefCell::new(Vec::new()));
-        let mut beggar: Beggar<()> = Beggar::new(
+        let mut beggar: Beggar<ScenarioReason> = Beggar::new(
             Origin::Fresh(fresh),
             Box::new(RecordingObserver::new(Rc::clone(&calls))),
         );
 
         // Act
-        let answered: Vec<(Command, Receipt)> = commands
+        let answered: Vec<(Command<ScenarioReason>, Receipt<ScenarioReason>)> = commands
             .into_iter()
             .map(|command| (command.clone(), beggar.process(command)))
             .collect();
@@ -205,7 +206,7 @@ proptest! {
     ) {
         // Arrange
         let instance = InstanceId { node: 1, incarnation: 7 };
-        let mut beggar: Beggar<()> = Beggar::new(
+        let mut beggar: Beggar<ScenarioReason> = Beggar::new(
             Origin::Fresh(Fresh { instance, retention: 0, bound: None }),
             Box::new(NoOpObserver),
         );
@@ -226,7 +227,7 @@ proptest! {
             .collect();
 
         // Act
-        let outputs: Vec<Output> = runs
+        let outputs: Vec<Output<ScenarioReason>> = runs
             .iter()
             .map(|(first, last)| {
                 let (first, last) = (*first, *last);
@@ -270,7 +271,7 @@ proptest! {
         starts in 1usize..6,
     ) {
         // Arrange
-        let mut registries: Vec<Beggar<()>> = instances
+        let mut registries: Vec<Beggar<ScenarioReason>> = instances
             .iter()
             .map(|(node, incarnation)| {
                 Beggar::new(
@@ -285,7 +286,7 @@ proptest! {
             .collect();
 
         // Act
-        let receipts: Vec<Receipt> = registries
+        let receipts: Vec<Receipt<ScenarioReason>> = registries
             .iter_mut()
             .zip(instances.iter())
             .flat_map(|(registry, (node, _))| {
@@ -298,7 +299,7 @@ proptest! {
                             receiver: peer,
                         })
                     })
-                    .collect::<Vec<Receipt>>()
+                    .collect::<Vec<Receipt<ScenarioReason>>>()
             })
             .collect();
 

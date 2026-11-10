@@ -9,10 +9,11 @@ use beggar::instance_id::InstanceId;
 use beggar::origin::Origin;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use serde_json::Value;
 
 // The specification's JSON read into beggar's types, by the data model's own
-// names: the crate knows nothing of JSON. A form 0.4.0 does not have is a
+// names: the crate knows nothing of JSON. A form 0.5.0 does not have is a
 // broken vector, and panics saying which.
 pub struct SpecReader;
 
@@ -29,7 +30,7 @@ impl SpecReader {
         }
     }
 
-    pub fn command(value: &Value) -> Command {
+    pub fn command(value: &Value) -> Command<ScenarioReason> {
         let (name, carried) = Self::member(value);
         match name {
             "StartRecovery" => Command::StartRecovery {
@@ -57,8 +58,12 @@ impl SpecReader {
                 sender: Self::number(&carried["sender"]),
                 receiver: Self::number(&carried["receiver"]),
             },
+            "CancelRecovery" => Command::CancelRecovery {
+                session_id: Self::session_id(&carried["session_id"]),
+                reason: Self::reason(&carried["reason"]),
+            },
             "ShowRegistry" => Command::ShowRegistry,
-            other => panic!("not a command of 0.4.0: {other}"),
+            other => panic!("not a command of 0.5.0: {other}"),
         }
     }
 
@@ -119,6 +124,20 @@ impl SpecReader {
             .as_str()
             .and_then(|digits| digits.parse().ok())
             .unwrap_or_else(|| panic!("a u64 is a string of decimal digits: {value}"))
+    }
+
+    // The vectors' own reason, read into the scenarios' reason type.
+    fn reason(value: &Value) -> ScenarioReason {
+        let (name, carried) = Self::member(value);
+        match name {
+            "Unservable" => ScenarioReason::Unservable,
+            "Superseded" => ScenarioReason::Superseded,
+            "PeerFailed" => ScenarioReason::PeerFailed,
+            "Stalled" => ScenarioReason::Stalled {
+                held: Self::number(&carried["held"]),
+            },
+            other => panic!("not a reason of 0.5.0: {other}"),
+        }
     }
 
     fn record(value: &Value) -> SessionRecord {

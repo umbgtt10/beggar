@@ -25,7 +25,7 @@ impl Registry {
     // A run added to the open session at the index, and what that did: none
     // new leaves the session unaffected, a full set completes and evicts it,
     // and anything else advances it.
-    pub fn account(&mut self, index: usize, first: u64, last: u64) -> Output {
+    pub fn account<R>(&mut self, index: usize, first: u64, last: u64) -> Output<R> {
         let record = &mut self.state.open[index];
         let before = record.chunk_set.count();
         record.chunk_set.add(first, last);
@@ -51,6 +51,15 @@ impl Registry {
         let number = self.state.next_receipt;
         self.state.next_receipt = number + 1;
         number
+    }
+
+    // The open session named evicted, if there is one: whether there was.
+    pub fn evict(&mut self, session_id: SessionId) -> bool {
+        let before = self.state.open.len();
+        self.state
+            .open
+            .retain(|record| record.session_id != session_id);
+        self.state.open.len() < before
     }
 
     // The next name this instance mints.

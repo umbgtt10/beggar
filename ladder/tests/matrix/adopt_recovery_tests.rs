@@ -23,6 +23,7 @@ use beggar::output::Output;
 use beggar::receipt::Receipt;
 use beggar::rejection::Rejection;
 use beggar::session_id::SessionId;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use std::collections::BTreeSet;
 
 const BOUNDS: [Option<u64>; 4] = [None, Some(0), Some(1), Some(2)];
@@ -58,7 +59,12 @@ const NAMES: [SessionId; 7] = [
 const NODES: [u64; 3] = [1, 2, 3];
 const PEER: u64 = 2;
 
-fn adopt(session_id: SessionId, chunks: u64, sender: u64, receiver: u64) -> Command {
+fn adopt(
+    session_id: SessionId,
+    chunks: u64,
+    sender: u64,
+    receiver: u64,
+) -> Command<ScenarioReason> {
     Command::AdoptRecovery {
         session_id,
         chunks,
@@ -69,8 +75,8 @@ fn adopt(session_id: SessionId, chunks: u64, sender: u64, receiver: u64) -> Comm
 
 // What both implementations answered in a situation, and the state each left.
 struct Answers {
-    crate_receipt: Receipt,
-    model_receipt: Receipt,
+    crate_receipt: Receipt<ScenarioReason>,
+    model_receipt: Receipt<ScenarioReason>,
     crate_state: Checkpoint,
     model_state: Checkpoint,
 }
@@ -81,7 +87,7 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
         retention: 0,
         bound: situation.bound,
     };
-    let mut crate_side: Beggar<()> =
+    let mut crate_side: Beggar<ScenarioReason> =
         Beggar::new(Origin::Fresh(fresh.clone()), Box::new(NoOpObserver));
     let mut model = NaiveRegistry::fresh(&fresh);
     for command in setup(situation) {
@@ -112,7 +118,7 @@ const fn peers(count: u64) -> SessionId {
 }
 
 // The matrix row an adopt's output answers for.
-fn row(output: &Output) -> String {
+fn row(output: &Output<ScenarioReason>) -> String {
     let row = match output {
         Output::RecoveryRejected(Rejection::NoChunks) => "no-chunks",
         Output::RecoveryRejected(Rejection::SelfAddressed) => "self-addressed",
@@ -129,8 +135,8 @@ fn row(output: &Output) -> String {
 
 // The calls that bring an instance to a situation: the peer's sessions
 // adopted, two chunks each, and this node's own started beside them.
-fn setup(situation: &Situation) -> Vec<Command> {
-    let mut commands: Vec<Command> = (1..=situation.adopted)
+fn setup(situation: &Situation) -> Vec<Command<ScenarioReason>> {
+    let mut commands: Vec<Command<ScenarioReason>> = (1..=situation.adopted)
         .map(|count| adopt(peers(count), 2, PEER, INSTANCE.node))
         .collect();
     if situation.started {
@@ -143,7 +149,7 @@ fn setup(situation: &Situation) -> Vec<Command> {
     commands
 }
 
-fn shown(beggar: &mut Beggar<()>) -> Checkpoint {
+fn shown(beggar: &mut Beggar<ScenarioReason>) -> Checkpoint {
     state(beggar.process(Command::ShowRegistry))
 }
 
@@ -153,7 +159,7 @@ struct Situation {
     bound: Option<u64>,
     adopted: u64,
     started: bool,
-    command: Command,
+    command: Command<ScenarioReason>,
 }
 
 fn situations() -> Vec<Situation> {
@@ -184,7 +190,7 @@ fn situations() -> Vec<Situation> {
     situations
 }
 
-fn state(receipt: Receipt) -> Checkpoint {
+fn state(receipt: Receipt<ScenarioReason>) -> Checkpoint {
     match receipt.output {
         Output::RegistryShown(checkpoint) => checkpoint,
         other => panic!("ShowRegistry answered {other:?}"),

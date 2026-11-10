@@ -45,7 +45,7 @@ fn attribution_of_a_receive_in_range_on_its_receivers_end_is_its_sessions_place(
     let rows = PartialRows::new(NODE, &open);
 
     // Act
-    let attribution = rows.attribution(Side::Receiving, name(1), 1, 4, 2, NODE);
+    let attribution = rows.attribution::<()>(Side::Receiving, name(1), 1, 4, 2, NODE);
 
     // Assert
     assert_eq!(attribution, Ok(0));
@@ -58,7 +58,7 @@ fn attribution_of_a_receive_on_the_senders_end_is_wrong_side_before_its_range() 
     let rows = PartialRows::new(NODE, &open);
 
     // Act
-    let attribution = rows.attribution(Side::Receiving, name(2), 0, 9, NODE, 2);
+    let attribution = rows.attribution::<()>(Side::Receiving, name(2), 0, 9, NODE, 2);
 
     // Assert
     assert_eq!(
@@ -74,7 +74,7 @@ fn attribution_of_a_send_for_no_open_session_is_not_started() {
     let rows = PartialRows::new(NODE, &open);
 
     // Act
-    let attribution = rows.attribution(Side::Sending, name(3), 1, 1, 9, 8);
+    let attribution = rows.attribution::<()>(Side::Sending, name(3), 1, 1, 9, 8);
 
     // Assert
     assert_eq!(attribution, Err(Output::RecoveryNotStarted));
@@ -87,8 +87,8 @@ fn attribution_of_a_send_from_zero_or_past_the_chunks_is_chunk_out_of_range() {
     let rows = PartialRows::new(NODE, &open);
 
     // Act
-    let from_zero = rows.attribution(Side::Sending, name(2), 0, 1, NODE, 2);
-    let past_the_chunks = rows.attribution(Side::Sending, name(2), 4, 5, NODE, 2);
+    let from_zero = rows.attribution::<()>(Side::Sending, name(2), 0, 1, NODE, 2);
+    let past_the_chunks = rows.attribution::<()>(Side::Sending, name(2), 4, 5, NODE, 2);
 
     // Assert
     assert_eq!(
@@ -116,7 +116,7 @@ fn attribution_of_a_send_in_range_on_its_senders_end_is_its_sessions_place() {
     let rows = PartialRows::new(NODE, &open);
 
     // Act
-    let attribution = rows.attribution(Side::Sending, name(2), 1, 4, NODE, 2);
+    let attribution = rows.attribution::<()>(Side::Sending, name(2), 1, 4, NODE, 2);
 
     // Assert
     assert_eq!(attribution, Ok(1));
@@ -129,7 +129,7 @@ fn attribution_of_a_send_on_the_receivers_end_is_wrong_side_before_its_range() {
     let rows = PartialRows::new(NODE, &open);
 
     // Act
-    let attribution = rows.attribution(Side::Sending, name(1), 0, 9, 2, NODE);
+    let attribution = rows.attribution::<()>(Side::Sending, name(1), 0, 9, 2, NODE);
 
     // Assert
     assert_eq!(
@@ -145,7 +145,7 @@ fn attribution_of_a_send_with_other_ends_is_misattributed_before_its_side() {
     let rows = PartialRows::new(NODE, &open);
 
     // Act
-    let attribution = rows.attribution(Side::Sending, name(1), 1, 1, NODE, 2);
+    let attribution = rows.attribution::<()>(Side::Sending, name(1), 1, 1, NODE, 2);
 
     // Assert
     assert_eq!(
@@ -164,7 +164,7 @@ fn attribution_of_an_empty_run_is_empty_run_before_its_session_is_looked_for() {
     let rows = PartialRows::new(NODE, &open);
 
     // Act
-    let attribution = rows.attribution(Side::Sending, name(3), 2, 1, 9, 8);
+    let attribution = rows.attribution::<()>(Side::Sending, name(3), 2, 1, 9, 8);
 
     // Assert
     assert_eq!(

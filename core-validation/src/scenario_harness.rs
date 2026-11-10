@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use crate::scenario_node::ScenarioNode;
+use crate::scenario_reason::ScenarioReason;
 use alloc::vec::Vec;
 use beggar::checkpoint::Checkpoint;
 use beggar::command::Command;
@@ -29,7 +30,7 @@ impl ScenarioHarness {
         session_id: SessionId,
         chunks: u64,
         sender: u64,
-    ) -> Receipt {
+    ) -> Receipt<ScenarioReason> {
         self.process(
             receiver,
             Command::AdoptRecovery {
@@ -46,7 +47,11 @@ impl ScenarioHarness {
         self.nodes[index].checkpoint()
     }
 
-    pub fn process(&mut self, node: u64, command: Command) -> Receipt {
+    pub fn process(
+        &mut self,
+        node: u64,
+        command: Command<ScenarioReason>,
+    ) -> Receipt<ScenarioReason> {
         let index = self.index(node);
         self.nodes[index].process(command)
     }
@@ -58,7 +63,7 @@ impl ScenarioHarness {
         first: u64,
         last: u64,
         sender: u64,
-    ) -> Receipt {
+    ) -> Receipt<ScenarioReason> {
         self.process(
             receiver,
             Command::ReceiveRecoveryPartial {
@@ -83,7 +88,7 @@ impl ScenarioHarness {
         first: u64,
         last: u64,
         receiver: u64,
-    ) -> Receipt {
+    ) -> Receipt<ScenarioReason> {
         self.process(
             sender,
             Command::SendRecoveryPartial {
@@ -96,7 +101,7 @@ impl ScenarioHarness {
         )
     }
 
-    pub fn start(&mut self, sender: u64, receiver: u64, chunks: u64) -> Receipt {
+    pub fn start(&mut self, sender: u64, receiver: u64, chunks: u64) -> Receipt<ScenarioReason> {
         self.process(
             sender,
             Command::StartRecovery {

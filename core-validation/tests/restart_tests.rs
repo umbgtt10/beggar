@@ -7,6 +7,7 @@ use beggar::receipt::Receipt;
 use beggar::session_id::SessionId;
 use beggar_core_validation::cluster_simulation::ClusterSimulation;
 use beggar_core_validation::scenario_harness::ScenarioHarness;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use beggar_core_validation::transport::fault_policy::FaultPolicy;
 
 const A: u64 = 1;
@@ -23,7 +24,7 @@ fn half_sent() -> (ScenarioHarness, SessionId) {
     (harness, session)
 }
 
-fn named(receipt: Receipt) -> SessionId {
+fn named(receipt: Receipt<ScenarioReason>) -> SessionId {
     match receipt.output {
         Output::RecoveryStarted { session_id } => session_id,
         other => panic!("not started: {other:?}"),

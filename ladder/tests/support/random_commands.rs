@@ -5,6 +5,7 @@ use beggar::command::Command;
 use beggar::fresh::Fresh;
 use beggar::instance_id::InstanceId;
 use beggar::session_id::SessionId;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use proptest::collection::vec;
 use proptest::option::of;
 use proptest::prelude::any;
@@ -24,7 +25,7 @@ const PEER_INCARNATION: u64 = 5;
 pub struct RandomCommands;
 
 impl RandomCommands {
-    pub fn command(instance: InstanceId) -> impl Strategy<Value = Command> {
+    pub fn command(instance: InstanceId) -> impl Strategy<Value = Command<ScenarioReason>> {
         let node = instance.node;
         let peer = node % 3 + 1;
         prop_oneof![
@@ -76,7 +77,9 @@ impl RandomCommands {
     }
 
     // A random instance and a random sequence of its commands.
-    pub fn fresh_and_commands(longest: usize) -> impl Strategy<Value = (Fresh, Vec<Command>)> {
+    pub fn fresh_and_commands(
+        longest: usize,
+    ) -> impl Strategy<Value = (Fresh, Vec<Command<ScenarioReason>>)> {
         Self::fresh().prop_flat_map(move |fresh| {
             let instance = fresh.instance;
             (Just(fresh), vec(Self::command(instance), 0..longest))

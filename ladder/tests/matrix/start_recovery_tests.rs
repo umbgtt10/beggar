@@ -18,6 +18,7 @@ use beggar::origin::Origin;
 use beggar::output::Output;
 use beggar::receipt::Receipt;
 use beggar::rejection::Rejection;
+use beggar_core_validation::scenario_reason::ScenarioReason;
 use std::collections::BTreeSet;
 
 const BOUNDS: [Option<u64>; 4] = [None, Some(0), Some(1), Some(2)];
@@ -29,8 +30,8 @@ const NODES: [u64; 3] = [1, 2, 3];
 
 // What both implementations answered in a situation, and the state each left.
 struct Answers {
-    crate_receipt: Receipt,
-    model_receipt: Receipt,
+    crate_receipt: Receipt<ScenarioReason>,
+    model_receipt: Receipt<ScenarioReason>,
     crate_state: Checkpoint,
     model_state: Checkpoint,
 }
@@ -41,7 +42,7 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
         retention: 0,
         bound: situation.bound,
     };
-    let mut crate_side: Beggar<()> =
+    let mut crate_side: Beggar<ScenarioReason> =
         Beggar::new(Origin::Fresh(fresh.clone()), Box::new(NoOpObserver));
     let mut model = NaiveRegistry::fresh(&fresh);
     for _ in 0..situation.opened {
@@ -64,11 +65,12 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
     }
 }
 
-fn kind(output: &Output) -> String {
+fn kind(output: &Output<ScenarioReason>) -> String {
     match output {
         Output::RecoveryStarted { .. } => String::from("started"),
         Output::RecoveryAdvanced { .. } => String::from("advanced"),
         Output::RecoveryCompleted => String::from("completed"),
+        Output::RecoveryCancelled(_) => String::from("cancelled"),
         Output::RecoveryUnaffected => String::from("unaffected"),
         Output::RecoveryNotStarted => String::from("not-started"),
         Output::RecoveryConflicted { .. } => String::from("conflicted"),
@@ -78,7 +80,7 @@ fn kind(output: &Output) -> String {
     }
 }
 
-fn shown(beggar: &mut Beggar<()>) -> Checkpoint {
+fn shown(beggar: &mut Beggar<ScenarioReason>) -> Checkpoint {
     state(beggar.process(Command::ShowRegistry))
 }
 
@@ -86,7 +88,7 @@ fn shown(beggar: &mut Beggar<()>) -> Checkpoint {
 struct Situation {
     bound: Option<u64>,
     opened: u64,
-    command: Command,
+    command: Command<ScenarioReason>,
 }
 
 fn situations() -> Vec<Situation> {
@@ -114,7 +116,7 @@ fn situations() -> Vec<Situation> {
     situations
 }
 
-fn start(chunks: u64, sender: u64, receiver: u64) -> Command {
+fn start(chunks: u64, sender: u64, receiver: u64) -> Command<ScenarioReason> {
     Command::StartRecovery {
         chunks,
         sender,
@@ -122,7 +124,7 @@ fn start(chunks: u64, sender: u64, receiver: u64) -> Command {
     }
 }
 
-fn state(receipt: Receipt) -> Checkpoint {
+fn state(receipt: Receipt<ScenarioReason>) -> Checkpoint {
     match receipt.output {
         Output::RegistryShown(checkpoint) => checkpoint,
         other => panic!("ShowRegistry answered {other:?}"),
