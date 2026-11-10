@@ -3,7 +3,8 @@
 
 // The replay tier over the cluster simulation's logs: every instance's trace,
 // written in the specification's JSON as its observer was told it and
-// replayed from that instance's origin -- under any faults and restarts, every
+// replayed from that instance's origin -- under any faults, restarts and
+// cancellation policy, the reasons of its cancels included, every
 // receipt rebuilt; with a line dropped, the gap found at its number and the
 // replay resynchronised at the next checkpoint the log holds.
 
@@ -18,6 +19,7 @@ use beggar_core_validation::scenario_trace_entry::ScenarioTraceEntry;
 use beggar_core_validation::transport::fault_policy::FaultPolicy;
 use beggar_core_validation::transport::message_kind::MessageKind;
 use proptest::collection::vec;
+use proptest::option::of;
 use proptest::prelude::any;
 use proptest::prelude::prop_assert;
 use proptest::prelude::prop_assert_eq;
@@ -26,17 +28,19 @@ use proptest::prelude::ProptestConfig;
 use proptest::prelude::Strategy;
 use serde_json::Value;
 
-// A cluster run to quiescence under the policy, the workload and the
-// restarts, its invariants checked before it starts and after every step --
-// which asks every node for its checkpoint, so every log opens with one and
-// holds one at every step.
+// A cluster run to quiescence under the policy, the workload, the restarts
+// and the patience, then made to cancel what it still holds and run again
+// until the abandons are delivered; its invariants checked before it starts
+// and after every step -- which asks every node for its checkpoint, so every
+// log opens with one and holds one at every step.
 fn cluster(
     policy: FaultPolicy,
     nodes: u64,
     transfers: &[(bool, u64, u64, u64)],
     restarts: &[(u64, u64)],
+    patience: Option<u64>,
 ) -> ClusterSimulation {
-    let mut simulation = ClusterSimulation::new(nodes, policy, 2, 6, None);
+    let mut simulation = ClusterSimulation::new(nodes, policy, 2, 6, patience);
     for (pull, first, second, chunks) in transfers {
         let (first, second) = (first % nodes + 1, second % nodes + 1);
         if first == second {
@@ -60,6 +64,8 @@ fn cluster(
         steps += 1;
         simulation.check();
     }
+    simulation.cancel_abandoned();
+    simulation.run_checked(20_000);
     simulation
 }
 
@@ -133,11 +139,12 @@ proptest! {
         nodes in 3u64..=5,
         transfers in vec((any::<bool>(), 0u64..5, 0u64..5, 1u64..=8), 1..8),
         restarts in vec((0u64..60, 0u64..5), 0..3),
+        patience in of(1u64..=20),
         which in any::<usize>(),
         dropped in any::<usize>(),
     ) {
         // Arrange
-        let logs = logs(cluster(policy, nodes, &transfers, &restarts).traces());
+        let logs = logs(cluster(policy, nodes, &transfers, &restarts, patience).traces());
         let log = &logs[which % logs.len()];
         let dropped = dropped % log.lines.len();
         let checkpoint = (dropped + 1..log.lines.len()).find(|index| log.checkpoints[*index]);
@@ -166,9 +173,10 @@ proptest! {
         nodes in 3u64..=5,
         transfers in vec((any::<bool>(), 0u64..5, 0u64..5, 1u64..=8), 1..8),
         restarts in vec((0u64..60, 0u64..5), 0..3),
+        patience in of(1u64..=20),
     ) {
         // Arrange
-        let logs = logs(cluster(policy, nodes, &transfers, &restarts).traces());
+        let logs = logs(cluster(policy, nodes, &transfers, &restarts, patience).traces());
 
         // Act
         let reports: Vec<_> = logs
