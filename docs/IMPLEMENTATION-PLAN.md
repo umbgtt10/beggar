@@ -138,4 +138,13 @@ The serving end: the side that holds the chunks opens the session and sends them
 ## After the slices
 
 Integration has plans of its own: beggar beneath IBFT's control layer, in `etheram-ibft`, and Raft's catch-up
-split into a control layer with beggar beneath it, in `etheram-raft`.
+split into a control layer with beggar beneath it, in `etheram-raft`. **Raft first** — decided 2026-11-10: slices
+4 and 5, then Raft, while IBFT's side is busy with work of its own.
+
+**Whether the control layer moves here is decided after integration, not before** — 2026-11-10, closing for now
+[`DESIGN.md`](DESIGN.md) §12's open question. `faction` has a `protocol` crate, its `protocol-validation` and
+`system-tests`, because it owns its wire; beggar owns none, and `P2-ADR-TestingLadder` already leaves its system
+tier to its consumers. Its counterpart to `faction`'s protocol layer is the control layer above it, of which there
+is one today, IBFT's, and will be two once Raft's catch-up is split. If the two prove one consensus-unaware layer in
+two configurations, it arrives here as `protocol/`, with `protocol-validation/` and `system-tests/` as `faction`'s;
+if not, each stays with its consumer. One example is not enough to draw the abstraction from.
