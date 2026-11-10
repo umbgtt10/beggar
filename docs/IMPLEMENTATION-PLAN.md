@@ -1,7 +1,7 @@
 # beggar — implementation plan
 
-**Status: planned 2026-11-06; slice 1 built 2026-11-09, slices 2 to 4 on 2026-11-10.** Its specification is
-`spec/` at version 0.5.0; the ladder's scenario tiers live in `ladder/`, a package of their own, the cluster
+**Status: planned 2026-11-06; slice 1 built 2026-11-09, slices 2 to 5 on 2026-11-10 — all five built.** Its
+specification is `spec/` at version 0.6.0; the ladder's scenario tiers live in `ladder/`, a package of their own, the cluster
 simulation in `core-validation/`, laid out as faction's, the memory tier in `memory/`, and the coverage gate stands at 100% over every tier and over the conformance tier alone. The decisions are the ADRs in [`ADRs/`](ADRs/README.md) and the
 how is [`DESIGN.md`](DESIGN.md); this is the order of building it.
 
@@ -104,11 +104,17 @@ The serving end: the side that holds the chunks opens the session and sends them
   what it still holds, and nothing is left open anywhere.
 - **A caller can then:** act on its cancellation policy.
 
-### 5. Look inside, and keep what finished
+### 5. Look inside, and keep what finished — built 2026-11-10
 
 - **Adds:** `ListRecoveries`, `ShowRecovery` and `ListMissingChunks`; and retention, recorded in two columns —
-  `Default` and deployed — from its first line.
-- **Proves:** the vectors run at retention 0 and at a high retention, and every output but a query's matches.
+  `Default` and deployed — from its first line, with no default: every instance states its own. A finished
+  session is kept as it stood, with the number of the receipt that finished it; past the retention the earliest
+  finished goes. A name may be open and retained at once — the queries read the open one, else the last finished.
+  `ListMissingChunks` answers maximal runs. The specification goes to 0.6.0.
+- **Proves:** every vector again at the top of u64, every output but a query's alike; random sequences and
+  clusters, faults and restarts included, likewise at 0 and at the top. At quiescence each receiver lacks exactly
+  the chunks that never reached it, and the cluster's last word asks each node what it lists. Logs replay through
+  checkpoints keeping finished sessions; at a retention the memory held stops growing once it is full.
 - **A caller can then:** know which chunks to resend, and keep finished sessions on a host for analysis.
 
 ### The matrix, slice by slice
@@ -133,10 +139,11 @@ The serving end: the side that holds the chunks opens the session and sends them
   ([`P1-ADR-TheSenderOpensAndStatesTheCount`](ADRs/P1-ADR-TheSenderOpensAndStatesTheCount.md)) and IBFT's control
   layer already exists to integrate against; Raft's catch-up has yet to be split into a control layer and beggar.
 - **The chunks received are a type of beggar's own, `ChunkSet`**, showing behaviour, never its fields:
-  `count`, `contains`, `ids`, and `runs` — the maximal runs of consecutive ids. A set has exactly one set of
-  maximal runs, so they are a property of the set and not of a representation, and they keep a checkpoint small:
-  a session holding chunks 1 to 1,000,000 is one run. `ListMissingChunks` answers in runs too. The vectors still
-  give ids. Its shape is laid down with the checkpoint in slice 1, and holds its first chunk in slice 2.
+  `count`, `ids`, and `missing` — what it lacks, as the maximal runs of consecutive ids. A set has exactly one set
+  of maximal runs, so they are a property of the set and not of a representation, and they keep a checkpoint
+  small: a session holding chunks 1 to 1,000,000 is one run. `ListMissingChunks` answers in runs; the vectors'
+  chunk sets still give ids. Its shape is laid down with the checkpoint in slice 1, and holds its first chunk in
+  slice 2. `contains` and `runs`, planned here at first, are not built: nothing the specification asks reads them.
 - **Vectors hold one instance each.** Two-ended transfers are host tests of two registries, from slice 3.
 
 ## After the slices

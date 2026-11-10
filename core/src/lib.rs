@@ -6,14 +6,24 @@
 
 //! A `no_std`, protocol-independent recovery registry.
 //!
-//! **Slices 1 to 4 of five are built:** an instance, created fresh or from a
+//! **All five slices are built:** an instance, created fresh or from a
 //! checkpoint, with an observer told of every call; both ends of a transfer --
 //! `StartRecovery` and `SendRecoveryPartial` on the side that holds the chunks,
 //! `AdoptRecovery` and `ReceiveRecoveryPartial` on the other, each accounting
 //! the session to completion; `CancelRecovery`, which ends a session for a
-//! reason of the caller's own type, recorded and never read; and
-//! `ShowRegistry`, the checkpoint -- conformant to version 0.5.0 of the
-//! specification in the repository's `spec/`. Nothing should depend on it until the slices are done.
+//! reason of the caller's own type, recorded and never read; the queries --
+//! `ListRecoveries`, `ShowRecovery`, `ListMissingChunks`, and `ShowRegistry`,
+//! the checkpoint; and retention, finished sessions kept for the queries and
+//! for nothing else -- conformant to version 0.6.0 of the specification in the
+//! repository's `spec/`.
+//!
+//! # Retention
+//!
+//! A finished session -- completed or cancelled -- is evicted; the instance's
+//! retention keeps that many of them, the latest to finish, as they stood, for
+//! `ShowRecovery` and `ListMissingChunks` to read. It changes what a query
+//! answers and nothing else, and it has no default: every instance states its
+//! own, 0 where nothing is to be kept.
 //!
 //! # What it does
 //!

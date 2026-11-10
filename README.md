@@ -2,12 +2,13 @@
 
 A `no_std`, protocol-independent **recovery registry**.
 
-**Slices 1 to 4 of five are built** (2026-11-10): an instance, created fresh or from a checkpoint, with an
-observer told of every call; both ends of a transfer — `StartRecovery` and `SendRecoveryPartial` on the side that
-holds the chunks, `AdoptRecovery` and `ReceiveRecoveryPartial` on the other — and `CancelRecovery`, carrying the
-caller's own reason, each with every row it has; and `ShowRegistry`, the checkpoint — conformant to the
-specification's version 0.5.0, in [`spec/`](spec/SPEC.md). Version 0.0.1 on crates.io only reserves the name, and nothing should depend on this crate
-until the slices are done.
+**All five slices are built** (2026-11-10): an instance, created fresh or from a checkpoint, with an observer
+told of every call; both ends of a transfer — `StartRecovery` and `SendRecoveryPartial` on the side that holds the
+chunks, `AdoptRecovery` and `ReceiveRecoveryPartial` on the other — and `CancelRecovery`, carrying the caller's own
+reason; the queries — `ListRecoveries`, `ShowRecovery`, `ListMissingChunks`, and `ShowRegistry`, the checkpoint;
+and retention — each with every row it has, conformant to the specification's version 0.6.0, in
+[`spec/`](spec/SPEC.md). Version 0.5.0 is tagged in this repository; version 0.0.1 on crates.io only reserves the
+name.
 
 The foundations are four ADRs in [`docs/ADRs/`](docs/ADRs/README.md); the design is
 [`docs/DESIGN.md`](docs/DESIGN.md). Both are authoritative; this file is the summary. The order of building it is
@@ -27,7 +28,18 @@ That asymmetry is the whole mechanism, and it is the reason for the name.
 chunk count and two node identities, and beggar names it; the peer's registry adopts the name. Each run of chunks
 that moves — a single chunk is a run of one — is recorded against it; when the set is full, or the caller cancels, the session terminates and is evicted.
 An instance may be given a bound on how many sessions are open at once; past it, an open is refused.
-A command it refuses gets an output saying why — never an exception.
+A command it refuses gets an output saying why — never an exception. A caller can ask which sessions are open, one
+session's record, and the chunks it still lacks, as maximal runs.
+
+**Retention** keeps finished sessions for those queries: as many as the instance's retention, the latest to
+finish, each as it stood. It changes what a query answers and nothing else, so a host kept for analysis and a
+board keeping none answer every other command alike. Both settings are recorded in two columns, because a library's
+default quoted as a deployed value is a trap this project has already fallen into:
+
+| setting | default | deployed |
+|---|---|---|
+| retention | none — every instance states its own | 0 on the IBFT cluster; Raft's chosen at its integration; high on a host kept for analysis |
+| bound on open sessions | none — no bound | the integration's to choose |
 
 It deals in **no bytes, blocks, arrays or wire types** — session identities, chunk counts, chunk ids and node
 identities, and nothing else. The payload moves elsewhere; beggar records that it moved.

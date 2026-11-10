@@ -48,7 +48,14 @@ by concurrent transfers, not by transfers ever attempted.
 Retention is recorded in two columns from the first line of code — its
 `Default` and its deployed value. A one-column constants table once led four
 downstream records to quote a library default as deployed; a retention
-default other than 0, with the cluster at 0, is the same trap.
+default other than 0, with the cluster at 0, is the same trap. Since
+2026-11-10 it has no default at all: every instance states its own, and the
+first column reads none.
+
+A finished session is kept as it stood, with the number of the receipt that
+finished it, and past the retention the one that finished earliest goes;
+whether it completed is its chunk set, full or not, and a cancel's reason
+stays in the log.
 
 Which sessions are open is the API's to answer; which ever existed is the
 capture's. They are two questions, and neither stands in for the other.
@@ -56,8 +63,10 @@ capture's. They are two questions, and neither stands in for the other.
 ## Enforcement
 
 In the matrix only `ShowRecovery` and `ListMissingChunks` read a retained
-record. The conformance vectors run a command sequence at retention 0 and at a
-high retention, and every output but a query's must match.
+record. Every conformance vector runs again with its retention raised to the
+top of u64 (the specification's §11); the property and cluster simulation
+tiers run random sequences and clusters at 0 and at the top; and every output
+but a query's must match.
 
 ## Related
 

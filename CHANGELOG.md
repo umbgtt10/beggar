@@ -3,6 +3,37 @@
 The crate's versions. The specification in [`spec/`](spec/SPEC.md) is versioned on its own; each release names the
 version it conforms to.
 
+## [0.5.0] — 2026-11-10
+
+### Slice 5 — look inside, and keep what finished
+
+The queries and retention, conformant to the specification's version 0.6.0. All five slices are built.
+
+#### Added
+- `ListRecoveries`, answering `RecoveriesListed { sessions }`: the names of the open sessions, in canonical order.
+- `ShowRecovery { session_id }`, answering `RecoveryShown { record, finished }` — the open session of the name,
+  `finished` none, else the retained one that finished last, with the number of the receipt that finished it — or
+  `RecoveryNotStarted`.
+- `ListMissingChunks { session_id }`, answering `MissingChunksListed { missing }`: what the same session lacks of
+  `1..=chunks`, as maximal runs — or `RecoveryNotStarted`.
+- Retention: a finished session, completed or cancelled, kept as it stood as a `RetainedRecord { record, finished }`,
+  the checkpoint's retained records in the order of their names and, under one name, of their finishing; past the
+  retention the one that finished earliest goes. It changes what a query answers and nothing else.
+- `QueryRows`, beside `OpeningRows` and `PartialRows`; `ChunkSet::missing`; `Registry::query_rows`.
+- The specification's 0.6.0: the three commands, their four rows, the run's JSON form `{"first", "last"}`, retained
+  records with `finished`, the conformance clause that every vector answers every step but a query's alike with its
+  retention raised to the top of u64, and 14 new vectors, 79 in all.
+- The exhaustive matrix over every query after every history of up to four commands, at four retentions and from
+  an instance already keeping two sessions (28,086 situations); random queries in the property tier, the retained
+  records checked exactly, every command but a query alike at retention 0 and at the top, and one name finished
+  again and again; the cluster simulation at any retention, each receiver's `ListMissingChunks` checked at
+  quiescence, the policy's last word asking each node `ListRecoveries`; replay through checkpoints keeping
+  finished sessions; and the memory tier at a retention, holding no more after a hundred recoveries than once full.
+
+#### Changed
+- `Checkpoint::retained` holds `RetainedRecord`s, not `SessionRecord`s.
+- Retention has no default; `Fresh` already required it, and now the documents say so, in two columns.
+
 ## [0.4.0] — 2026-11-10
 
 ### Slice 4 — abandon it

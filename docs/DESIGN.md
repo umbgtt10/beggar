@@ -234,6 +234,14 @@ policy** — [`P1-ADR-CancelEvictsWithoutATombstone`](ADRs/P1-ADR-CancelEvictsWi
 
 How many finished sessions beggar keeps is configuration — **0** on the IBFT cluster — and it changes what a query
 can answer and nothing else: every terminal output is emitted whatever is kept — [`P1-ADR-RetentionGovernsQueriesNeverEmission`](ADRs/P1-ADR-RetentionGovernsQueriesNeverEmission.md).
+A finished session, completed or cancelled, is kept as it stood, with the number of the receipt that finished it;
+past the retention the one that finished earliest goes. Whether it completed is its chunk set, full or not; the
+cancel's reason stays in the log. **It has no default** — decided 2026-11-10: every instance states its own.
+
+| setting | default | deployed |
+|---|---|---|
+| retention | none — every instance states its own | 0 on the IBFT cluster; Raft's chosen at its integration; high on a host kept for analysis |
+| bound on open sessions | none — no bound | the integration's to choose |
 
 **How many sessions may be open is configuration too, and optional** — none by default, no bound; its deployed value
 is the integration's to choose. Past it a start, or an adopt of a session not open, is refused with
@@ -257,9 +265,10 @@ provided for a caller with no use for one, as faction provides its own — [`P1-
 **The received set is ranges of chunk ids** — `3..=7`, `9..=12` — merged as chunks arrive; never a bitmap
 ([`P0-ADR-ARecoveryIsACollectionOfChunks`](ADRs/P0-ADR-ARecoveryIsACollectionOfChunks.md)).
 
-**A caller sees it as `ChunkSet`**, beggar's own type, through behaviour and never its fields: `count`,
-`contains`, `ids`, and `runs` — the maximal runs of consecutive ids, `1..=3`, `5..=6`, `9..=9` for chunks 1, 2, 3, 5,
-6 and 9. A set has exactly one list of maximal runs, so they are a property of the set, not of how beggar stores
+**A caller sees it as `ChunkSet`**, beggar's own type, through behaviour and never its fields: `count`, `ids`,
+and `missing` — what it lacks of `1..=chunks`, as maximal runs of consecutive ids: `1..=3`, `5..=6`, `9..=9` for
+chunks 1, 2, 3, 5, 6 and 9. It keeps its ids as maximal runs too; `contains` and `runs`, once planned here, are not
+built, because nothing the specification asks reads them. A set has exactly one list of maximal runs, so they are a property of the set, not of how beggar stores
 it, and any implementation gives the same. They keep the checkpoint small: chunks 1 to 1,000,000 received in order
 are one run, and a session that has received nothing is missing one run, whatever its `chunks`.
 
