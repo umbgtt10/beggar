@@ -1,5 +1,5 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "rows": [
     {
       "id": "no-chunks",
@@ -117,6 +117,18 @@
       "id": "partial-unaffected",
       "commands": ["SendRecoveryPartial", "ReceiveRecoveryPartial"],
       "situation": "otherwise: every chunk of the run is already in the chunk set",
+      "output": "RecoveryUnaffected"
+    },
+    {
+      "id": "cancel-cancelled",
+      "commands": ["CancelRecovery"],
+      "situation": "a session named `session_id` is open: it is evicted",
+      "output": "RecoveryCancelled"
+    },
+    {
+      "id": "cancel-unaffected",
+      "commands": ["CancelRecovery"],
+      "situation": "otherwise: no session named `session_id` is open",
       "output": "RecoveryUnaffected"
     },
     {

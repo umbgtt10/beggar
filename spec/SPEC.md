@@ -1,14 +1,14 @@
 # beggar — the specification
 
-**Version 0.4.0.** The four parts of this specification are versioned together: this prose, the data model in
+**Version 0.5.0.** The four parts of this specification are versioned together: this prose, the data model in
 [`schema.json`](schema.json), the decision table in [`matrix.json`](matrix.json) and the conformance vectors in
 [`vectors/`](vectors/). It is normative; the `beggar` crate is one implementation of it, and where the two disagree
 the specification is right ([`P0-ADR-SpecificationIsNormativeCrateIsReference`](../docs/ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md)).
 
-**What 0.4.0 covers:** an instance, created fresh or from a checkpoint, and the observer it reports every call to;
-both ends of a transfer — `StartRecovery` and `AdoptRecovery`, `SendRecoveryPartial` and `ReceiveRecoveryPartial`,
-each with every row it has; and `ShowRegistry`, the checkpoint. The other commands arrive in later versions, each
-with all of its rows. 0.4.0 is 0.3.0 with the receiving end: `AdoptRecovery` and `ReceiveRecoveryPartial`.
+**What 0.5.0 covers:** an instance, created fresh or from a checkpoint, and the observer it reports every call to;
+both ends of a transfer — `StartRecovery` and `AdoptRecovery`, `SendRecoveryPartial` and `ReceiveRecoveryPartial` —
+and `CancelRecovery`, each with every row it has; and `ShowRegistry`, the checkpoint. The queries arrive in a later
+version, with all of their rows. 0.5.0 is 0.4.0 with `CancelRecovery`.
 
 ## 1. Conventions
 
@@ -44,8 +44,8 @@ exactly one form, so two implementations' logs of the same calls are identical.
   restart, since a checkpoint's name count may be behind the one the instance had reached
   ([`P1-ADR-TheLogIsTheRecord`](../docs/ADRs/P1-ADR-TheLogIsTheRecord.md)).
 
-**The retention** is how many finished sessions the instance keeps for its queries. In 0.4.0 a session finishes
-when it completes (§7), and is evicted; what a retention keeps, and for which queries, arrives in a later version.
+**The retention** is how many finished sessions the instance keeps for its queries. In 0.5.0 a session finishes
+when it completes (§7) or is cancelled (§8), and is evicted; what a retention keeps, and for which queries, arrives in a later version.
 So the retained records are always none, whatever the retention, and the retention is carried and shown.
 
 **The bound** is how many sessions may be open at once, or none for no bound. It counts open sessions only, and a
@@ -134,8 +134,8 @@ with the open session on its count or its ends changes nothing, and answers with
 log can tell a repeated report from a contradicting one ([`P1-ADR-OneEntryPointOneOutput`](../docs/ADRs/P1-ADR-OneEntryPointOneOutput.md)).
 `RecoveryConflicted` terminates nothing: the open session stays open.
 
-**A late duplicate.** An adopt whose session already completed here finds none open, and opens it again: an
-evicted session leaves no trace to refuse it by. The session reopened never completes unless its chunks come again;
+**A late duplicate.** An adopt whose session already completed or was cancelled here finds none open, and opens it
+again: an evicted session leaves no trace to refuse it by. The session reopened never completes unless its chunks come again;
 it is an abandoned session like any other, and the caller's cancellation policy ends it
 ([`P1-ADR-CancelEvictsWithoutATombstone`](../docs/ADRs/P1-ADR-CancelEvictsWithoutATombstone.md)).
 
@@ -179,7 +179,37 @@ and it leaves no trace, so a later partial naming it answers `RecoveryNotStarted
 ([`P1-ADR-CancelEvictsWithoutATombstone`](../docs/ADRs/P1-ADR-CancelEvictsWithoutATombstone.md)). Its place under
 the bound is free again; its name stays minted.
 
-## 8. `ShowRegistry`, the checkpoint
+## 8. `CancelRecovery`
+
+**Carries:** `session_id`, the session's name; and `reason`, why the caller abandons it — a value of the caller's
+own enumeration, with or without a payload, never a string. Beggar records the reason in the receipt and never
+reads it: why a session ends is the caller's to know and the log's to keep
+([`P1-ADR-CancelEvictsWithoutATombstone`](../docs/ADRs/P1-ADR-CancelEvictsWithoutATombstone.md)).
+
+**Checked in this order:**
+
+| row | situation | output |
+|---|---|---|
+| `cancel-cancelled` | a session named `session_id` is open | `RecoveryCancelled(reason)`, the reason given |
+| `cancel-unaffected` | otherwise | `RecoveryUnaffected` |
+
+**Cancelled:** the session is evicted, as a completed one is: no longer open, its record gone, no trace left, its
+place under the bound free again and its name still minted. A cancel is local — telling the other end is the
+caller's — and carries no ends to check: it names a session, at whichever end the instance holds it.
+
+**A cancel wins once accepted.** A partial that arrives after it, the session's final one included, finds none
+open and answers `RecoveryNotStarted`: no completion follows an accepted cancel. A partial that arrived before it
+stands: a session the partial completed is no longer open, and the cancel is unaffected.
+
+**None is an error.** A cancel of a session never opened here, already completed, already cancelled, or racing its
+final partial each has its row; an abandoned session ends only by the caller's cancellation policy, since beggar
+times nothing.
+
+**The reason in the vectors** is an enumeration of their own, standing for any caller's: `Unservable`,
+`Superseded`, `PeerFailed`, and `Stalled { held }`, which carries a count. Its values are the four reasons a
+session is abandoned that the ADR names; an implementation maps them to its own reason type.
+
+## 9. `ShowRegistry`, the checkpoint
 
 **Changes nothing** but the receipt number. **Answers `RegistryShown`**, carrying the checkpoint: the instance id,
 the retention and the bound; every open session's record and every retained one's; the name count; and the next
@@ -193,7 +223,7 @@ the receipt that carries it. An instance restored from it carries on from the ne
 alike. An open session's chunk set is never full: the run that fills it completes the
 session and evicts it.
 
-## 9. Conformance
+## 10. Conformance
 
 **A vector is an initial state, steps, and a final state.** The initial state is an origin: fresh, or a checkpoint.
 Each step is a command and the receipt it must be answered with. The final state is the checkpoint a

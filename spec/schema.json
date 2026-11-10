@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:beggar:spec:0.4.0:schema",
-  "title": "beggar 0.4.0 -- the data model",
+  "$id": "urn:beggar:spec:0.5.0:schema",
+  "title": "beggar 0.5.0 -- the data model",
   "description": "Every command, receipt, output, rejection and the checkpoint, and the forms of a conformance vector and of the decision table. Normative with SPEC.md.",
   "$ref": "#/$defs/vector",
   "$defs": {
@@ -34,6 +34,42 @@
         "incarnation": { "$ref": "#/$defs/u64" },
         "count": { "$ref": "#/$defs/u64" }
       }
+    },
+    "reason": {
+      "description": "Why a session is cancelled: in the vectors an enumeration of their own, standing for the caller's.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Unservable"],
+          "properties": { "Unservable": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Superseded"],
+          "properties": { "Superseded": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["PeerFailed"],
+          "properties": { "PeerFailed": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["Stalled"],
+          "properties": {
+            "Stalled": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["held"],
+              "properties": { "held": { "$ref": "#/$defs/u64" } }
+            }
+          }
+        }
+      ]
     },
     "bound": {
       "description": "How many sessions may be open at once, or null for no bound.",
@@ -168,6 +204,22 @@
                 "last": { "$ref": "#/$defs/u64" },
                 "sender": { "$ref": "#/$defs/u64" },
                 "receiver": { "$ref": "#/$defs/u64" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["CancelRecovery"],
+          "properties": {
+            "CancelRecovery": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["session_id", "reason"],
+              "properties": {
+                "session_id": { "$ref": "#/$defs/session_id" },
+                "reason": { "$ref": "#/$defs/reason" }
               }
             }
           }
@@ -315,6 +367,13 @@
           "additionalProperties": false,
           "required": ["RecoveryCompleted"],
           "properties": { "RecoveryCompleted": { "$ref": "#/$defs/nothing" } }
+        },
+        {
+          "description": "A session cancelled and evicted; carries the reason given.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["RecoveryCancelled"],
+          "properties": { "RecoveryCancelled": { "$ref": "#/$defs/reason" } }
         },
         {
           "type": "object",

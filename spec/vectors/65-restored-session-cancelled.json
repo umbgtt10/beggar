@@ -1,0 +1,97 @@
+{
+  "description": "A session restored from a checkpoint with chunks received is cancelled like any other, and a run arriving after finds none open.",
+  "rows": [
+    "cancel-cancelled",
+    "partial-not-started"
+  ],
+  "origin": {
+    "Checkpoint": {
+      "instance": {
+        "node": "2",
+        "incarnation": "3"
+      },
+      "retention": "0",
+      "bound": null,
+      "open": [
+        {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "chunks": "5",
+          "sender": "1",
+          "receiver": "2",
+          "chunk_set": [
+            "1",
+            "2"
+          ]
+        }
+      ],
+      "retained": [],
+      "name_count": "0",
+      "next_receipt": "30"
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "CancelRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "reason": {
+            "Stalled": {
+              "held": "2"
+            }
+          }
+        }
+      },
+      "receipt": {
+        "number": "30",
+        "output": {
+          "RecoveryCancelled": {
+            "Stalled": {
+              "held": "2"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "ReceiveRecoveryPartial": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "first": "3",
+          "last": "3",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "31",
+        "output": {
+          "RecoveryNotStarted": {}
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "2",
+      "incarnation": "3"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "33"
+  }
+}

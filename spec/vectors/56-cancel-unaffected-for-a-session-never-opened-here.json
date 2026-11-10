@@ -1,0 +1,70 @@
+{
+  "description": "A cancel naming no open session — one never minted, a peer's never adopted — leaves everything as it was.",
+  "rows": [
+    "cancel-unaffected"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "CancelRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "reason": {
+            "Unservable": {}
+          }
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryUnaffected": {}
+        }
+      }
+    },
+    {
+      "command": {
+        "CancelRecovery": {
+          "session_id": {
+            "node": "2",
+            "incarnation": "3",
+            "count": "1"
+          },
+          "reason": {
+            "PeerFailed": {}
+          }
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryUnaffected": {}
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [],
+    "retained": [],
+    "name_count": "0",
+    "next_receipt": "4"
+  }
+}

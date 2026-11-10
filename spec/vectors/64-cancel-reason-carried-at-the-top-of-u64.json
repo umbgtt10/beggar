@@ -1,0 +1,78 @@
+{
+  "description": "A reason's payload is carried as given, at the top of u64 like anywhere else: beggar records it and never reads it.",
+  "rows": [
+    "start-started",
+    "cancel-cancelled"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "2",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "CancelRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "reason": {
+            "Stalled": {
+              "held": "18446744073709551615"
+            }
+          }
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryCancelled": {
+            "Stalled": {
+              "held": "18446744073709551615"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [],
+    "retained": [],
+    "name_count": "1",
+    "next_receipt": "4"
+  }
+}

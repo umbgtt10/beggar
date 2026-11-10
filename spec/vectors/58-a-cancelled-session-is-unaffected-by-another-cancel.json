@@ -1,0 +1,95 @@
+{
+  "description": "A session cancelled is gone: a second cancel, for whatever reason, is unaffected.",
+  "rows": [
+    "start-started",
+    "cancel-cancelled",
+    "cancel-unaffected"
+  ],
+  "origin": {
+    "Fresh": {
+      "instance": {
+        "node": "1",
+        "incarnation": "7"
+      },
+      "retention": "0",
+      "bound": null
+    }
+  },
+  "steps": [
+    {
+      "command": {
+        "StartRecovery": {
+          "chunks": "2",
+          "sender": "1",
+          "receiver": "2"
+        }
+      },
+      "receipt": {
+        "number": "1",
+        "output": {
+          "RecoveryStarted": {
+            "session_id": {
+              "node": "1",
+              "incarnation": "7",
+              "count": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "CancelRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "reason": {
+            "PeerFailed": {}
+          }
+        }
+      },
+      "receipt": {
+        "number": "2",
+        "output": {
+          "RecoveryCancelled": {
+            "PeerFailed": {}
+          }
+        }
+      }
+    },
+    {
+      "command": {
+        "CancelRecovery": {
+          "session_id": {
+            "node": "1",
+            "incarnation": "7",
+            "count": "1"
+          },
+          "reason": {
+            "Unservable": {}
+          }
+        }
+      },
+      "receipt": {
+        "number": "3",
+        "output": {
+          "RecoveryUnaffected": {}
+        }
+      }
+    }
+  ],
+  "final": {
+    "instance": {
+      "node": "1",
+      "incarnation": "7"
+    },
+    "retention": "0",
+    "bound": null,
+    "open": [],
+    "retained": [],
+    "name_count": "1",
+    "next_receipt": "5"
+  }
+}
