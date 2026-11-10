@@ -7,7 +7,7 @@
 # living in the crate's source tree. `--package` does not narrow it, because the
 # scope is the directory.
 [workspace]
-members = ["core", "ladder", "memory", "xtask"]
+members = ["core", "core-validation", "ladder", "memory", "xtask"]
 resolver = "2"
 
 [workspace.package]

@@ -19,6 +19,7 @@ use xtask::process::system_command_runner::SystemCommandRunner;
 
 const CONFORMANCE_TIER: &str = "conformance";
 const CORE_PACKAGE: &str = "beggar";
+const CORE_VALIDATION_PACKAGE: &str = "beggar-core-validation";
 const LADDER_PACKAGE: &str = "beggar-ladder";
 const MEMORY_PACKAGE: &str = "beggar-memory";
 const XTASK_PACKAGE: &str = "xtask";
@@ -46,13 +47,14 @@ fn run_stage2() -> ExitCode {
     let parser = CrapReportParser::new();
 
     // The house rules reach xtask as well, so the crate that runs the gates is
-    // held to them too, and the ladder and the memory tier, whose tests are
-    // held to them as tests.
+    // held to them too, and the ladder, the memory tier and the cluster
+    // simulation, whose tests are held to them as tests.
     let stern = SternGate::new(
         &runner,
         manifest_path.clone(),
         vec![
             String::from(CORE_PACKAGE),
+            String::from(CORE_VALIDATION_PACKAGE),
             String::from(LADDER_PACKAGE),
             String::from(MEMORY_PACKAGE),
             String::from(XTASK_PACKAGE),

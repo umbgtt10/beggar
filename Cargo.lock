@@ -47,6 +47,14 @@ name = "beggar"
 version = "0.2.0"
 
 [[package]]
+name = "beggar-core-validation"
+version = "0.0.0"
+dependencies = [
+ "beggar",
+ "proptest",
+]
+
+[[package]]
 name = "beggar-ladder"
 version = "0.0.0"
 dependencies = [

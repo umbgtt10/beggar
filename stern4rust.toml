@@ -10,3 +10,9 @@ header-file = "docs/header.txt"
 # paired-test-file. core/ keeps it, over its mirrored unit tier.
 [package.beggar-ladder]
 skip = ["paired-test-file"]
+
+# The cluster simulation tier, laid out as faction's core-validation: its tests
+# are named for what they prove -- completion, pathology, restarts -- not for a
+# source file, as stern's own README has a validation package skip the rule.
+[package.beggar-core-validation]
+skip = ["paired-test-file"]
