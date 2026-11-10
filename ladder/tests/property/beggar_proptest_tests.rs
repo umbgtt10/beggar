@@ -9,6 +9,7 @@
 // completing exactly when every chunk is held, with no record after it.
 
 use crate::support::naive_registry::NaiveRegistry;
+use crate::support::random_commands::RandomCommands;
 use crate::support::recording_observer::RecordingObserver;
 use beggar::beggar::Beggar;
 use beggar::checkpoint::Checkpoint;
@@ -22,11 +23,8 @@ use beggar::receipt::Receipt;
 use beggar::session_id::SessionId;
 use proptest::collection::btree_set;
 use proptest::collection::vec;
-use proptest::option::of;
-use proptest::prelude::any;
 use proptest::prelude::prop_assert;
 use proptest::prelude::prop_assert_eq;
-use proptest::prelude::prop_oneof;
 use proptest::prelude::proptest;
 use proptest::prelude::Just;
 use proptest::prelude::ProptestConfig;
@@ -35,67 +33,6 @@ use proptest::test_runner::TestCaseError;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
 use std::rc::Rc;
-
-// A random command for an instance: starts and partials mostly between this
-// node and its usual peer, so partials often find their session, otherwise
-// between any two of three nodes; a partial naming one of the instance's first
-// five names, its run mostly well formed.
-fn command(instance: InstanceId) -> impl Strategy<Value = Command> {
-    let run = prop_oneof![
-        4 => (0u64..=7, 0u64..=3).prop_map(|(first, span)| (first, first + span)),
-        1 => (0u64..=7, 0u64..=7),
-    ];
-    prop_oneof![
-        3 => (0u64..=6, ends(instance.node)).prop_map(|(chunks, (sender, receiver))| {
-            Command::StartRecovery {
-                chunks,
-                sender,
-                receiver,
-            }
-        }),
-        4 => (1u64..=5, run, ends(instance.node)).prop_map(
-            move |(count, (first, last), (sender, receiver))| Command::SendRecoveryPartial {
-                session_id: SessionId {
-                    node: instance.node,
-                    incarnation: instance.incarnation,
-                    count,
-                },
-                first,
-                last,
-                sender,
-                receiver,
-            }
-        ),
-        1 => Just(Command::ShowRegistry),
-    ]
-}
-
-// A command's sender and receiver: this node and its usual peer, three times
-// in four, otherwise any two of three nodes.
-fn ends(node: u64) -> impl Strategy<Value = (u64, u64)> {
-    prop_oneof![
-        3 => Just((node, node % 3 + 1)),
-        1 => (1u64..=3, 1u64..=3),
-    ]
-}
-
-fn fresh() -> impl Strategy<Value = Fresh> {
-    (1u64..=3, any::<u64>(), 0u64..=8, of(0u64..=4)).prop_map(
-        |(node, incarnation, retention, bound)| Fresh {
-            instance: InstanceId { node, incarnation },
-            retention,
-            bound,
-        },
-    )
-}
-
-// A random instance and a random sequence of its commands.
-fn fresh_and_commands(longest: usize) -> impl Strategy<Value = (Fresh, Vec<Command>)> {
-    fresh().prop_flat_map(move |fresh| {
-        let instance = fresh.instance;
-        (Just(fresh), vec(command(instance), 0..longest))
-    })
-}
 
 // What every state 0.3.0 can reach holds: the bound; as many names minted as
 // starts answered; open exactly the sessions started and not completed, in the
@@ -155,9 +92,13 @@ proptest! {
 
     #[test]
     fn new_from_a_checkpoint_taken_anywhere_carries_on_as_its_instance(
-        (fresh, before, after) in fresh().prop_flat_map(|fresh| {
+        (fresh, before, after) in RandomCommands::fresh().prop_flat_map(|fresh| {
             let instance = fresh.instance;
-            (Just(fresh), vec(command(instance), 0..30), vec(command(instance), 0..30))
+            (
+                Just(fresh),
+                vec(RandomCommands::command(instance), 0..30),
+                vec(RandomCommands::command(instance), 0..30),
+            )
         }),
     ) {
         // Arrange
@@ -186,7 +127,7 @@ proptest! {
 
     #[test]
     fn process_of_any_sequence_answers_as_the_naive_model_and_keeps_the_invariants(
-        (fresh, commands) in fresh_and_commands(60),
+        (fresh, commands) in RandomCommands::fresh_and_commands(60),
     ) {
         // Arrange
         let mut beggar: Beggar<()> =
@@ -228,7 +169,7 @@ proptest! {
 
     #[test]
     fn process_of_any_sequence_reports_every_call_to_the_observer_as_answered(
-        (fresh, commands) in fresh_and_commands(60),
+        (fresh, commands) in RandomCommands::fresh_and_commands(60),
     ) {
         // Arrange
         let calls = Rc::new(RefCell::new(Vec::new()));

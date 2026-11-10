@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use beggar::checkpoint::Checkpoint;
+use beggar::command::Command;
 use beggar::instance_id::InstanceId;
 use beggar::output::Output;
 use beggar::receipt::Receipt;
@@ -28,10 +29,46 @@ impl SpecWriter {
         })
     }
 
+    pub fn command(command: &Command) -> Value {
+        match command {
+            Command::StartRecovery {
+                chunks,
+                sender,
+                receiver,
+            } => json!({ "StartRecovery": {
+                "chunks": Self::number(*chunks),
+                "sender": Self::number(*sender),
+                "receiver": Self::number(*receiver),
+            } }),
+            Command::SendRecoveryPartial {
+                session_id,
+                first,
+                last,
+                sender,
+                receiver,
+            } => json!({ "SendRecoveryPartial": {
+                "session_id": Self::session_id(session_id),
+                "first": Self::number(*first),
+                "last": Self::number(*last),
+                "sender": Self::number(*sender),
+                "receiver": Self::number(*receiver),
+            } }),
+            Command::ShowRegistry => json!({ "ShowRegistry": {} }),
+        }
+    }
+
     pub fn receipt(receipt: &Receipt) -> Value {
         json!({
             "number": Self::number(receipt.number),
             "output": Self::output(&receipt.output),
+        })
+    }
+
+    // A log's line: the call's command and the receipt it was answered with.
+    pub fn step(command: &Command, receipt: &Receipt) -> Value {
+        json!({
+            "command": Self::command(command),
+            "receipt": Self::receipt(receipt),
         })
     }
 

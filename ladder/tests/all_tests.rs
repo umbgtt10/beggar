@@ -4,4 +4,5 @@
 mod conformance;
 mod matrix;
 mod property;
+mod replay;
 mod support;
