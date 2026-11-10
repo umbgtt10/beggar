@@ -7,11 +7,11 @@
 # differ is noted below.
 [package]
 name = "beggar"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 rust-version = "1.85"
 license = "MIT"
-description = "A no_std, protocol-independent recovery registry: a recovery is a collection of chunks -- log entries or a snapshot's pieces -- and beggar accounts for which have moved. Under construction: it accounts both ends of a recovery to completion -- the side that holds the chunks starts and sends, the other adopts and receives -- and shows its registry; cancelling and the queries are still to come."
+description = "A no_std, protocol-independent recovery registry: a recovery is a collection of chunks -- log entries or a snapshot's pieces -- and beggar accounts for which have moved. Under construction: it accounts both ends of a recovery to completion -- the side that holds the chunks starts and sends, the other adopts and receives -- cancels a session for a reason of the caller's own type, and shows its registry; the queries are still to come."
 documentation = "https://docs.rs/beggar"
 readme = "../README.md"
 keywords = ["recovery", "consensus", "distributed", "registry", "no-std"]

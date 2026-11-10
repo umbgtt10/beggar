@@ -1,7 +1,7 @@
 # beggar — implementation plan
 
-**Status: planned 2026-11-06; slice 1 built 2026-11-09, slices 2 and 3 on 2026-11-10.** Its specification is
-`spec/` at version 0.4.0; the ladder's scenario tiers live in `ladder/`, a package of their own, the cluster
+**Status: planned 2026-11-06; slice 1 built 2026-11-09, slices 2 to 4 on 2026-11-10.** Its specification is
+`spec/` at version 0.5.0; the ladder's scenario tiers live in `ladder/`, a package of their own, the cluster
 simulation in `core-validation/`, laid out as faction's, the memory tier in `memory/`, and the coverage gate stands at 100% over every tier and over the conformance tier alone. The decisions are the ADRs in [`ADRs/`](ADRs/README.md) and the
 how is [`DESIGN.md`](DESIGN.md); this is the order of building it.
 
@@ -92,12 +92,16 @@ The serving end: the side that holds the chunks opens the session and sends them
   invariant checked after every delivery. The replay tier takes its logs; the memory tier goes two-ended.
 - **A caller can then:** account both ends of a transfer, pulled or pushed, for IBFT or for Raft.
 
-### 4. Abandon it
+### 4. Abandon it — built 2026-11-10
 
 - **Adds:** `CancelRecovery<R>`, generic over the caller's enum: cancelled and evicted when open, unaffected when
-  not. A cancel wins its race with the final partial.
+  not. A cancel wins its race with the final partial. The reason's type runs through the vocabulary —
+  `Command<R>`, `Output<R>`, `Receipt<R>`, `Observer<R>` — and the vectors carry an enumeration of their own:
+  `Unservable`, `Superseded`, `PeerFailed`, `Stalled { held }`. The specification goes to 0.5.0.
 - **Proves:** a late duplicate adopt reopening a finished session, as the ADR states; the memory test covers
-  cancelled sessions.
+  cancelled sessions. The cluster simulation gains a cancellation policy: a receiver cancels a session that stalls
+  past its patience and tells the sender, which cancels the pages it still holds; at the end every node cancels
+  what it still holds, and nothing is left open anywhere.
 - **A caller can then:** act on its cancellation policy.
 
 ### 5. Look inside, and keep what finished

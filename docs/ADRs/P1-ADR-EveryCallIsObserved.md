@@ -61,7 +61,8 @@ is derivable ([P1-ADR-TheLogIsTheRecord](P1-ADR-TheLogIsTheRecord.md)).
 [P0-ADR-AccountsNeverDecides](P0-ADR-AccountsNeverDecides.md) is amended: the
 observer is beggar's one injected dependency, and nothing else is injected.
 
-The observer is a `Box<dyn Observer>`, as faction's is, and `NoOpObserver` is
+The observer is boxed, `Box<dyn Observer<R>>`, as faction's is, and generic
+over the caller's cancel reason, which commands carry; `NoOpObserver` is
 provided for a caller with no use for one, as faction provides its own.
 
 The observer is in the specification, from 0.2.0: every implementation reports

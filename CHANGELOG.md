@@ -3,6 +3,34 @@
 The crate's versions. The specification in [`spec/`](spec/SPEC.md) is versioned on its own; each release names the
 version it conforms to.
 
+## [0.4.0] — 2026-11-10
+
+### Slice 4 — abandon it
+
+Cancelling, conformant to the specification's version 0.5.0.
+
+#### Added
+- `CancelRecovery { session_id, reason }`: an open session cancelled and evicted, answering
+  `RecoveryCancelled(reason)` with the reason given; otherwise `RecoveryUnaffected`. A cancel is local and by name,
+  at either end; it wins once accepted — a partial after it finds no session open — and is legal, never an error,
+  for a session never opened here, completed, cancelled, or racing its final partial.
+- `Registry::evict`, beside open and account.
+- The specification's 0.5.0: the command, its two rows, the vectors' own reason enumeration (`Unservable`,
+  `Superseded`, `PeerFailed`, `Stalled { held }`) and 11 new vectors, 65 in all.
+- The cluster simulation's cancellation policy: a receiver cancels a session no run has reached for as many steps as
+  its patience, and tells the sender with a new event, `Abandon`, over the same faulty transport; the sender cancels
+  the pages it still holds, or is unaffected if it sent them all. `cancel_abandoned` has every node cancel what it
+  still holds, and a new invariant, `settled`, requires nothing left open anywhere after it.
+- The exhaustive matrix over cancels after every history of up to three commands (11,700 situations); random
+  cancels in the property tier, with an accepted cancel winning over every later well-formed partial; replay of
+  logs carrying cancels and their reasons; and the memory tier over recoveries cancelled midway, at one end and at
+  both.
+
+#### Changed
+- `Command`, `Output`, `Receipt` and `Observer` are generic over the caller's reason type, `R`, as `Beggar<R>`
+  already was; `Beggar` needs `R: Clone`, to record the reason in the receipt and still report the command.
+- `OpeningRows::adoption`, `PartialRows::attribution` and `Registry::account` take `R` as a parameter of their own.
+
 ## [0.3.0] — 2026-11-10
 
 ### Slice 3 — the receiving end
