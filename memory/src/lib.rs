@@ -10,3 +10,4 @@ pub mod allocation_counter;
 pub mod counting_allocator;
 pub mod memory_profile;
 pub mod recovery_sequence;
+pub mod transfer_sequence;

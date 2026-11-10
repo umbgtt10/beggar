@@ -16,6 +16,7 @@ license = "MIT"
 
 [workspace.dependencies]
 beggar = { path = "core" }
+beggar-core-validation = { path = "core-validation" }
 boon = "0.6"
 proptest = { version = "1", default-features = false, features = ["std"] }
 serde = { version = "1", features = ["derive"] }
