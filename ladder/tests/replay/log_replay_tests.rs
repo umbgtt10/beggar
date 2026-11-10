@@ -5,7 +5,7 @@
 // as the observer is told them, replayed into an instance created from the
 // same origin -- every receipt rebuilt, a dropped line detected by the gap in
 // the numbers, and the replay resynchronised from the next checkpoint the log
-// holds.
+// holds, the finished sessions it keeps included.
 
 use crate::support::log_replay::LogReplay;
 use crate::support::random_commands::RandomCommands;
@@ -170,6 +170,60 @@ fn replay_of_a_log_missing_a_line_and_no_checkpoint_after_it_rebuilds_only_what_
     assert_eq!(report.reconstructed, 1);
     assert_eq!(report.gaps, vec![2..=2]);
     assert!(report.departures.is_empty());
+}
+
+#[test]
+fn replay_of_a_log_missing_a_line_resynchronises_at_a_checkpoint_keeping_finished_sessions() {
+    // Arrange
+    let fresh = Fresh {
+        instance: InstanceId {
+            node: 1,
+            incarnation: 7,
+        },
+        retention: 2,
+        bound: None,
+    };
+    let second = SessionId {
+        node: 1,
+        incarnation: 7,
+        count: 2,
+    };
+    let mut lines = log(
+        &fresh,
+        vec![
+            Command::StartRecovery {
+                chunks: 4,
+                sender: 1,
+                receiver: 2,
+            },
+            send(1, 4),
+            Command::StartRecovery {
+                chunks: 4,
+                sender: 1,
+                receiver: 2,
+            },
+            Command::CancelRecovery {
+                session_id: second,
+                reason: ScenarioReason::Superseded,
+            },
+            Command::ShowRegistry,
+            Command::ShowRecovery {
+                session_id: SessionId { count: 1, ..second },
+            },
+            Command::ListMissingChunks { session_id: second },
+            Command::ListRecoveries,
+        ],
+    );
+    lines.remove(1);
+
+    // Act
+    let report = LogReplay::new(Origin::Fresh(fresh)).replay(&lines);
+
+    // Assert
+    assert_eq!(report.lines, 7);
+    assert_eq!(report.gaps, vec![2..=2]);
+    assert_eq!(report.reconstructed, 4);
+    assert!(report.departures.is_empty(), "{:?}", report.departures);
 }
 
 #[test]

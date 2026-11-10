@@ -3,10 +3,11 @@
 
 // The replay tier over the cluster simulation's logs: every instance's trace,
 // written in the specification's JSON as its observer was told it and
-// replayed from that instance's origin -- under any faults, restarts and
-// cancellation policy, the reasons of its cancels included, every
-// receipt rebuilt; with a line dropped, the gap found at its number and the
-// replay resynchronised at the next checkpoint the log holds.
+// replayed from that instance's origin -- under any faults, restarts,
+// cancellation policy and retention, the reasons of its cancels and the
+// queries of its finished sessions included, every receipt rebuilt; with a
+// line dropped, the gap found at its number and the replay resynchronised at
+// the next checkpoint the log holds, with the finished sessions it keeps.
 
 use crate::support::log_replay::LogReplay;
 use crate::support::spec_writer::SpecWriter;
@@ -23,7 +24,9 @@ use proptest::option::of;
 use proptest::prelude::any;
 use proptest::prelude::prop_assert;
 use proptest::prelude::prop_assert_eq;
+use proptest::prelude::prop_oneof;
 use proptest::prelude::proptest;
+use proptest::prelude::Just;
 use proptest::prelude::ProptestConfig;
 use proptest::prelude::Strategy;
 use serde_json::Value;
@@ -39,8 +42,9 @@ fn cluster(
     transfers: &[(bool, u64, u64, u64)],
     restarts: &[(u64, u64)],
     patience: Option<u64>,
+    retention: u64,
 ) -> ClusterSimulation {
-    let mut simulation = ClusterSimulation::new(nodes, policy, 2, 6, patience, 0);
+    let mut simulation = ClusterSimulation::new(nodes, policy, 2, 6, patience, retention);
     for (pull, first, second, chunks) in transfers {
         let (first, second) = (first % nodes + 1, second % nodes + 1);
         if first == second {
@@ -99,10 +103,10 @@ fn logs(traces: Vec<Vec<ScenarioTraceEntry>>) -> Vec<InstanceLog> {
     logs
 }
 
-fn origin(instance: InstanceId) -> Origin {
+fn origin(instance: InstanceId, retention: u64) -> Origin {
     Origin::Fresh(Fresh {
         instance,
-        retention: 0,
+        retention,
         bound: None,
     })
 }
@@ -140,11 +144,12 @@ proptest! {
         transfers in vec((any::<bool>(), 0u64..5, 0u64..5, 1u64..=8), 1..8),
         restarts in vec((0u64..60, 0u64..5), 0..3),
         patience in of(1u64..=20),
+        retention in retention(),
         which in any::<usize>(),
         dropped in any::<usize>(),
     ) {
         // Arrange
-        let logs = logs(cluster(policy, nodes, &transfers, &restarts, patience).traces());
+        let logs = logs(cluster(policy, nodes, &transfers, &restarts, patience, retention).traces());
         let log = &logs[which % logs.len()];
         let dropped = dropped % log.lines.len();
         let checkpoint = (dropped + 1..log.lines.len()).find(|index| log.checkpoints[*index]);
@@ -152,7 +157,7 @@ proptest! {
         lines.remove(dropped);
 
         // Act
-        let report = LogReplay::new(origin(log.instance)).replay(&lines);
+        let report = LogReplay::new(origin(log.instance, retention)).replay(&lines);
 
         // Assert
         let number = dropped as u64 + 1;
@@ -174,14 +179,15 @@ proptest! {
         transfers in vec((any::<bool>(), 0u64..5, 0u64..5, 1u64..=8), 1..8),
         restarts in vec((0u64..60, 0u64..5), 0..3),
         patience in of(1u64..=20),
+        retention in retention(),
     ) {
         // Arrange
-        let logs = logs(cluster(policy, nodes, &transfers, &restarts, patience).traces());
+        let logs = logs(cluster(policy, nodes, &transfers, &restarts, patience, retention).traces());
 
         // Act
         let reports: Vec<_> = logs
             .iter()
-            .map(|log| LogReplay::new(origin(log.instance)).replay(&log.lines))
+            .map(|log| LogReplay::new(origin(log.instance, retention)).replay(&log.lines))
             .collect();
 
         // Assert
@@ -192,4 +198,9 @@ proptest! {
             prop_assert!(report.departures.is_empty(), "{:?}", report.departures);
         }
     }
+}
+
+// A retention: none, a few, or every finished session.
+fn retention() -> impl Strategy<Value = u64> {
+    prop_oneof![Just(0u64), 1u64..=3, Just(u64::MAX)]
 }
