@@ -69,13 +69,26 @@ impl NaiveRegistry {
                 sender,
                 receiver,
             } => self.start(*chunks, *sender, *receiver),
+            Command::AdoptRecovery {
+                session_id,
+                chunks,
+                sender,
+                receiver,
+            } => self.adopt(*session_id, *chunks, *sender, *receiver),
             Command::SendRecoveryPartial {
                 session_id,
                 first,
                 last,
                 sender,
                 receiver,
-            } => self.send(*session_id, *first..=*last, (*sender, *receiver)),
+            } => self.partial(false, *session_id, *first..=*last, (*sender, *receiver)),
+            Command::ReceiveRecoveryPartial {
+                session_id,
+                first,
+                last,
+                sender,
+                receiver,
+            } => self.partial(true, *session_id, *first..=*last, (*sender, *receiver)),
             Command::ShowRegistry => Output::RegistryShown(self.checkpoint()),
         };
         Receipt {
@@ -84,14 +97,62 @@ impl NaiveRegistry {
         }
     }
 
+    // Adopt's rows tried top to bottom, the form rows a start meets first.
+    fn adopt(&mut self, session_id: SessionId, chunks: u64, sender: u64, receiver: u64) -> Output {
+        let node = self.instance.node;
+        let own = session_id.node == node && session_id.incarnation == self.instance.incarnation;
+        let rows = [
+            (chunks == 0, Rejection::NoChunks),
+            (sender == receiver, Rejection::SelfAddressed),
+            (sender != node && receiver != node, Rejection::NotAParty),
+            (own, Rejection::OwnSession),
+        ];
+        if let Some((_, rejection)) = rows.into_iter().find(|(applies, _)| *applies) {
+            return Output::RecoveryRejected(rejection);
+        }
+        if let Some(session) = self
+            .open
+            .iter()
+            .find(|session| session.session_id == session_id)
+        {
+            if (session.chunks, session.sender, session.receiver) == (chunks, sender, receiver) {
+                return Output::RecoveryUnaffected;
+            }
+            return Output::RecoveryConflicted {
+                chunks: session.chunks,
+                sender: session.sender,
+                receiver: session.receiver,
+            };
+        }
+        if self
+            .bound
+            .is_some_and(|bound| self.open.len() as u64 == bound)
+        {
+            return Output::RecoveryRejected(Rejection::RegistryFull {
+                capacity: self.bound.unwrap_or(0),
+            });
+        }
+        self.open.push(NaiveSession {
+            session_id,
+            chunks,
+            sender,
+            receiver,
+            ids: BTreeSet::new(),
+        });
+        Output::RecoveryStarted { session_id }
+    }
+
+    // The checkpoint, its records sorted by name only now: the model keeps
+    // them in the order they were opened.
     fn checkpoint(&self) -> Checkpoint {
+        let mut open: Vec<&NaiveSession> = self.open.iter().collect();
+        open.sort_by_key(|session| session.session_id);
         Checkpoint {
             instance: self.instance,
             retention: self.retention,
             bound: self.bound,
-            open: self
-                .open
-                .iter()
+            open: open
+                .into_iter()
                 .map(|session| {
                     let mut chunk_set = ChunkSet::new();
                     for id in &session.ids {
@@ -112,8 +173,9 @@ impl NaiveRegistry {
         }
     }
 
-    fn send(
+    fn partial(
         &mut self,
+        receiving: bool,
         session_id: SessionId,
         run: RangeInclusive<u64>,
         ends: (u64, u64),
@@ -139,7 +201,14 @@ impl NaiveRegistry {
                     receiver: session.receiver,
                 },
             ),
-            (node == session.receiver, Rejection::WrongSide),
+            (
+                node == if receiving {
+                    session.sender
+                } else {
+                    session.receiver
+                },
+                Rejection::WrongSide,
+            ),
             (
                 first == 0 || last > session.chunks,
                 Rejection::ChunkOutOfRange {

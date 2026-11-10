@@ -12,7 +12,7 @@ use beggar::session_record::SessionRecord;
 use serde_json::Value;
 
 // The specification's JSON read into beggar's types, by the data model's own
-// names: the crate knows nothing of JSON. A form 0.3.0 does not have is a
+// names: the crate knows nothing of JSON. A form 0.4.0 does not have is a
 // broken vector, and panics saying which.
 pub struct SpecReader;
 
@@ -37,6 +37,19 @@ impl SpecReader {
                 sender: Self::number(&carried["sender"]),
                 receiver: Self::number(&carried["receiver"]),
             },
+            "AdoptRecovery" => Command::AdoptRecovery {
+                session_id: Self::session_id(&carried["session_id"]),
+                chunks: Self::number(&carried["chunks"]),
+                sender: Self::number(&carried["sender"]),
+                receiver: Self::number(&carried["receiver"]),
+            },
+            "ReceiveRecoveryPartial" => Command::ReceiveRecoveryPartial {
+                session_id: Self::session_id(&carried["session_id"]),
+                first: Self::number(&carried["first"]),
+                last: Self::number(&carried["last"]),
+                sender: Self::number(&carried["sender"]),
+                receiver: Self::number(&carried["receiver"]),
+            },
             "SendRecoveryPartial" => Command::SendRecoveryPartial {
                 session_id: Self::session_id(&carried["session_id"]),
                 first: Self::number(&carried["first"]),
@@ -45,7 +58,7 @@ impl SpecReader {
                 receiver: Self::number(&carried["receiver"]),
             },
             "ShowRegistry" => Command::ShowRegistry,
-            other => panic!("not a command of 0.3.0: {other}"),
+            other => panic!("not a command of 0.4.0: {other}"),
         }
     }
 

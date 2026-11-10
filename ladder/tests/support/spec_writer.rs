@@ -40,6 +40,30 @@ impl SpecWriter {
                 "sender": Self::number(*sender),
                 "receiver": Self::number(*receiver),
             } }),
+            Command::AdoptRecovery {
+                session_id,
+                chunks,
+                sender,
+                receiver,
+            } => json!({ "AdoptRecovery": {
+                "session_id": Self::session_id(session_id),
+                "chunks": Self::number(*chunks),
+                "sender": Self::number(*sender),
+                "receiver": Self::number(*receiver),
+            } }),
+            Command::ReceiveRecoveryPartial {
+                session_id,
+                first,
+                last,
+                sender,
+                receiver,
+            } => json!({ "ReceiveRecoveryPartial": {
+                "session_id": Self::session_id(session_id),
+                "first": Self::number(*first),
+                "last": Self::number(*last),
+                "sender": Self::number(*sender),
+                "receiver": Self::number(*receiver),
+            } }),
             Command::SendRecoveryPartial {
                 session_id,
                 first,
@@ -94,6 +118,15 @@ impl SpecWriter {
             Output::RecoveryCompleted => json!({ "RecoveryCompleted": {} }),
             Output::RecoveryUnaffected => json!({ "RecoveryUnaffected": {} }),
             Output::RecoveryNotStarted => json!({ "RecoveryNotStarted": {} }),
+            Output::RecoveryConflicted {
+                chunks,
+                sender,
+                receiver,
+            } => json!({ "RecoveryConflicted": {
+                "chunks": Self::number(*chunks),
+                "sender": Self::number(*sender),
+                "receiver": Self::number(*receiver),
+            } }),
             Output::RecoveryRejected(rejection) => {
                 json!({ "RecoveryRejected": Self::rejection(rejection) })
             }
@@ -125,6 +158,7 @@ impl SpecWriter {
             Rejection::NoChunks => json!({ "NoChunks": {} }),
             Rejection::SelfAddressed => json!({ "SelfAddressed": {} }),
             Rejection::NotAParty => json!({ "NotAParty": {} }),
+            Rejection::OwnSession => json!({ "OwnSession": {} }),
             Rejection::RegistryFull { capacity } => {
                 json!({ "RegistryFull": { "capacity": Self::number(*capacity) } })
             }

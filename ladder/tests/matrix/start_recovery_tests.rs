@@ -71,6 +71,7 @@ fn kind(output: &Output) -> String {
         Output::RecoveryCompleted => String::from("completed"),
         Output::RecoveryUnaffected => String::from("unaffected"),
         Output::RecoveryNotStarted => String::from("not-started"),
+        Output::RecoveryConflicted { .. } => String::from("conflicted"),
         Output::RecoveryRejected(Rejection::RegistryFull { .. }) => String::from("registry-full"),
         Output::RecoveryRejected(rejection) => format!("{rejection:?}"),
         Output::RegistryShown(_) => String::from("shown"),

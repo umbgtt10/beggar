@@ -5,6 +5,7 @@ use crate::output::Output;
 use crate::rejection::Rejection;
 use crate::session_id::SessionId;
 use crate::session_record::SessionRecord;
+use crate::side::Side;
 
 // The rows a partial meets before its chunks are counted, in the matrix's
 // order: the run, the session, its ends, its side, its range.
@@ -22,6 +23,7 @@ impl<'a> PartialRows<'a> {
     // first, or the output of the first row that does.
     pub fn attribution(
         &self,
+        side: Side,
         session_id: SessionId,
         first: u64,
         last: u64,
@@ -40,12 +42,16 @@ impl<'a> PartialRows<'a> {
             .position(|record| record.session_id == session_id)
             .ok_or(Output::RecoveryNotStarted)?;
         let record = &self.open[index];
+        let wrong_end = match side {
+            Side::Sending => record.receiver,
+            Side::Receiving => record.sender,
+        };
         let rejection = if record.sender != sender || record.receiver != receiver {
             Some(Rejection::Misattributed {
                 sender: record.sender,
                 receiver: record.receiver,
             })
-        } else if self.node == record.receiver {
+        } else if self.node == wrong_end {
             Some(Rejection::WrongSide)
         } else if first == 0 || last > record.chunks {
             Some(Rejection::ChunkOutOfRange {

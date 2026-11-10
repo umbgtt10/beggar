@@ -11,7 +11,20 @@ pub enum Command {
         sender: u64,
         receiver: u64,
     },
+    AdoptRecovery {
+        session_id: SessionId,
+        chunks: u64,
+        sender: u64,
+        receiver: u64,
+    },
     SendRecoveryPartial {
+        session_id: SessionId,
+        first: u64,
+        last: u64,
+        sender: u64,
+        receiver: u64,
+    },
+    ReceiveRecoveryPartial {
         session_id: SessionId,
         first: u64,
         last: u64,

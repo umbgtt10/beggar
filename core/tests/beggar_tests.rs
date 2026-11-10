@@ -23,6 +23,15 @@ const INSTANCE: InstanceId = InstanceId {
     incarnation: 7,
 };
 
+fn adopt(session_id: SessionId, chunks: u64, sender: u64, receiver: u64) -> Command {
+    Command::AdoptRecovery {
+        session_id,
+        chunks,
+        sender,
+        receiver,
+    }
+}
+
 fn fresh(bound: Option<u64>) -> Beggar<()> {
     Beggar::new(
         Origin::Fresh(Fresh {
@@ -39,6 +48,24 @@ fn name(count: u64) -> SessionId {
         node: INSTANCE.node,
         incarnation: INSTANCE.incarnation,
         count,
+    }
+}
+
+fn peers(count: u64) -> SessionId {
+    SessionId {
+        node: 2,
+        incarnation: 3,
+        count,
+    }
+}
+
+fn receive(session_id: SessionId, first: u64, last: u64, sender: u64, receiver: u64) -> Command {
+    Command::ReceiveRecoveryPartial {
+        session_id,
+        first,
+        last,
+        sender,
+        receiver,
     }
 }
 
@@ -227,6 +254,36 @@ fn process_of_a_partial_with_other_ends_answers_misattributed_carrying_the_sessi
 }
 
 #[test]
+fn process_of_a_receive_filling_the_set_completes_and_evicts_the_session() {
+    // Arrange
+    let mut beggar = fresh(None);
+    beggar.process(adopt(peers(1), 2, 2, 1));
+
+    // Act
+    let receipt = beggar.process(receive(peers(1), 1, 2, 2, 1));
+
+    // Assert
+    assert_eq!(receipt.output, Output::RecoveryCompleted);
+    assert!(shown(&mut beggar).open.is_empty());
+}
+
+#[test]
+fn process_of_a_receive_on_the_senders_end_answers_wrong_side() {
+    // Arrange
+    let mut beggar = fresh(None);
+    beggar.process(start(4, 1, 2));
+
+    // Act
+    let receipt = beggar.process(receive(name(1), 1, 1, 1, 2));
+
+    // Assert
+    assert_eq!(
+        receipt.output,
+        Output::RecoveryRejected(Rejection::WrongSide)
+    );
+}
+
+#[test]
 fn process_of_a_start_at_the_bound_answers_registry_full_carrying_the_bound() {
     // Arrange
     let mut beggar = fresh(Some(1));
@@ -309,6 +366,88 @@ fn process_of_a_start_with_one_end_twice_answers_self_addressed() {
         receipt.output,
         Output::RecoveryRejected(Rejection::SelfAddressed)
     );
+}
+
+#[test]
+fn process_of_an_adopt_of_its_own_name_answers_own_session() {
+    // Arrange
+    let mut beggar = fresh(None);
+
+    // Act
+    let receipt = beggar.process(adopt(name(1), 4, 2, 1));
+
+    // Assert
+    assert_eq!(
+        receipt.output,
+        Output::RecoveryRejected(Rejection::OwnSession)
+    );
+}
+
+#[test]
+fn process_of_an_adopt_on_other_terms_answers_conflicted_carrying_the_open_sessions() {
+    // Arrange
+    let mut beggar = fresh(None);
+    beggar.process(adopt(peers(1), 4, 2, 1));
+
+    // Act
+    let receipt = beggar.process(adopt(peers(1), 5, 2, 1));
+
+    // Assert
+    assert_eq!(
+        receipt.output,
+        Output::RecoveryConflicted {
+            chunks: 4,
+            sender: 2,
+            receiver: 1
+        }
+    );
+}
+
+#[test]
+fn process_of_an_adopt_opens_the_peers_session_under_its_name_minting_nothing() {
+    // Arrange
+    let mut beggar = fresh(None);
+
+    // Act
+    let receipt = beggar.process(adopt(peers(1), 4, 2, 1));
+
+    // Assert
+    assert_eq!(
+        receipt.output,
+        Output::RecoveryStarted {
+            session_id: peers(1)
+        }
+    );
+    let checkpoint = shown(&mut beggar);
+    assert_eq!(checkpoint.name_count, 0);
+    assert_eq!(
+        checkpoint.open,
+        vec![SessionRecord {
+            session_id: peers(1),
+            chunks: 4,
+            sender: 2,
+            receiver: 1,
+            chunk_set: ChunkSet::new(),
+        }]
+    );
+}
+
+#[test]
+fn process_of_an_adopt_then_a_start_shows_the_records_in_the_order_of_their_names() {
+    // Arrange
+    let mut beggar = fresh(None);
+    beggar.process(adopt(peers(1), 4, 2, 1));
+
+    // Act
+    beggar.process(start(4, 1, 2));
+
+    // Assert
+    let names: Vec<SessionId> = shown(&mut beggar)
+        .open
+        .iter()
+        .map(|record| record.session_id)
+        .collect();
+    assert_eq!(names, vec![name(1), peers(1)]);
 }
 
 #[test]
