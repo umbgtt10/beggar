@@ -2,17 +2,17 @@
 // SPDX-License-Identifier: MIT
 
 use beggar::checkpoint::Checkpoint;
+use beggar::chunk_set::ChunkSet;
 use beggar::command::Command;
 use beggar::fresh::Fresh;
 use beggar::instance_id::InstanceId;
 use beggar::origin::Origin;
-use beggar::received_chunks::ReceivedChunks;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
 use serde_json::Value;
 
 // The specification's JSON read into beggar's types, by the data model's own
-// names: the crate knows nothing of JSON. A form 0.2.0 does not have is a
+// names: the crate knows nothing of JSON. A form 0.3.0 does not have is a
 // broken vector, and panics saying which.
 pub struct SpecReader;
 
@@ -37,8 +37,15 @@ impl SpecReader {
                 sender: Self::number(&carried["sender"]),
                 receiver: Self::number(&carried["receiver"]),
             },
+            "SendRecoveryPartial" => Command::SendRecoveryPartial {
+                session_id: Self::session_id(&carried["session_id"]),
+                first: Self::number(&carried["first"]),
+                last: Self::number(&carried["last"]),
+                sender: Self::number(&carried["sender"]),
+                receiver: Self::number(&carried["receiver"]),
+            },
             "ShowRegistry" => Command::ShowRegistry,
-            other => panic!("not a command of 0.2.0: {other}"),
+            other => panic!("not a command of 0.3.0: {other}"),
         }
     }
 
@@ -61,6 +68,19 @@ impl SpecReader {
         } else {
             Some(Self::number(value))
         }
+    }
+
+    // A chunk set's ids, each added as a run of one: the set merges them.
+    fn chunk_set(value: &Value) -> ChunkSet {
+        let mut chunk_set = ChunkSet::new();
+        for id in value
+            .as_array()
+            .unwrap_or_else(|| panic!("a chunk set is a list of ids: {value}"))
+        {
+            let id = Self::number(id);
+            chunk_set.add(id, id);
+        }
+        chunk_set
     }
 
     fn instance(value: &Value) -> InstanceId {
@@ -88,22 +108,13 @@ impl SpecReader {
             .unwrap_or_else(|| panic!("a u64 is a string of decimal digits: {value}"))
     }
 
-    // 0.2.0 records no chunk, so every record's set is empty.
-    fn received(value: &Value) -> ReceivedChunks {
-        let ids = value
-            .as_array()
-            .unwrap_or_else(|| panic!("the chunks received are a set of ids: {value}"));
-        assert!(ids.is_empty(), "0.2.0 receives no chunk: {value}");
-        ReceivedChunks::new()
-    }
-
     fn record(value: &Value) -> SessionRecord {
         SessionRecord {
             session_id: Self::session_id(&value["session_id"]),
             chunks: Self::number(&value["chunks"]),
             sender: Self::number(&value["sender"]),
             receiver: Self::number(&value["receiver"]),
-            received: Self::received(&value["received"]),
+            chunk_set: Self::chunk_set(&value["chunk_set"]),
         }
     }
 

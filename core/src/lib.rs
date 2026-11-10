@@ -58,6 +58,7 @@ extern crate alloc;
 
 pub mod beggar;
 pub mod checkpoint;
+pub mod chunk_set;
 pub mod command;
 pub mod fresh;
 pub mod instance_id;
@@ -65,8 +66,9 @@ pub mod no_op_observer;
 pub mod observer;
 pub mod origin;
 pub mod output;
+pub mod partial_rows;
 pub mod receipt;
-pub mod received_chunks;
 pub mod rejection;
 pub mod session_id;
 pub mod session_record;
+pub mod start_rows;

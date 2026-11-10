@@ -67,6 +67,10 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
 fn kind(output: &Output) -> String {
     match output {
         Output::RecoveryStarted { .. } => String::from("started"),
+        Output::RecoveryAdvanced { .. } => String::from("advanced"),
+        Output::RecoveryCompleted => String::from("completed"),
+        Output::RecoveryUnaffected => String::from("unaffected"),
+        Output::RecoveryNotStarted => String::from("not-started"),
         Output::RecoveryRejected(Rejection::RegistryFull { .. }) => String::from("registry-full"),
         Output::RecoveryRejected(rejection) => format!("{rejection:?}"),
         Output::RegistryShown(_) => String::from("shown"),

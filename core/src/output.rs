@@ -9,6 +9,10 @@ use crate::session_id::SessionId;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Output {
     RecoveryStarted { session_id: SessionId },
+    RecoveryAdvanced { held: u64, chunks: u64 },
+    RecoveryCompleted,
+    RecoveryUnaffected,
+    RecoveryNotStarted,
     RecoveryRejected(Rejection),
     RegistryShown(Checkpoint),
 }

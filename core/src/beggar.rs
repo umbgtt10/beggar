@@ -2,15 +2,16 @@
 // SPDX-License-Identifier: MIT
 
 use crate::checkpoint::Checkpoint;
+use crate::chunk_set::ChunkSet;
 use crate::command::Command;
 use crate::observer::Observer;
 use crate::origin::Origin;
 use crate::output::Output;
+use crate::partial_rows::PartialRows;
 use crate::receipt::Receipt;
-use crate::received_chunks::ReceivedChunks;
-use crate::rejection::Rejection;
 use crate::session_id::SessionId;
 use crate::session_record::SessionRecord;
+use crate::start_rows::StartRows;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
@@ -56,6 +57,13 @@ impl<R> Beggar<R> {
                 sender,
                 receiver,
             } => self.start(chunks, sender, receiver),
+            Command::SendRecoveryPartial {
+                session_id,
+                first,
+                last,
+                sender,
+                receiver,
+            } => self.send(session_id, first, last, sender, receiver),
             Command::ShowRegistry => Output::RegistryShown(self.state.clone()),
         };
         let receipt = Receipt { number, output };
@@ -63,25 +71,47 @@ impl<R> Beggar<R> {
         receipt
     }
 
-    fn refusal(&self, chunks: u64, sender: u64, receiver: u64) -> Option<Rejection> {
-        let node = self.state.instance.node;
-        let open = self.state.open.len() as u64;
-        if chunks == 0 {
-            Some(Rejection::NoChunks)
-        } else if sender == receiver {
-            Some(Rejection::SelfAddressed)
-        } else if node != sender && node != receiver {
-            Some(Rejection::NotAParty)
+    // A partial's chunks, once it is attributed: none new leaves the session
+    // unaffected, a full set completes and evicts it, and anything else
+    // advances it.
+    fn account(&mut self, index: usize, first: u64, last: u64) -> Output {
+        let record = &mut self.state.open[index];
+        let before = record.chunk_set.count();
+        record.chunk_set.add(first, last);
+        let held = record.chunk_set.count();
+        let chunks = record.chunks;
+        if held == before {
+            Output::RecoveryUnaffected
+        } else if held == chunks {
+            self.state.open.remove(index);
+            Output::RecoveryCompleted
         } else {
-            self.state
-                .bound
-                .filter(|bound| open >= *bound)
-                .map(|capacity| Rejection::RegistryFull { capacity })
+            Output::RecoveryAdvanced { held, chunks }
+        }
+    }
+
+    fn send(
+        &mut self,
+        session_id: SessionId,
+        first: u64,
+        last: u64,
+        sender: u64,
+        receiver: u64,
+    ) -> Output {
+        let rows = PartialRows::new(self.state.instance.node, &self.state.open);
+        match rows.attribution(session_id, first, last, sender, receiver) {
+            Ok(index) => self.account(index, first, last),
+            Err(output) => output,
         }
     }
 
     fn start(&mut self, chunks: u64, sender: u64, receiver: u64) -> Output {
-        if let Some(rejection) = self.refusal(chunks, sender, receiver) {
+        let rows = StartRows::new(
+            self.state.instance.node,
+            self.state.open.len() as u64,
+            self.state.bound,
+        );
+        if let Some(rejection) = rows.refusal(chunks, sender, receiver) {
             return Output::RecoveryRejected(rejection);
         }
         self.state.name_count += 1;
@@ -95,7 +125,7 @@ impl<R> Beggar<R> {
             chunks,
             sender,
             receiver,
-            received: ReceivedChunks::new(),
+            chunk_set: ChunkSet::new(),
         });
         Output::RecoveryStarted { session_id }
     }

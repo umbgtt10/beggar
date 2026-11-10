@@ -51,6 +51,12 @@ impl SpecWriter {
             Output::RecoveryStarted { session_id } => {
                 json!({ "RecoveryStarted": { "session_id": Self::session_id(session_id) } })
             }
+            Output::RecoveryAdvanced { held, chunks } => {
+                json!({ "RecoveryAdvanced": { "held": Self::number(*held), "chunks": Self::number(*chunks) } })
+            }
+            Output::RecoveryCompleted => json!({ "RecoveryCompleted": {} }),
+            Output::RecoveryUnaffected => json!({ "RecoveryUnaffected": {} }),
+            Output::RecoveryNotStarted => json!({ "RecoveryNotStarted": {} }),
             Output::RecoveryRejected(rejection) => {
                 json!({ "RecoveryRejected": Self::rejection(rejection) })
             }
@@ -70,7 +76,7 @@ impl SpecWriter {
                         "chunks": Self::number(record.chunks),
                         "sender": Self::number(record.sender),
                         "receiver": Self::number(record.receiver),
-                        "received": record.received.ids().into_iter().map(Self::number).collect::<Vec<Value>>(),
+                        "chunk_set": record.chunk_set.ids().into_iter().map(Self::number).collect::<Vec<Value>>(),
                     })
                 })
                 .collect(),
@@ -85,6 +91,22 @@ impl SpecWriter {
             Rejection::RegistryFull { capacity } => {
                 json!({ "RegistryFull": { "capacity": Self::number(*capacity) } })
             }
+            Rejection::EmptyRun { first, last } => {
+                json!({ "EmptyRun": { "first": Self::number(*first), "last": Self::number(*last) } })
+            }
+            Rejection::Misattributed { sender, receiver } => {
+                json!({ "Misattributed": { "sender": Self::number(*sender), "receiver": Self::number(*receiver) } })
+            }
+            Rejection::WrongSide => json!({ "WrongSide": {} }),
+            Rejection::ChunkOutOfRange {
+                first,
+                last,
+                chunks,
+            } => json!({ "ChunkOutOfRange": {
+                "first": Self::number(*first),
+                "last": Self::number(*last),
+                "chunks": Self::number(*chunks),
+            } }),
         }
     }
 

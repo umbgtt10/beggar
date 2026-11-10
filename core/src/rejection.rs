@@ -8,4 +8,8 @@ pub enum Rejection {
     SelfAddressed,
     NotAParty,
     RegistryFull { capacity: u64 },
+    EmptyRun { first: u64, last: u64 },
+    Misattributed { sender: u64, receiver: u64 },
+    WrongSide,
+    ChunkOutOfRange { first: u64, last: u64, chunks: u64 },
 }
