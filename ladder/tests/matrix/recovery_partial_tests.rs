@@ -1,10 +1,11 @@
 // Copyright (c) 2026 Umberto Gotti
 // SPDX-License-Identifier: MIT
 
-// The exhaustive matrix tier for partials: every partial in every small
-// situation -- a session of up to 3 chunks with this node at either end, every
-// chunk set it can hold while open, alone or beside a second session; a
-// partial naming it, the second session or a name never minted, with every run
+// The exhaustive matrix tier for partials, sent and received: every partial in
+// every small situation -- a session of up to 3 chunks this node started and
+// sends, or adopted from a peer and receives, holding every chunk set it can
+// hold while open, alone or beside a second session; a send and a receive,
+// each naming it, the second session or a name never minted, with every run
 // from 0 to one past its chunks, under every pair of ends among three nodes --
 // from a fresh instance and from the checkpoint of the same state, the crate's
 // receipt and resulting state against the naive model's.
@@ -24,12 +25,32 @@ use beggar::rejection::Rejection;
 use beggar::session_id::SessionId;
 use std::collections::BTreeSet;
 
+const BESIDE: SessionId = SessionId {
+    node: 3,
+    incarnation: 1,
+    count: 1,
+};
 const INSTANCE: InstanceId = InstanceId {
     node: 1,
     incarnation: 7,
 };
-const NEVER_MINTED: u64 = 9;
+const NEVER_MINTED: SessionId = SessionId {
+    node: 1,
+    incarnation: 7,
+    count: 9,
+};
 const NODES: [u64; 3] = [1, 2, 3];
+const PEER: u64 = 2;
+const PEERS_SESSION: SessionId = SessionId {
+    node: PEER,
+    incarnation: 5,
+    count: 1,
+};
+const STARTED: SessionId = SessionId {
+    node: 1,
+    incarnation: 7,
+    count: 1,
+};
 
 // What both implementations answered in a situation, and the state each left.
 struct Answers {
@@ -67,13 +88,9 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
     }
 }
 
-// Every chunk set a session can hold while open: on its sender, every subset of
-// its chunks but the full one, which would have completed it; on its receiver,
-// none, as nothing in 0.3.0 adds to that end's set.
-fn held_sets(chunks: u64, sending: bool) -> Vec<Vec<u64>> {
-    if !sending {
-        return vec![Vec::new()];
-    }
+// Every chunk set a session can hold while open: every subset of its chunks
+// but the full one, which would have completed it.
+fn held_sets(chunks: u64) -> Vec<Vec<u64>> {
     (0..(1u64 << chunks) - 1)
         .map(|mask| {
             (1..=chunks)
@@ -81,6 +98,34 @@ fn held_sets(chunks: u64, sending: bool) -> Vec<Vec<u64>> {
                 .collect()
         })
         .collect()
+}
+
+// A partial of either kind, by whether it is a receive.
+fn partial(
+    receiving: bool,
+    session_id: SessionId,
+    run: (u64, u64),
+    sender: u64,
+    receiver: u64,
+) -> Command {
+    let (first, last) = run;
+    if receiving {
+        Command::ReceiveRecoveryPartial {
+            session_id,
+            first,
+            last,
+            sender,
+            receiver,
+        }
+    } else {
+        Command::SendRecoveryPartial {
+            session_id,
+            first,
+            last,
+            sender,
+            receiver,
+        }
+    }
 }
 
 // The matrix row an output answers for.
@@ -99,34 +144,62 @@ fn row(output: &Output) -> String {
     String::from(row)
 }
 
-fn send(count: u64, first: u64, last: u64, sender: u64, receiver: u64) -> Command {
-    Command::SendRecoveryPartial {
-        session_id: SessionId {
-            node: INSTANCE.node,
-            incarnation: INSTANCE.incarnation,
-            count,
-        },
-        first,
-        last,
-        sender,
-        receiver,
-    }
+// The rows the matrix gives a command.
+fn rows_for(command: &str) -> BTreeSet<String> {
+    SpecFiles::matrix()["rows"]
+        .as_array()
+        .expect("the matrix's rows")
+        .iter()
+        .filter(|row| {
+            row["commands"]
+                .as_array()
+                .expect("a row's commands")
+                .iter()
+                .any(|listed| listed == command)
+        })
+        .map(|row| String::from(row["id"].as_str().expect("a row's id")))
+        .collect()
 }
 
-// The calls that bring an instance to a situation: the session started, the
-// second one beside it, and each chunk it holds sent as a run of one.
+// The calls that bring an instance to a situation: the session started and
+// sent, or adopted and received, the second one adopted beside it, and each
+// chunk it holds reported as a run of one.
 fn setup(situation: &Situation) -> Vec<Command> {
-    let (sender, receiver) = if situation.sending {
-        (INSTANCE.node, 2)
+    let mut commands = if situation.sending {
+        vec![Command::StartRecovery {
+            chunks: situation.chunks,
+            sender: INSTANCE.node,
+            receiver: PEER,
+        }]
     } else {
-        (2, INSTANCE.node)
+        vec![Command::AdoptRecovery {
+            session_id: PEERS_SESSION,
+            chunks: situation.chunks,
+            sender: PEER,
+            receiver: INSTANCE.node,
+        }]
     };
-    let mut commands = vec![start(situation.chunks, sender, receiver)];
     if situation.beside {
-        commands.push(start(2, INSTANCE.node, 3));
+        commands.push(Command::AdoptRecovery {
+            session_id: BESIDE,
+            chunks: 2,
+            sender: 3,
+            receiver: INSTANCE.node,
+        });
     }
+    let (session_id, sender, receiver) = if situation.sending {
+        (STARTED, INSTANCE.node, PEER)
+    } else {
+        (PEERS_SESSION, PEER, INSTANCE.node)
+    };
     for id in &situation.held {
-        commands.push(send(1, *id, *id, sender, receiver));
+        commands.push(partial(
+            !situation.sending,
+            session_id,
+            (*id, *id),
+            sender,
+            receiver,
+        ));
     }
     commands
 }
@@ -149,25 +222,34 @@ fn situations() -> Vec<Situation> {
     let mut situations = Vec::new();
     for chunks in 1..=3 {
         for sending in [true, false] {
-            for held in held_sets(chunks, sending) {
+            let own = if sending { STARTED } else { PEERS_SESSION };
+            for held in held_sets(chunks) {
                 for beside in [false, true] {
-                    let counts = if beside {
-                        vec![1, 2, NEVER_MINTED]
+                    let names = if beside {
+                        vec![own, BESIDE, NEVER_MINTED]
                     } else {
-                        vec![1, NEVER_MINTED]
+                        vec![own, NEVER_MINTED]
                     };
-                    for count in counts {
-                        for first in 0..=chunks + 1 {
-                            for last in 0..=chunks + 1 {
-                                for sender in NODES {
-                                    for receiver in NODES {
-                                        situations.push(Situation {
-                                            chunks,
-                                            sending,
-                                            held: held.clone(),
-                                            beside,
-                                            command: send(count, first, last, sender, receiver),
-                                        });
+                    for receiving in [false, true] {
+                        for session_id in &names {
+                            for first in 0..=chunks + 1 {
+                                for last in 0..=chunks + 1 {
+                                    for sender in NODES {
+                                        for receiver in NODES {
+                                            situations.push(Situation {
+                                                chunks,
+                                                sending,
+                                                held: held.clone(),
+                                                beside,
+                                                command: partial(
+                                                    receiving,
+                                                    *session_id,
+                                                    (first, last),
+                                                    sender,
+                                                    receiver,
+                                                ),
+                                            });
+                                        }
                                     }
                                 }
                             }
@@ -178,14 +260,6 @@ fn situations() -> Vec<Situation> {
         }
     }
     situations
-}
-
-fn start(chunks: u64, sender: u64, receiver: u64) -> Command {
-    Command::StartRecovery {
-        chunks,
-        sender,
-        receiver,
-    }
 }
 
 fn state(receipt: Receipt) -> Checkpoint {
@@ -225,7 +299,7 @@ fn process_of_every_partial_in_every_small_situation_answers_as_the_naive_model(
 
     // Assert
     assert!(
-        situations.len() > 12_000,
+        situations.len() > 40_000,
         "only {} situations",
         situations.len()
     );
@@ -233,29 +307,24 @@ fn process_of_every_partial_in_every_small_situation_answers_as_the_naive_model(
 }
 
 #[test]
-fn situations_reach_every_row_the_matrix_has_for_a_partial() {
+fn situations_reach_every_row_the_matrix_has_for_each_partial() {
     // Arrange
-    let expected: BTreeSet<String> = SpecFiles::matrix()["rows"]
-        .as_array()
-        .expect("the matrix's rows")
-        .iter()
-        .filter(|row| {
-            row["commands"]
-                .as_array()
-                .expect("a row's commands")
-                .iter()
-                .any(|command| command == "SendRecoveryPartial")
-        })
-        .map(|row| String::from(row["id"].as_str().expect("a row's id")))
-        .collect();
+    let sends = rows_for("SendRecoveryPartial");
+    let receives = rows_for("ReceiveRecoveryPartial");
 
     // Act
-    let reached: BTreeSet<String> = situations()
-        .iter()
-        .map(|situation| row(&answers(situation, false).crate_receipt.output))
-        .collect();
+    let mut reached_by_sends = BTreeSet::new();
+    let mut reached_by_receives = BTreeSet::new();
+    for situation in situations() {
+        let reached = row(&answers(&situation, false).crate_receipt.output);
+        match situation.command {
+            Command::ReceiveRecoveryPartial { .. } => reached_by_receives.insert(reached),
+            _ => reached_by_sends.insert(reached),
+        };
+    }
 
     // Assert
-    assert_eq!(expected.len(), 8);
-    assert_eq!(reached, expected);
+    assert_eq!(sends.len(), 8);
+    assert_eq!(reached_by_sends, sends);
+    assert_eq!(reached_by_receives, receives);
 }
