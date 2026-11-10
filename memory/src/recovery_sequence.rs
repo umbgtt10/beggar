@@ -17,16 +17,26 @@ const PEER: u64 = 2;
 
 // Recoveries one after another on one instance at retention 0: each a session
 // of as many chunks as the order names, sent to one peer a chunk at a time in
-// that order until it completes and is evicted. The counter runs from before
-// the instance is created, and nothing here allocates while it does.
+// that order until it completes and is evicted -- or, given a count, cancelled
+// once that many chunks are sent. The counter runs from before the instance
+// is created, and nothing here allocates while it does.
 pub struct RecoverySequence<'a> {
     counter: &'a dyn AllocationCounter,
     order: Vec<u64>,
+    cancel_after: Option<usize>,
 }
 
 impl<'a> RecoverySequence<'a> {
-    pub fn new(counter: &'a dyn AllocationCounter, order: Vec<u64>) -> Self {
-        Self { counter, order }
+    pub fn new(
+        counter: &'a dyn AllocationCounter,
+        order: Vec<u64>,
+        cancel_after: Option<usize>,
+    ) -> Self {
+        Self {
+            counter,
+            order,
+            cancel_after,
+        }
     }
 
     pub fn run(&self, recoveries: u64) -> MemoryProfile {
@@ -52,7 +62,14 @@ impl<'a> RecoverySequence<'a> {
                 receiver: PEER,
             });
             held_at_worst = held_at_worst.max(self.counter.live());
-            for id in &self.order {
+            for (sent, id) in self.order.iter().enumerate() {
+                if self.cancel_after == Some(sent) {
+                    beggar.process(Command::CancelRecovery {
+                        session_id: Self::session_id(count),
+                        reason: (),
+                    });
+                    break;
+                }
                 beggar.process(Self::send(count, *id));
                 held_at_worst = held_at_worst.max(self.counter.live());
             }
@@ -73,15 +90,19 @@ impl<'a> RecoverySequence<'a> {
 
     fn send(count: u64, id: u64) -> Command<()> {
         Command::SendRecoveryPartial {
-            session_id: SessionId {
-                node: NODE,
-                incarnation: INCARNATION,
-                count,
-            },
+            session_id: Self::session_id(count),
             first: id,
             last: id,
             sender: NODE,
             receiver: PEER,
+        }
+    }
+
+    fn session_id(count: u64) -> SessionId {
+        SessionId {
+            node: NODE,
+            incarnation: INCARNATION,
+            count,
         }
     }
 }

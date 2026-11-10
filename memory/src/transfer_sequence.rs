@@ -21,16 +21,27 @@ const SENDER: u64 = 1;
 // as DESIGN.md has the memory test: each a session of as many chunks as the
 // order names, started by the sender, adopted by the receiver from its first
 // run, every chunk sent and received a run of one in that order until both
-// ends complete it; the other three take no part. The instances are kept on
+// ends complete it -- or, given a count, until that many have moved, when the
+// receiver cancels it and its sender, told, cancels too; the other three take
+// no part. The instances are kept on
 // the stack, so every byte counted is beggar's, from before they exist.
 pub struct TransferSequence<'a> {
     counter: &'a dyn AllocationCounter,
     order: Vec<u64>,
+    cancel_after: Option<usize>,
 }
 
 impl<'a> TransferSequence<'a> {
-    pub fn new(counter: &'a dyn AllocationCounter, order: Vec<u64>) -> Self {
-        Self { counter, order }
+    pub fn new(
+        counter: &'a dyn AllocationCounter,
+        order: Vec<u64>,
+        cancel_after: Option<usize>,
+    ) -> Self {
+        Self {
+            counter,
+            order,
+            cancel_after,
+        }
     }
 
     pub fn run(&self, recoveries: u64) -> MemoryProfile {
@@ -71,7 +82,16 @@ impl<'a> TransferSequence<'a> {
                 receiver: RECEIVER,
             });
             held_at_worst = held_at_worst.max(self.counter.live());
-            for id in &self.order {
+            for (moved, id) in self.order.iter().enumerate() {
+                if self.cancel_after == Some(moved) {
+                    for end in [receiver, sender] {
+                        nodes[end].process(Command::CancelRecovery {
+                            session_id,
+                            reason: (),
+                        });
+                    }
+                    break;
+                }
                 nodes[sender].process(Command::SendRecoveryPartial {
                     session_id,
                     first: *id,
