@@ -60,7 +60,9 @@ testing (`cargo-mutants`) would automate them, once installing it is allowed.
 A coverage gate in stage 2, built with the first slice: `cargo llvm-cov` with
 `--fail-uncovered-lines 0`, `--fail-uncovered-regions 0` and
 `--fail-uncovered-functions 0`, run twice — over every tier, and over the
-conformance tests alone.
+conformance tests alone. Since 2026-11-13 it measures the specification's model
+too ([P1-ADR-IndependentModelOfTheSpecification](P1-ADR-IndependentModelOfTheSpecification.md)):
+a line of it the vectors never reach is one the prose does not give it.
 
 ## Related
 

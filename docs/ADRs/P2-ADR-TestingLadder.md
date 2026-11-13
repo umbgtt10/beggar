@@ -25,10 +25,10 @@ Each tier is the only one that catches its class of failure:
 
 | tier | proves | catches |
 |---|---|---|
-| 1. unit | each type alone, one test file per source file | a type wrong in isolation |
-| 2. conformance | every vector, every vector valid against the schema, every row of the matrix exercised | a departure from the specification |
+| 1. unit | each type alone, one test file per source file, the crate's and the specification's model's | a type wrong in isolation |
+| 2. conformance | every vector, run against the crate and against the specification's model, every vector valid against the schema, every row of the matrix exercised — and, by the model, decided | a departure from the specification, or a vector that departs from it |
 | 3. exhaustive matrix | every command in every situation over small bounds — `chunks` up to 3, every run within, across and beyond them — against the naive model | a situation no vector names |
-| 4. property | the invariants after every call, receipts one more on every call, the crate against the naive model over random sequences | a sequence nobody wrote down |
+| 4. property | the invariants after every call, receipts one more on every call, the crate against the specification's model over random sequences | a sequence nobody wrote down |
 | 5. cluster simulation | several registries whose reports to one another a seeded harness loses, duplicates, reorders and withholds — pull, push, cancels, restarts under a new incarnation | what happens between two ends |
 | 6. replay | the property and cluster simulation tiers' logs written in the specification's JSON and replayed into a fresh instance: every receipt matches, a dropped line is detected, the replay resynchronises from a checkpoint | a log that cannot rebuild the state |
 | 7. memory | a counting allocator in a test target of its own: a positive control, then peak and residue over 100 recoveries | growth no other tier sees |
@@ -48,7 +48,8 @@ Raft's system tests, once it is integrated.
 
 A command lands in every tier that applies to it, in the slice that brings it:
 a unit test for each new type, its rows in the vectors, its situations in the
-exhaustive matrix, its effect in the naive model, and a cluster simulation scenario and
+exhaustive matrix, its situations and changes in the specification's model
+([P1-ADR-IndependentModelOfTheSpecification](P1-ADR-IndependentModelOfTheSpecification.md)), and a cluster simulation scenario and
 a replay where it changes what passes between two ends.
 
 The ladder is slower than unit tests alone; tier 3's bounds keep it exhaustive
@@ -56,8 +57,8 @@ and fast, and tier 5 is seeded, so a failure replays.
 
 ## Enforcement
 
-Stage 1 runs every tier: the unit tier in `crates/core/tests/`, mirrored file by
-file, and the scenario tiers in `validation/ladder/`, a package of their own (decided
+Stage 1 runs every tier: the unit tier in `crates/core/tests/` and
+`crates/spec-model/tests/`, mirrored file by file, and the scenario tiers in `validation/ladder/`, a package of their own (decided
 2026-11-09), where stern's `paired-test-file` stands down because they are
 named for what they prove, not for a source file. The memory tier needs a
 binary of its own, a global allocator being per binary, and is `validation/memory/`, a

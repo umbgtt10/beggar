@@ -74,7 +74,9 @@ machine means the normative core is a data model plus one total function — the
 
 What will make it a specification rather than prose is `spec/`, written first and by hand: a JSON Schema data
 model, a JSON decision table, normative prose, and a **committed, machine-readable conformance suite** in JSON: vectors of `(initial state, command sequence) → (expected receipts, final state)`, consumed by this
-crate's tests and by any other implementation's.
+crate's tests and by any other implementation's. A second implementation sits beside the crate, never published:
+the specification's model, written from the prose and the decision table and independent of the crate, against
+which every vector is checked before the crate runs it.
 
 ## Sibling to `faction`, and the difference is load-bearing
 

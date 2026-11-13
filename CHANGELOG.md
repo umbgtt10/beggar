@@ -10,6 +10,12 @@ version it conforms to.
   `validation/` -- `ladder/`, `core-validation/`, `memory/` -- beside `spec/` and `xtask/`
   (`P2-ADR-WorkspaceLaidOutByRole`). No package is renamed, and nothing the crate does changes.
 
+#### Added
+- The specification's independent model, `beggar-spec-model` in `crates/spec-model/`, never published: a second
+  implementation of the specification, written from the prose and the decision table, `no_std` and free of unsafe
+  code, depending on nothing of the crate (`P1-ADR-IndependentModelOfTheSpecification`). Every vector is checked
+  against it, and the crate against it over random sequences. Nothing the crate does changes.
+
 ## [0.5.1] — 2026-11-13
 
 ### Published on crates.io

@@ -22,6 +22,7 @@ the gates.
 | directory | packages |
 |---|---|
 | `crates/core/` | `beggar`, published |
+| `crates/spec-model/` | `beggar-spec-model`, the specification's model, since 2026-11-13 |
 | `validation/ladder/` | `beggar-ladder` |
 | `validation/core-validation/` | `beggar-core-validation` |
 | `validation/memory/` | `beggar-memory` |
@@ -29,8 +30,8 @@ the gates.
 
 ## Forcing constraints / Evidence
 The gates name the library already: CRAP, the coverage gate, the mirrored tests
-and the file risk measure `beggar`, and the duplication gate scans its source
-alone. The layout states what the gates enforce. `spec/` is normative data,
+and the file risk measure the library's crates, and the duplication gate scans
+their source alone. The layout states what the gates enforce. `spec/` is normative data,
 versioned apart from the crate, read and never built; a package inside it would
 make it something else.
 
@@ -50,5 +51,5 @@ specification and the README two directories up. No package is renamed, and
 nothing the crate does changes.
 
 ## Enforcement
-The workspace manifest's members. The duplication gate scans
-`crates/core/src`, `DRY_PATH` in `xtask/src/main.rs`.
+The workspace manifest's members. The duplication gate scans `crates/`, what
+`dry4rust.toml` leaves in: the library's source.

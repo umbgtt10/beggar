@@ -24,18 +24,22 @@ Run:
 If either gate is not green, the work is not complete.
 
 Stage 1 is formatting, clippy over every target, the `no_std` check and tests.
-The `no_std` check builds for `thumbv7em-none-eabihf`, a target with no std at
-all, which `rust-toolchain.toml` installs.
+The `no_std` check builds the crate and the specification's model for
+`thumbv7em-none-eabihf`, a target with no std at all, which
+`rust-toolchain.toml` installs.
 
 Stage 2 is `cargo xtask stage2`, ported from etheram-core's: stern4rust, then
 dry4rust against `dry4rust-baseline.json`, crap4rust, the coverage gate twice,
 twin4rust, iceberg4rust and cargo-deny, in that order, for the reasons
 etheram-core records. stern runs over `beggar`, `beggar-core-validation`,
-`beggar-ladder`, `beggar-memory` **and** `xtask`; the rest over `beggar`.
+`beggar-ladder`, `beggar-memory`, `beggar-spec-model` **and** `xtask`; the rest
+over the library, `beggar` and `beggar-spec-model`. dry4rust scans `crates/`,
+what `dry4rust.toml` leaves in, as faction's does.
 
 The tests climb a ladder of seven tiers — `docs/ADRs/P2-ADR-TestingLadder.md`.
-The coverage gate, `cargo llvm-cov` over `beggar` and `beggar-ladder`, fails on
-any line, region or function of beggar left uncovered: once over every tier, and
+The coverage gate, `cargo llvm-cov` over `beggar`, `beggar-spec-model` and
+`beggar-ladder`, fails on any line, region or function of the library left
+uncovered: once over every tier, and
 once over the conformance tier alone, its tests filtered to `conformance::` —
 the vectors must reach every line by themselves, or the crate holds something
 the specification does not ask for
@@ -43,12 +47,15 @@ the specification does not ask for
 not measured, and a hand-written one is a line like any other: `ChunkSet`
 derives `Default`, which clippy asks for beside its `new`, rather than writing
 it. The specification in `spec/` is normative; the crate is one implementation
-of it.
+of it, and `crates/spec-model/` a second, independent of the crate, against
+which the vectors are checked
+(`docs/ADRs/P1-ADR-IndependentModelOfTheSpecification.md`). `deny.toml` refuses
+it `beggar`: the two meet only in the specification's encoding, in the ladder.
 
 ### Every commit carries the library's scores
 
 Every commit message carries the grip and braintax of the library's crates,
-`core` under `crates/`, and their ratio, scored as the commit stages them, as
+`core` and `spec-model` under `crates/`, and their ratio, scored as the commit stages them, as
 faction's does. `.githooks/commit-msg` runs `cargo xtask grip-braintax` on the
 message's file, which writes the scores in as a paragraph of their own above the
 trailers: each crate's `grip_absolute_total` over its `total_braintax` and their
@@ -69,14 +76,16 @@ machine. `cargo xtask grip-braintax` with no file prints the scores.
 
 A workspace laid out by role, as faction's is
 (`docs/ADRs/P2-ADR-WorkspaceLaidOutByRole.md`): `spec/` holds the specification,
-`crates/` the library -- `crates/core/`, the crate -- `validation/` every package
+`crates/` the library -- `crates/core/`, the crate, and `crates/spec-model/`,
+the specification's independent model -- `validation/` every package
 that checks it -- `validation/ladder/` the testing ladder's scenario tiers,
 `validation/core-validation/` its cluster simulation, `validation/memory/` its
 memory tier -- and `xtask/` runs the gates. A crate at the repository root would
 put `xtask/tests/**` inside its package directory, and stern would read them as
 the crate's.
 
-`crates/core/tests/` is the unit tier, one test file per source file, under every rule.
+`crates/core/tests/` and `crates/spec-model/tests/` are the unit tier, one test
+file per source file, under every rule.
 The tiers that are scenarios rather than mirrors of a file -- conformance, the
 exhaustive matrix, property, replay -- live in `validation/ladder/`, a package with no code
 of its own (`publish = false`), where stern's `paired-test-file` stands down:

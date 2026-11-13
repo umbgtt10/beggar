@@ -74,10 +74,12 @@ a change to the specification first. The receipt and the checkpoint are part of
 it, so any implementation's log can be replayed by any tool.
 
 The crate never reads the specification. Its conformance tests map the JSON to
-its types through a model of their own. A deliberately naive model in the
-property tests is a second implementation, in Rust; one in another language
-passing the same vectors would prove the specification language-independent,
-and may come later.
+its types through a model of their own. The specification's model, in
+`crates/spec-model/`, is a second implementation, in Rust and independent of the
+crate, and the vectors are checked against it before the crate runs them
+([P1-ADR-IndependentModelOfTheSpecification](P1-ADR-IndependentModelOfTheSpecification.md));
+one in another language passing the same vectors would prove the specification
+language-independent, and may come later.
 
 The cancel reason, the caller's enum, appears in the vectors as an enum of
 their own. The memory test is not a vector: it measures this implementation's
