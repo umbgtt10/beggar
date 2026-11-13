@@ -45,6 +45,26 @@ derives `Default`, which clippy asks for beside its `new`, rather than writing
 it. The specification in `spec/` is normative; the crate is one implementation
 of it.
 
+### Every commit carries the library's scores
+
+Every commit message carries the grip and braintax of the library's crates,
+`core` under `crates/`, and their ratio, scored as the commit stages them, as
+faction's does. `.githooks/commit-msg` runs `cargo xtask grip-braintax` on the
+message's file, which writes the scores in as a paragraph of their own above the
+trailers: each crate's `grip_absolute_total` over its `total_braintax` and their
+ratio, then the sums and theirs, under a title naming the releases of
+`cargo-grip4rust` and `cargo-braintax4rust` -- scores of different releases do
+not compare. The files under them that the index holds are exported into a
+scratch directory and scored there, so nothing unstaged counts. An amend scores
+again, in place of the earlier scores; a message with no words is left alone, so
+git still aborts its commit; a scoring that fails stops the commit, and
+`--no-verify` skips it, deliberately -- never use it. Git runs a repository's
+own hooks only where a clone asks it to: `just hooks`, once a clone, on each
+machine. `cargo xtask grip-braintax` with no file prints the scores.
+
+`cargo install cargo-grip4rust`
+`cargo install cargo-braintax4rust`
+
 ## Layout
 
 A workspace laid out by role, as faction's is

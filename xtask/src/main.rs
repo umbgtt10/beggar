@@ -2,8 +2,13 @@
 // SPDX-License-Identifier: MIT
 
 use std::env::args;
+use std::env::temp_dir;
+use std::fs::read_to_string;
+use std::fs::remove_dir_all;
+use std::fs::write;
 use std::path::Path;
 use std::path::PathBuf;
+use std::process::id;
 use std::process::ExitCode;
 use xtask::crap::crap_report_parser::CrapReportParser;
 use xtask::gates::coverage_gate::CoverageGate;
@@ -16,6 +21,8 @@ use xtask::gates::stage2::Stage2;
 use xtask::gates::stern_gate::SternGate;
 use xtask::gates::twin_gate::TwinGate;
 use xtask::process::system_command_runner::SystemCommandRunner;
+use xtask::scores::library_scorer::LibraryScorer;
+use xtask::scores::message_scoring::MessageScoring;
 
 const CONFORMANCE_TIER: &str = "conformance";
 const CORE_PACKAGE: &str = "beggar";
@@ -34,11 +41,37 @@ const DRY_MIN_NODES: &str = "10";
 fn main() -> ExitCode {
     match args().nth(1).as_deref() {
         Some("stage2") => run_stage2(),
+        Some("grip-braintax") => match grip_braintax() {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(reason) => {
+                eprintln!("grip-braintax: {reason}");
+                ExitCode::FAILURE
+            }
+        },
         _ => {
-            eprintln!("usage: cargo xtask stage2");
+            eprintln!("usage: cargo xtask <stage2|grip-braintax>");
             ExitCode::FAILURE
         }
     }
+}
+
+// The library's crates scored as staged, for the commit-msg hook in .githooks/:
+// given the message's file, the scores are written into it, above its
+// trailers; given none, they are printed.
+fn grip_braintax() -> Result<(), String> {
+    let scratch = temp_dir().join(format!("xtask-grip-braintax-{}", id()));
+    let runner = SystemCommandRunner::new();
+    let scored = LibraryScorer::new(&runner, scratch.to_string_lossy().into_owned()).score();
+    let _ = remove_dir_all(&scratch);
+    let block = scored.map_err(|failure| failure.to_string())?.render();
+    let Some(path) = args().nth(2) else {
+        println!("{block}");
+        return Ok(());
+    };
+    let message =
+        read_to_string(&path).map_err(|error| format!("could not read {path}: {error}"))?;
+    write(&path, MessageScoring::new(block).applied_to(&message))
+        .map_err(|error| format!("could not write {path}: {error}"))
 }
 
 fn run_stage2() -> ExitCode {

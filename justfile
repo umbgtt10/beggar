@@ -19,6 +19,12 @@ fmt_mode := if env('CI', '') != '' { '--check' } else { '' }
 default:
     @just --list
 
+# Every commit message carries the library's grip and braintax, written in by
+# .githooks/commit-msg. Git runs a repository's own hooks only where a clone
+# asks it to: run this once a clone, on each machine.
+hooks:
+    git config core.hooksPath .githooks
+
 # Formatting, clippy, the no_std check and tests -- cargo built-ins only, so it
 # works on a fresh checkout with none of the house tools installed. The no_std
 # check builds for a target with no std at all, which a host build cannot prove.
