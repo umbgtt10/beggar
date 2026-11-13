@@ -137,7 +137,7 @@ The serving end: the side that holds the chunks opens the session and sends them
   ([`P1-ADR-TheLogIsTheRecord`](ADRs/P1-ADR-TheLogIsTheRecord.md)).
 - **The sending end first:** slice 2 sends, because a session opens on its sender
   ([`P1-ADR-TheSenderOpensAndStatesTheCount`](ADRs/P1-ADR-TheSenderOpensAndStatesTheCount.md)) and IBFT's control
-  layer already exists to integrate against; Raft's catch-up has yet to be split into a control layer and beggar.
+  layer already exists to integrate against; Raft's recovery has yet to be split into a control layer and beggar.
 - **The chunks received are a type of beggar's own, `ChunkSet`**, showing behaviour, never its fields:
   `count`, `ids`, and `missing` — what it lacks, as the maximal runs of consecutive ids. A set has exactly one set
   of maximal runs, so they are a property of the set and not of a representation, and they keep a checkpoint
@@ -148,7 +148,7 @@ The serving end: the side that holds the chunks opens the session and sends them
 
 ## After the slices
 
-Integration has plans of its own: beggar beneath IBFT's control layer, in `etheram-ibft`, and Raft's catch-up
+Integration has plans of its own: beggar beneath IBFT's control layer, in `etheram-ibft`, and Raft's recovery
 split into a control layer with beggar beneath it, in `etheram-raft`. **Raft first** — decided 2026-11-10: slices
 4 and 5, then Raft, while IBFT's side is busy with work of its own.
 
@@ -156,6 +156,6 @@ split into a control layer with beggar beneath it, in `etheram-raft`. **Raft fir
 [`DESIGN.md`](DESIGN.md) §12's open question. `faction` has a `protocol` crate, its `protocol-validation` and
 `system-tests`, because it owns its wire; beggar owns none, and `P2-ADR-TestingLadder` already leaves its system
 tier to its consumers. Its counterpart to `faction`'s protocol layer is the control layer above it, of which there
-is one today, IBFT's, and will be two once Raft's catch-up is split. If the two prove one consensus-unaware layer in
+is one today, IBFT's, and will be two once Raft's recovery is split. If the two prove one consensus-unaware layer in
 two configurations, it arrives here as `protocol/`, with `protocol-validation/` and `system-tests/` as `faction`'s;
 if not, each stays with its consumer. One example is not enough to draw the abstraction from.

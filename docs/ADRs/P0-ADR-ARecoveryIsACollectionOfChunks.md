@@ -31,8 +31,8 @@ missing entries and a snapshot in a hundred pieces are each a session of chunks.
 ## Rejected alternatives
 
 **Fitting beggar to the transfers that already have a fixed end** — snapshots,
-block requests — and leaving log catch-up out. Rejected: whether a transfer
-has a fixed end is how its caller frames it. A log catch-up becomes a
+block requests — and leaving log recovery out. Rejected: whether a transfer
+has a fixed end is how its caller frames it. A log recovery becomes a
 collection once the caller decides what one recovery covers.
 
 **A bitmap for the chunks received.** Rejected: a byte-level representation in

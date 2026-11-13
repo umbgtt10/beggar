@@ -11,7 +11,7 @@ the sections they came from keep their numbers, because other repositories cite 
 the request in flight — beneath the control layer the extraction carved out of it (§12). The path's as-built
 behaviour, known issues and extraction plan are `etheram-ibft/docs/RECOVERY-AS-BUILT.md`.
 
-**Beggar itself can be built and validated with no dependency on that work and without touching firmware**, so
+**Beggar itself can be built and validated with no dependency on that work and without touching hardware**, so
 nothing here waits on it.
 
 **The integration is sequenced step-by-step behind that extraction — decided 2026-09-30.** A single-change
@@ -20,7 +20,7 @@ that independently. It is that the extraction produces two things nothing else d
 of what recovery actually does**, which the as-built document explicitly is not, and which the layers above beggar
 must reproduce — most of it the consensus-unaware control layer, not the IBFT side (§12); and **a seam proven
 with known-good logic behind it**, so that beggar afterwards changes only one side. Without it, beggar, a new
-driver and the rewiring land together and a failed hardware sweep has three candidate causes it cannot separate.
+driver and the rewiring land together and a failed hardware run has three candidate causes it cannot separate.
 
 So the order is: the extraction, then beggar behind the seam it created. Beggar's own validation runs in
 parallel with all of it.
@@ -295,7 +295,7 @@ sessions a linear scan also beats a tree lookup.
 **Five nodes, one session, one peer: a record on each of the two involved nodes and nothing on the other three** —
 `Vec::new()` does not allocate. Five concurrent sessions are one allocation of records, and their ranges.
 
-**Churn is negligible too.** At 3–8 sessions per catch-up and a few hundred catch-ups per long run, that is
+**Churn is negligible too.** At 3–8 sessions per recovery and a few hundred recoveries per long run, that is
 ~1,900 sessions opened and evicted across ~16 hours — about **0.03 per second**, against a logging path doing ~40
 lines per second on the same board.
 
@@ -335,7 +335,7 @@ flaky in the direction of **passing**. It needs its **own test target**.
 **Zero `unsafe`, gateable rather than reviewable:** `#![forbid(unsafe_code)]` at the crate root makes it a
 compile error. A registry over identifiers and sets has no motive for it.
 
-**A compile-time fixed-capacity registry was considered and rejected.** It would bind an embedded constraint
+**A compile-time fixed-capacity registry was considered and rejected.** It would bind a platform's constraint
 into a core that property 4 requires to be platform-neutral — worse than the problem it solves, and §8 shows
 the problem is not there.
 
@@ -411,7 +411,7 @@ consensus vocabulary in its source, comments included. It may know a chain; it m
 - **the peer set supplied per call and never cached** (§2): the control layer borrows it from its caller on every
   call.
 
-**Raft has the same three layers — 2026-11-06, §13.** Its control layer is the catch-up bookkeeping behind
+**Raft has the same three layers — 2026-11-06, §13.** Its control layer is the recovery bookkeeping behind
 `etheram-raft`'s `CatchUpBookkeeping` port, whose default steps back on a rejection: log indices, `nextIndex` and
 `matchIndex`, the follower to send to next. Beggar sits beneath it as beneath IBFT's, and takes over the same one
 thing: the bookkeeping of what is in flight.
@@ -422,7 +422,7 @@ whether the control layer ever moves into this repository. If it does, it arrive
 on beggar, never the reverse.
 
 **Status, 2026-11-06.** The extraction merged to `etheram-ibft`'s main in `0963d1d` on 2026-10-17, so the control
-layer is on main, in `recovery/control/`. Beggar still does not exist. Nor does Raft's split: its catch-up
+layer is on main, in `recovery/control/`. Beggar still does not exist. Nor does Raft's split: its recovery
 bookkeeping is one layer today, and beggar's arrival there is what would split it.
 
 ## 13. A recovery is a collection of chunks — decided 2026-11-06
@@ -464,7 +464,7 @@ caller's.
 
 [`P1-ADR-APartialIsARunOfChunks`](ADRs/P1-ADR-APartialIsARunOfChunks.md): a partial reports `first..=last`, the
 unit its caller moved and validated — a page of blocks, a batch of entries, a message of snapshot pieces — and a
-single chunk is a run of one. One call, one receipt, one line per unit: a catch-up of 77 blocks in pages of eight
+single chunk is a run of one. One call, one receipt, one line per unit: a recovery of 77 blocks in pages of eight
 leaves about ten receipts at each end instead of 77. A run that overruns the session is refused whole; one partly
 present adds what is new; an empty run is malformed (`EmptyRun`), checked first. The received set merges a run in
 one step (§8).
