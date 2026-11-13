@@ -4,6 +4,7 @@
 use beggar::checkpoint::Checkpoint;
 use beggar::command::Command;
 use beggar::instance_id::InstanceId;
+use beggar::origin::Origin;
 use beggar::output::Output;
 use beggar::receipt::Receipt;
 use beggar::rejection::Rejection;
@@ -92,6 +93,18 @@ impl SpecWriter {
                 json!({ "ListMissingChunks": { "session_id": Self::session_id(session_id) } })
             }
             Command::ShowRegistry => json!({ "ShowRegistry": {} }),
+        }
+    }
+
+    // An instance's origin, fresh or a checkpoint, as a vector states it.
+    pub fn origin(origin: &Origin) -> Value {
+        match origin {
+            Origin::Fresh(fresh) => json!({ "Fresh": {
+                "instance": Self::instance(&fresh.instance),
+                "retention": Self::number(fresh.retention),
+                "bound": fresh.bound.map_or(Value::Null, Self::number),
+            } }),
+            Origin::Checkpoint(checkpoint) => json!({ "Checkpoint": Self::checkpoint(checkpoint) }),
         }
     }
 

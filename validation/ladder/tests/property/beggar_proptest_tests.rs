@@ -3,8 +3,9 @@
 
 // The property tier: random sequences on random instances -- both ends of
 // transfers, started and adopted, sent, received and cancelled, and queried --
-// the crate against the naive model after every call, a well-formed partial
-// after an accepted cancel never finding its session, the invariants on every
+// the crate against the specification's model after every call, the two
+// meeting only in the specification's encoding, a well-formed partial after
+// an accepted cancel never finding its session, the invariants on every
 // state shown, the queries answering for the open and the finished sessions,
 // receipts one more on every call, every call reported to the observer as it
 // was answered, every command but a query answered alike at retention 0 and at
@@ -14,9 +15,10 @@
 // a session completing exactly when every chunk is held, with no record after
 // it.
 
-use crate::support::naive_registry::NaiveRegistry;
 use crate::support::random_commands::RandomCommands;
 use crate::support::recording_observer::RecordingObserver;
+use crate::support::spec_files::SpecFiles;
+use crate::support::spec_writer::SpecWriter;
 use beggar::beggar::Beggar;
 use beggar::checkpoint::Checkpoint;
 use beggar::chunk_set::ChunkSet;
@@ -31,6 +33,9 @@ use beggar::retained_record::RetainedRecord;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
 use beggar_core_validation::scenario_reason::ScenarioReason;
+use beggar_spec_model::answer::Answer;
+use beggar_spec_model::model::Model;
+use beggar_spec_model::spec_reader::SpecReader;
 use proptest::collection::btree_set;
 use proptest::collection::vec;
 use proptest::prelude::any;
@@ -167,21 +172,24 @@ proptest! {
     }
 
     #[test]
-    fn process_of_any_sequence_answers_as_the_naive_model_and_keeps_the_invariants(
+    fn process_of_any_sequence_answers_as_the_specification_s_model_and_keeps_the_invariants(
         (fresh, commands) in RandomCommands::fresh_and_commands(60),
     ) {
         // Arrange
-        let mut beggar: Beggar<ScenarioReason> =
-            Beggar::new(Origin::Fresh(fresh.clone()), Box::new(NoOpObserver));
-        let mut model = NaiveRegistry::fresh(&fresh);
+        let origin = Origin::Fresh(fresh);
+        let mut model = Model::new(
+            SpecReader::table(&SpecFiles::matrix()),
+            SpecReader::origin(&SpecWriter::origin(&origin)),
+        );
+        let mut beggar: Beggar<ScenarioReason> = Beggar::new(origin, Box::new(NoOpObserver));
 
         // Act
-        let answers: Vec<(Command<ScenarioReason>, Receipt<ScenarioReason>, Receipt<ScenarioReason>)> = commands
+        let answers: Vec<(Command<ScenarioReason>, Receipt<ScenarioReason>, Answer)> = commands
             .into_iter()
             .chain([Command::ShowRegistry])
             .map(|command| {
+                let from_model = model.process(&SpecWriter::command(&command));
                 let from_crate = beggar.process(command.clone());
-                let from_model = model.answer(&command);
                 (command, from_crate, from_model)
             })
             .collect();
@@ -192,7 +200,7 @@ proptest! {
         let mut cancelled: BTreeSet<SessionId> = BTreeSet::new();
         let mut finished: Vec<Finish> = Vec::new();
         for (index, (command, from_crate, from_model)) in answers.iter().enumerate() {
-            prop_assert_eq!(from_crate, from_model);
+            prop_assert_eq!(SpecWriter::receipt(from_crate), from_model.receipt.clone());
             prop_assert_eq!(from_crate.number, index as u64 + 1);
             match (&from_crate.output, command) {
                 (Output::RecoveryStarted { session_id }, Command::StartRecovery { .. }) => {

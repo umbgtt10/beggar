@@ -29,10 +29,10 @@ const CORE_PACKAGE: &str = "beggar";
 const CORE_VALIDATION_PACKAGE: &str = "beggar-core-validation";
 const LADDER_PACKAGE: &str = "beggar-ladder";
 const MEMORY_PACKAGE: &str = "beggar-memory";
+const SPEC_MODEL_PACKAGE: &str = "beggar-spec-model";
 const XTASK_PACKAGE: &str = "xtask";
 const CRAP_THRESHOLD: &str = "15";
 const ICEBERG_THRESHOLD: &str = "5";
-const DRY_PATH: &str = "crates/core/src";
 const DRY_BASELINE: &str = "dry4rust-baseline.json";
 const DRY_MIN_NODES: &str = "10";
 
@@ -90,41 +90,48 @@ fn run_stage2() -> ExitCode {
             String::from(CORE_VALIDATION_PACKAGE),
             String::from(LADDER_PACKAGE),
             String::from(MEMORY_PACKAGE),
+            String::from(SPEC_MODEL_PACKAGE),
             String::from(XTASK_PACKAGE),
         ],
     );
 
     // Second, for the same reason stern4rust is first: removing a duplicate
     // moves code between files, which changes what the three behind it measure.
-    // The library's source only, against a baseline of what was already
-    // duplicated when the gate arrived. The floor is dry4rust's own default
-    // rather than the 25 the *4rust tools use: this crate is a registry of small
-    // types, and a higher floor would measure next to nothing.
+    // The library's source, what dry4rust.toml leaves in, against a baseline of
+    // what was already duplicated when the gate arrived. The floor is
+    // dry4rust's own default rather than the 25 the *4rust tools use: the
+    // library is small types, and a higher floor would measure next to nothing.
     let root = workspace_root();
     let dry = DryGate::new(
         &runner,
-        root.join(DRY_PATH).to_string_lossy().into_owned(),
+        root.to_string_lossy().into_owned(),
         root.join(DRY_BASELINE).to_string_lossy().into_owned(),
         String::from(DRY_MIN_NODES),
     );
 
-    // The library crate only -- nothing here is published, and `xtask` sets
-    // `publish = false`. CRAP scores functions against their coverage, and the
-    // bill being paid here is beggar's rather than xtask's.
-    let core_only = vec![String::from(CORE_PACKAGE)];
+    // The library: the crate beggar publishes, and the specification's model,
+    // held to the same rules though it never is. CRAP scores functions against
+    // their coverage, and the bill being paid here is the library's rather
+    // than xtask's.
+    let library = vec![String::from(CORE_PACKAGE), String::from(SPEC_MODEL_PACKAGE)];
 
     let crap = CrapGate::new(
         &runner,
         &parser,
         manifest_path.clone(),
-        core_only.clone(),
+        library.clone(),
         String::from(CRAP_THRESHOLD),
     );
-    // Beggar's lines over every tier, then over the conformance tier alone: the
-    // vectors must reach every line by themselves, or the crate holds something
-    // the specification does not ask for. The ladder runs the scenario tiers,
-    // so both packages are measured, beggar's lines the ones that count.
-    let measured = vec![String::from(CORE_PACKAGE), String::from(LADDER_PACKAGE)];
+    // The library's lines over every tier, then over the conformance tier
+    // alone: the vectors must reach every line by themselves, or the crate
+    // holds something the specification does not ask for, and the model
+    // something it does not say. The ladder runs the scenario tiers, so it is
+    // measured with them, the library's lines the ones that count.
+    let measured = vec![
+        String::from(CORE_PACKAGE),
+        String::from(SPEC_MODEL_PACKAGE),
+        String::from(LADDER_PACKAGE),
+    ];
     let coverage = CoverageGate::new(&runner, manifest_path.clone(), measured.clone(), None);
     let conformance_coverage = CoverageGate::new(
         &runner,
@@ -132,13 +139,13 @@ fn run_stage2() -> ExitCode {
         measured,
         Some(String::from(CONFORMANCE_TIER)),
     );
-    let twin = TwinGate::new(&runner, manifest_path.clone(), core_only.clone());
+    let twin = TwinGate::new(&runner, manifest_path.clone(), library.clone());
     // Last in stage 2: its advisories change without the code changing (see DenyGate).
     let deny = DenyGate::new(&runner, manifest_path.clone());
     let iceberg = IcebergGate::new(
         &runner,
         manifest_path,
-        core_only,
+        library,
         String::from(ICEBERG_THRESHOLD),
     );
 

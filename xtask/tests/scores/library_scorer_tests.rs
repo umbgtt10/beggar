@@ -9,14 +9,16 @@ use xtask::scores::score_failure::ScoreFailure;
 use xtask::scores::score_sheet::ScoreSheet;
 
 const LISTING: &str =
-    "crates/core/src/lib.rs\0crates/core/Cargo.toml\0crates/core/src/registry.rs\0";
+    "crates/core/src/lib.rs\0crates/core/Cargo.toml\0crates/spec-model/src/model.rs\0";
 
-fn answering_the_core() -> FakeCommandRunner {
+fn answering_two_crates() -> FakeCommandRunner {
     FakeCommandRunner::new().with_replies(&[
         LISTING,
         "",
         r#"{"version":"0.10.0","overall":{"grip_absolute_total":107.38}}"#,
         r#"{"version":"0.14.0","overall":{"total_braintax":844.21}}"#,
+        r#"{"version":"0.10.0","overall":{"grip_absolute_total":4.05}}"#,
+        r#"{"version":"0.14.0","overall":{"total_braintax":27.65}}"#,
     ])
 }
 
@@ -27,7 +29,7 @@ fn arguments(args: &[&str]) -> Vec<String> {
 #[test]
 fn score_exports_the_staged_library_files_then_scores_each_crate_there() {
     // Arrange
-    let runner = answering_the_core();
+    let runner = answering_two_crates();
     let scorer = LibraryScorer::new(&runner, String::from("/scratch"));
 
     // Act
@@ -37,7 +39,7 @@ fn score_exports_the_staged_library_files_then_scores_each_crate_there() {
     assert_eq!(
         runner.calls()[..4],
         [
-            arguments(&["ls-files", "-z", "--", "crates/core",]),
+            arguments(&["ls-files", "-z", "--", "crates/core", "crates/spec-model"]),
             arguments(&[
                 "checkout-index",
                 "--force",
@@ -45,7 +47,7 @@ fn score_exports_the_staged_library_files_then_scores_each_crate_there() {
                 "--",
                 "crates/core/src/lib.rs",
                 "crates/core/Cargo.toml",
-                "crates/core/src/registry.rs",
+                "crates/spec-model/src/model.rs",
             ]),
             arguments(&["grip4rust", "--json", "/scratch/crates/core"]),
             arguments(&["braintax4rust", "--json", "/scratch/crates/core"]),
@@ -57,7 +59,7 @@ fn score_exports_the_staged_library_files_then_scores_each_crate_there() {
 #[test]
 fn score_of_a_failing_tool_names_its_command_with_what_it_said() {
     // Arrange
-    let runner = answering_the_core().with_capturing_codes(&[Some(0), Some(0), Some(1)]);
+    let runner = answering_two_crates().with_capturing_codes(&[Some(0), Some(0), Some(1)]);
     let scorer = LibraryScorer::new(&runner, String::from("/scratch"));
 
     // Act
@@ -95,7 +97,7 @@ fn score_of_a_runner_that_cannot_launch_fails_with_the_launch() {
 #[test]
 fn score_scores_each_library_crate_as_staged() {
     // Arrange
-    let runner = answering_the_core();
+    let runner = answering_two_crates();
     let scorer = LibraryScorer::new(&runner, String::from("/scratch"));
 
     // Act
@@ -105,11 +107,18 @@ fn score_scores_each_library_crate_as_staged() {
     let expected = ScoreSheet::new(
         String::from("0.10.0"),
         String::from("0.14.0"),
-        vec![CrateScore {
-            name: String::from("core"),
-            grip: 107.38,
-            braintax: 844.21,
-        }],
+        vec![
+            CrateScore {
+                name: String::from("core"),
+                grip: 107.38,
+                braintax: 844.21,
+            },
+            CrateScore {
+                name: String::from("spec-model"),
+                grip: 4.05,
+                braintax: 27.65,
+            },
+        ],
     );
     assert_eq!(scored, Ok(expected.render()));
 }

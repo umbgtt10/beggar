@@ -17,14 +17,14 @@ const GIT: &str = "git";
 const GRIP: &str = "grip4rust";
 const GRIP_TOOL: &str = "cargo-grip4rust";
 const GRIP_TOTAL: &str = "grip_absolute_total";
-const LIBRARY: [&str; 1] = ["core"];
+const LIBRARY: [&str; 2] = ["core", "spec-model"];
 const LIBRARY_DIRECTORY: &str = "crates";
 
-// The library's crates under crates/ -- core, the one beggar publishes --
-// scored as they are staged: the files under them that the index holds -- the
-// one git hands a commit hook -- exported into a scratch directory, so nothing
-// unstaged is scored, and each crate with source there scored by
-// cargo-grip4rust and cargo-braintax4rust.
+// The library's crates under crates/ -- core, the one beggar publishes, and
+// the specification's model, spec-model -- scored as they are staged: the
+// files under them that the index holds -- the one git hands a commit hook --
+// exported into a scratch directory, so nothing unstaged is scored, and each
+// crate with source there scored by cargo-grip4rust and cargo-braintax4rust.
 pub struct LibraryScorer<'a> {
     runner: &'a dyn CommandRunner,
     scratch: String,

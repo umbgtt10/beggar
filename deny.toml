@@ -20,6 +20,13 @@ multiple-versions = "warn"
 # -- the validation crates and fixture trees -- which never reaches crates.io.
 wildcards = "deny"
 allow-wildcard-paths = true
+# beggar is taken only by the crates written for it. The specification's
+# model is not among them: a model that shares the crate's types shares its
+# mistakes, so it reads the specification alone and meets the crate only in
+# the specification's encoding, in the ladder.
+deny = [
+    { crate = "beggar", wrappers = ["beggar-core-validation", "beggar-ladder", "beggar-memory"], reason = "the specification's model is independent of the crate" },
+]
 
 [sources]
 unknown-registry = "deny"

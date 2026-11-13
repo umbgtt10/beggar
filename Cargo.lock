@@ -60,6 +60,7 @@ version = "0.0.0"
 dependencies = [
  "beggar",
  "beggar-core-validation",
+ "beggar-spec-model",
  "boon",
  "proptest",
  "serde_json",
@@ -70,6 +71,13 @@ name = "beggar-memory"
 version = "0.0.0"
 dependencies = [
  "beggar",
+]
+
+[[package]]
+name = "beggar-spec-model"
+version = "0.0.0"
+dependencies = [
+ "serde_json",
 ]
 
 [[package]]

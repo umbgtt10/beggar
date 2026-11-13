@@ -27,11 +27,12 @@ hooks:
 
 # Formatting, clippy, the no_std check and tests -- cargo built-ins only, so it
 # works on a fresh checkout with none of the house tools installed. The no_std
-# check builds for a target with no std at all, which a host build cannot prove.
+# check builds the crate and the specification's model for a target with no std
+# at all, which a host build cannot prove.
 stage1:
     cargo fmt {{fmt_mode}}
     cargo clippy --workspace --all-targets -- -D warnings
-    cargo check -p beggar --target thumbv7em-none-eabihf
+    cargo check -p beggar -p beggar-spec-model --target thumbv7em-none-eabihf
     cargo test --workspace
 
 # House rules, duplication, CRAP, mirrored tests, file risk and dependencies,

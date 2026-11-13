@@ -9,6 +9,7 @@
 [workspace]
 members = [
     "crates/core",
+    "crates/spec-model",
     "validation/core-validation",
     "validation/ladder",
     "validation/memory",
@@ -23,7 +24,8 @@ license = "MIT"
 [workspace.dependencies]
 beggar = { path = "crates/core" }
 beggar-core-validation = { path = "validation/core-validation" }
+beggar-spec-model = { path = "crates/spec-model" }
 boon = "0.6"
 proptest = { version = "1", default-features = false, features = ["std"] }
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", default-features = false, features = ["alloc"] }

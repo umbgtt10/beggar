@@ -1,0 +1,5 @@
+# What the duplication gate scans: the library's source, crates/. Tests, the
+# build tree, everything under validation/ and the gates' own crate are left
+# out.
+exclude = ["/tests/", "target/", "validation/", "xtask/"]
+exclude_tests = true

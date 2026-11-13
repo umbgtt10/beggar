@@ -17,9 +17,10 @@ autotests = false
 [dev-dependencies]
 beggar.workspace = true
 beggar-core-validation.workspace = true
+beggar-spec-model.workspace = true
 boon.workspace = true
 proptest.workspace = true
-serde_json.workspace = true
+serde_json = { workspace = true, features = ["std"] }
 
 [lib]
 path = "src/lib.rs"
