@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 pub mod log_replay;
-pub mod naive_registry;
+pub mod model_side;
 pub mod random_commands;
 pub mod recording_observer;
 pub mod replay_report;

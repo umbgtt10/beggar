@@ -15,9 +15,9 @@
 // a session completing exactly when every chunk is held, with no record after
 // it.
 
+use crate::support::model_side::ModelSide;
 use crate::support::random_commands::RandomCommands;
 use crate::support::recording_observer::RecordingObserver;
-use crate::support::spec_files::SpecFiles;
 use crate::support::spec_writer::SpecWriter;
 use beggar::beggar::Beggar;
 use beggar::checkpoint::Checkpoint;
@@ -33,9 +33,6 @@ use beggar::retained_record::RetainedRecord;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
 use beggar_core_validation::scenario_reason::ScenarioReason;
-use beggar_spec_model::answer::Answer;
-use beggar_spec_model::model::Model;
-use beggar_spec_model::spec_reader::SpecReader;
 use proptest::collection::btree_set;
 use proptest::collection::vec;
 use proptest::prelude::any;
@@ -46,6 +43,7 @@ use proptest::prelude::Just;
 use proptest::prelude::ProptestConfig;
 use proptest::prelude::Strategy;
 use proptest::test_runner::TestCaseError;
+use serde_json::Value;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
 use std::rc::Rc;
@@ -177,18 +175,15 @@ proptest! {
     ) {
         // Arrange
         let origin = Origin::Fresh(fresh);
-        let mut model = Model::new(
-            SpecReader::table(&SpecFiles::matrix()),
-            SpecReader::origin(&SpecWriter::origin(&origin)),
-        );
+        let mut model = ModelSide::new(&origin);
         let mut beggar: Beggar<ScenarioReason> = Beggar::new(origin, Box::new(NoOpObserver));
 
         // Act
-        let answers: Vec<(Command<ScenarioReason>, Receipt<ScenarioReason>, Answer)> = commands
+        let answers: Vec<(Command<ScenarioReason>, Receipt<ScenarioReason>, Value)> = commands
             .into_iter()
             .chain([Command::ShowRegistry])
             .map(|command| {
-                let from_model = model.process(&SpecWriter::command(&command));
+                let from_model = model.process(&command);
                 let from_crate = beggar.process(command.clone());
                 (command, from_crate, from_model)
             })
@@ -200,7 +195,7 @@ proptest! {
         let mut cancelled: BTreeSet<SessionId> = BTreeSet::new();
         let mut finished: Vec<Finish> = Vec::new();
         for (index, (command, from_crate, from_model)) in answers.iter().enumerate() {
-            prop_assert_eq!(SpecWriter::receipt(from_crate), from_model.receipt.clone());
+            prop_assert_eq!(&SpecWriter::receipt(from_crate), from_model);
             prop_assert_eq!(from_crate.number, index as u64 + 1);
             match (&from_crate.output, command) {
                 (Output::RecoveryStarted { session_id }, Command::StartRecovery { .. }) => {

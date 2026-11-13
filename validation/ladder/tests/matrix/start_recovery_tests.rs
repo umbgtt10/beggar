@@ -5,9 +5,10 @@
 // bounds -- chunks up to 3, every pair of ends among three nodes, no bound and
 // bounds up to 2, up to two sessions open -- from a fresh instance and from
 // the checkpoint of the same state, the crate's receipt and resulting state
-// against the naive model's.
+// against the specification's model's, in its encoding.
 
-use crate::support::naive_registry::NaiveRegistry;
+use crate::support::model_side::ModelSide;
+use crate::support::spec_writer::SpecWriter;
 use beggar::beggar::Beggar;
 use beggar::checkpoint::Checkpoint;
 use beggar::command::Command;
@@ -19,6 +20,7 @@ use beggar::output::Output;
 use beggar::receipt::Receipt;
 use beggar::rejection::Rejection;
 use beggar_core_validation::scenario_reason::ScenarioReason;
+use serde_json::Value;
 use std::collections::BTreeSet;
 
 const BOUNDS: [Option<u64>; 4] = [None, Some(0), Some(1), Some(2)];
@@ -31,9 +33,9 @@ const NODES: [u64; 3] = [1, 2, 3];
 // What both implementations answered in a situation, and the state each left.
 struct Answers {
     crate_receipt: Receipt<ScenarioReason>,
-    model_receipt: Receipt<ScenarioReason>,
+    model_receipt: Value,
     crate_state: Checkpoint,
-    model_state: Checkpoint,
+    model_state: Value,
 }
 
 fn answers(situation: &Situation, restored: bool) -> Answers {
@@ -44,24 +46,24 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
     };
     let mut crate_side: Beggar<ScenarioReason> =
         Beggar::new(Origin::Fresh(fresh.clone()), Box::new(NoOpObserver));
-    let mut model = NaiveRegistry::fresh(&fresh);
+    let mut model = ModelSide::new(&Origin::Fresh(fresh.clone()));
     for _ in 0..situation.opened {
         let open_one = start(1, INSTANCE.node, 2);
         crate_side.process(open_one.clone());
-        model.answer(&open_one);
+        model.process(&open_one);
     }
     if restored {
         let checkpoint = shown(&mut crate_side);
-        model = NaiveRegistry::restored(&checkpoint);
+        model = ModelSide::new(&Origin::Checkpoint(checkpoint.clone()));
         crate_side = Beggar::new(Origin::Checkpoint(checkpoint), Box::new(NoOpObserver));
     }
     let crate_receipt = crate_side.process(situation.command.clone());
-    let model_receipt = model.answer(&situation.command);
+    let model_receipt = model.process(&situation.command);
     Answers {
         crate_receipt,
         model_receipt,
         crate_state: shown(&mut crate_side),
-        model_state: state(model.answer(&Command::ShowRegistry)),
+        model_state: model.checkpoint(),
     }
 }
 
@@ -135,7 +137,7 @@ fn state(receipt: Receipt<ScenarioReason>) -> Checkpoint {
 }
 
 #[test]
-fn process_in_every_small_situation_answers_as_the_naive_model() {
+fn process_in_every_small_situation_answers_as_the_specification_s_model() {
     // Arrange
     let situations = situations();
 
@@ -145,8 +147,8 @@ fn process_in_every_small_situation_answers_as_the_naive_model() {
         .flat_map(|situation| [(situation, false), (situation, true)])
         .filter_map(|(situation, restored)| {
             let answers = answers(situation, restored);
-            let agree = answers.crate_receipt == answers.model_receipt
-                && answers.crate_state == answers.model_state;
+            let agree = SpecWriter::receipt(&answers.crate_receipt) == answers.model_receipt
+                && SpecWriter::checkpoint(&answers.crate_state) == answers.model_state;
             (!agree).then(|| {
                 format!(
                     "bound {:?}, {} open, {:?}, restored {restored}: crate {:?}, model {:?}",

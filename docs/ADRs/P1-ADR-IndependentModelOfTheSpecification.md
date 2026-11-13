@@ -89,14 +89,20 @@ disagree with it about a row's commands, output or rejection — only about the
 situations, the changes and what an output carries; the matrix itself is checked
 against the vectors.
 
-The property tier compares the crate with this model. The exhaustive matrix
-tier still compares it with the naive registry, until that tier moves onto the
-model and the naive registry is retired.
+The exhaustive matrix and property tiers have no reference model of their own:
+the crate is checked against this one, every receipt and checkpoint compared
+whole in the specification's encoding. The naive registry they compared it with
+is retired: the model answers every situation the matrix tier sets the crate in
+and every random sequence as the naive registry did, and runs at the top of u64
+besides. Driven through the encoding, the matrix tier pays for it in time —
+about 40 seconds of a debug build where the naive registry took 2.
 
 ## Enforcement
 `cargo deny`'s bans in `deny.toml`. The model's conformance tier,
 `validation/ladder/tests/conformance/spec_model_tests.rs`, and the crate against
-the model, `validation/ladder/tests/property/beggar_proptest_tests.rs`. Stage 2
+the model, in the exhaustive matrix tier, `validation/ladder/tests/matrix/`, and
+the property tier, `validation/ladder/tests/property/beggar_proptest_tests.rs`,
+both through `validation/ladder/tests/support/model_side.rs`. Stage 2
 holds the model to every gate the library is held to — stern4rust, dry4rust,
 crap4rust, twin4rust, iceberg4rust, and coverage over every tier and over the
 conformance tier alone (`P1-ADR-NoLineTheSpecificationDoesNotAskFor`); stage 1

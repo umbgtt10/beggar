@@ -16,6 +16,11 @@ version it conforms to.
   code, depending on nothing of the crate (`P1-ADR-IndependentModelOfTheSpecification`). Every vector is checked
   against it, and the crate against it over random sequences. Nothing the crate does changes.
 
+#### Removed
+- The ladder's naive registry, the reference model the exhaustive matrix and property tiers checked the crate
+  against: both now check it against the specification's model, every receipt and checkpoint compared whole in the
+  specification's encoding. Nothing the crate does changes.
+
 ## [0.5.1] — 2026-11-13
 
 ### Published on crates.io

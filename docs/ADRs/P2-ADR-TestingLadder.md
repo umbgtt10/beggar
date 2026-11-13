@@ -27,7 +27,7 @@ Each tier is the only one that catches its class of failure:
 |---|---|---|
 | 1. unit | each type alone, one test file per source file, the crate's and the specification's model's | a type wrong in isolation |
 | 2. conformance | every vector, run against the crate and against the specification's model, every vector valid against the schema, every row of the matrix exercised — and, by the model, decided | a departure from the specification, or a vector that departs from it |
-| 3. exhaustive matrix | every command in every situation over small bounds — `chunks` up to 3, every run within, across and beyond them — against the naive model | a situation no vector names |
+| 3. exhaustive matrix | every command in every situation over small bounds — `chunks` up to 3, every run within, across and beyond them — against the specification's model | a situation no vector names |
 | 4. property | the invariants after every call, receipts one more on every call, the crate against the specification's model over random sequences | a sequence nobody wrote down |
 | 5. cluster simulation | several registries whose reports to one another a seeded harness loses, duplicates, reorders and withholds — pull, push, cancels, restarts under a new incarnation | what happens between two ends |
 | 6. replay | the property and cluster simulation tiers' logs written in the specification's JSON and replayed into a fresh instance: every receipt matches, a dropped line is detected, the replay resynchronises from a checkpoint | a log that cannot rebuild the state |
