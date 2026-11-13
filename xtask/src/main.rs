@@ -25,7 +25,7 @@ const MEMORY_PACKAGE: &str = "beggar-memory";
 const XTASK_PACKAGE: &str = "xtask";
 const CRAP_THRESHOLD: &str = "15";
 const ICEBERG_THRESHOLD: &str = "5";
-const DRY_PATH: &str = "core/src";
+const DRY_PATH: &str = "crates/core/src";
 const DRY_BASELINE: &str = "dry4rust-baseline.json";
 const DRY_MIN_NODES: &str = "10";
 

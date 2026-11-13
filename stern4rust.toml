@@ -7,7 +7,7 @@ header-file = "docs/header.txt"
 
 # The ladder's tiers are scenarios named for what they prove, not mirrors of a
 # source file: stern's README says a package of such tests skips
-# paired-test-file. core/ keeps it, over its mirrored unit tier.
+# paired-test-file. crates/core/ keeps it, over its mirrored unit tier.
 [package.beggar-ladder]
 skip = ["paired-test-file"]
 

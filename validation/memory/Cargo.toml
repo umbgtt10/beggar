@@ -1,5 +1,5 @@
 # The testing ladder's memory tier, in a package of its own because a
-# `#[global_allocator]` is per binary: counted inside `ladder/`'s one test
+# `#[global_allocator]` is per binary: counted inside `validation/ladder/`'s one test
 # binary, every other tier's allocations would be the memory tier's too. The
 # instrument -- a counting allocator -- and the run it measures are in `src/`,
 # their tests in `tests/`, one binary that installs the allocator.

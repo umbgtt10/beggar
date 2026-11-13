@@ -8,7 +8,7 @@ use xtask::gates::gate::Gate;
 fn gate(runner: &FakeCommandRunner) -> DryGate<'_> {
     DryGate::new(
         runner,
-        String::from("/repo/core/src"),
+        String::from("/repo/crates/core/src"),
         String::from("/repo/dry4rust-baseline.json"),
         String::from("20"),
     )
@@ -44,7 +44,7 @@ fn run_checks_the_path_above_the_floor_against_the_baseline_with_zero_ceilings()
         vec![
             String::from("dry4rust"),
             String::from("--path"),
-            String::from("/repo/core/src"),
+            String::from("/repo/crates/core/src"),
             String::from("--baseline"),
             String::from("/repo/dry4rust-baseline.json"),
             String::from("--min-nodes"),

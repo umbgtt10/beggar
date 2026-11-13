@@ -3,6 +3,13 @@
 The crate's versions. The specification in [`spec/`](spec/SPEC.md) is versioned on its own; each release names the
 version it conforms to.
 
+## [Unreleased]
+
+#### Changed
+- The workspace is laid out by role, as faction's is: the crate in `crates/core/`, the packages that check it in
+  `validation/` -- `ladder/`, `core-validation/`, `memory/` -- beside `spec/` and `xtask/`
+  (`P2-ADR-WorkspaceLaidOutByRole`). No package is renamed, and nothing the crate does changes.
+
 ## [0.5.1] — 2026-11-13
 
 ### Published on crates.io

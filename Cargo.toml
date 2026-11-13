@@ -7,7 +7,13 @@
 # living in the crate's source tree. `--package` does not narrow it, because the
 # scope is the directory.
 [workspace]
-members = ["core", "core-validation", "ladder", "memory", "xtask"]
+members = [
+    "crates/core",
+    "validation/core-validation",
+    "validation/ladder",
+    "validation/memory",
+    "xtask",
+]
 resolver = "2"
 
 [workspace.package]
@@ -15,8 +21,8 @@ edition = "2021"
 license = "MIT"
 
 [workspace.dependencies]
-beggar = { path = "core" }
-beggar-core-validation = { path = "core-validation" }
+beggar = { path = "crates/core" }
+beggar-core-validation = { path = "validation/core-validation" }
 boon = "0.6"
 proptest = { version = "1", default-features = false, features = ["std"] }
 serde = { version = "1", features = ["derive"] }

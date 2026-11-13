@@ -53,6 +53,6 @@ impl SpecFiles {
     }
 
     fn root() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../spec")
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../spec")
     }
 }

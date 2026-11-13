@@ -1,8 +1,9 @@
 # beggar — implementation plan
 
 **Status: planned 2026-11-06; slice 1 built 2026-11-09, slices 2 to 5 on 2026-11-10 — all five built.** Its
-specification is `spec/` at version 0.6.0; the ladder's scenario tiers live in `ladder/`, a package of their own, the cluster
-simulation in `core-validation/`, laid out as faction's, the memory tier in `memory/`, and the coverage gate stands at 100% over every tier and over the conformance tier alone. The decisions are the ADRs in [`ADRs/`](ADRs/README.md) and the
+specification is `spec/` at version 0.6.0; the workspace is laid out by role since 2026-11-13, the crate in
+`crates/core/`, the ladder's scenario tiers in `validation/ladder/`, a package of their own, the cluster simulation in
+`validation/core-validation/`, laid out as faction's, the memory tier in `validation/memory/`, and the coverage gate stands at 100% over every tier and over the conformance tier alone. The decisions are the ADRs in [`ADRs/`](ADRs/README.md) and the
 how is [`DESIGN.md`](DESIGN.md); this is the order of building it.
 
 ## Vertical slices

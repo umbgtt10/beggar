@@ -47,23 +47,26 @@ of it.
 
 ## Layout
 
-A workspace: `core/` holds the crate, `ladder/` the testing ladder's scenario
-tiers, `core-validation/` its cluster simulation, `memory/` its memory tier, and
-`xtask/` runs the gates. A crate at the repository root would put
-`xtask/tests/**` inside its package directory, and stern would read them as the
-crate's.
+A workspace laid out by role, as faction's is
+(`docs/ADRs/P2-ADR-WorkspaceLaidOutByRole.md`): `spec/` holds the specification,
+`crates/` the library -- `crates/core/`, the crate -- `validation/` every package
+that checks it -- `validation/ladder/` the testing ladder's scenario tiers,
+`validation/core-validation/` its cluster simulation, `validation/memory/` its
+memory tier -- and `xtask/` runs the gates. A crate at the repository root would
+put `xtask/tests/**` inside its package directory, and stern would read them as
+the crate's.
 
-`core/tests/` is the unit tier, one test file per source file, under every rule.
+`crates/core/tests/` is the unit tier, one test file per source file, under every rule.
 The tiers that are scenarios rather than mirrors of a file -- conformance, the
-exhaustive matrix, property, replay -- live in `ladder/`, a package with no code
+exhaustive matrix, property, replay -- live in `validation/ladder/`, a package with no code
 of its own (`publish = false`), where stern's `paired-test-file` stands down:
 it pairs `tests/a/b_tests.rs` with `src/a/b.rs` by path, and those tiers are
-named for what they prove. The cluster simulation is `core-validation/`, laid
+named for what they prove. The cluster simulation is `validation/core-validation/`, laid
 out as faction's: its harness -- `ScenarioHarness`, `ClusterSimulation` over a
 seeded `FaultyTransport`, and `ClusterInvariants`, each check shown firing on
 a crafted violation -- is its `src/`, `no_std`, and its tests, named for what
 they prove, skip `paired-test-file` too. The memory tier is
-`memory/`, a package of its own because a `#[global_allocator]` is per binary
+`validation/memory/`, a package of its own because a `#[global_allocator]` is per binary
 and a tests folder has one door: the counting allocator and the run it measures
 are its `src/`, mirrored by its tests under every rule -- and the workspace's
 one `unsafe`, the allocator's, since beggar forbids it. The specification,

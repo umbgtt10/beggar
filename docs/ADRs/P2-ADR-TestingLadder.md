@@ -56,13 +56,13 @@ and fast, and tier 5 is seeded, so a failure replays.
 
 ## Enforcement
 
-Stage 1 runs every tier: the unit tier in `core/tests/`, mirrored file by
-file, and the scenario tiers in `ladder/`, a package of their own (decided
+Stage 1 runs every tier: the unit tier in `crates/core/tests/`, mirrored file by
+file, and the scenario tiers in `validation/ladder/`, a package of their own (decided
 2026-11-09), where stern's `paired-test-file` stands down because they are
 named for what they prove, not for a source file. The memory tier needs a
-binary of its own, a global allocator being per binary, and is `memory/`, a
+binary of its own, a global allocator being per binary, and is `validation/memory/`, a
 package of its own (decided 2026-11-10) whose instrument and run are its source
-and mirrored by its tests. The cluster simulation is `core-validation/`, laid
+and mirrored by its tests. The cluster simulation is `validation/core-validation/`, laid
 out as faction's (decided 2026-11-10): its harness is its source, its tests are
 named for what they prove and skip `paired-test-file` as the ladder's do, and
 the cross-node invariants are a type of their own, each check shown firing on a
