@@ -7,8 +7,7 @@ told of every call; both ends of a transfer — `StartRecovery` and `SendRecover
 chunks, `AdoptRecovery` and `ReceiveRecoveryPartial` on the other — and `CancelRecovery`, carrying the caller's own
 reason; the queries — `ListRecoveries`, `ShowRecovery`, `ListMissingChunks`, and `ShowRegistry`, the checkpoint;
 and retention — each with every row it has, conformant to the specification's version 0.6.0, in
-[`spec/`](spec/SPEC.md). Version 0.5.0 is tagged in this repository; version 0.0.1 on crates.io only reserves the
-name.
+[`spec/`](spec/SPEC.md). Version 0.5.1 is on [crates.io](https://crates.io/crates/beggar).
 
 The foundations are four ADRs in [`docs/ADRs/`](docs/ADRs/README.md); the design is
 [`docs/DESIGN.md`](docs/DESIGN.md). Both are authoritative; this file is the summary. The order of building it is
@@ -38,14 +37,14 @@ default quoted as a deployed value is a trap this project has already fallen int
 
 | setting | default | deployed |
 |---|---|---|
-| retention | none — every instance states its own | 0 on the IBFT cluster; Raft's chosen at its integration; high on a host kept for analysis |
+| retention | none — every instance states its own | 0 on the IBFT cluster; each other integration's chosen as it is built; high on a host kept for analysis |
 | bound on open sessions | none — no bound | the integration's to choose |
 
 It deals in **no bytes, blocks, arrays or wire types** — session identities, chunk counts, chunk ids and node
 identities, and nothing else. The payload moves elsewhere; beggar records that it moved.
 
 **A recovery is just a collection of chunks**: a request for blocks, a lagging follower's missing log entries, a
-snapshot sent in pieces; in IBFT or in Raft; pulled by the node behind or pushed by the node ahead. Beggar knows
+snapshot sent in pieces; under any consensus protocol; pulled by the node behind or pushed by the node ahead. Beggar knows
 none of it. What a chunk holds, in what order chunks move and under what policy are the caller's.
 
 **It is deliberately not a control layer.** It does not detect that a node is behind, does not choose a peer,

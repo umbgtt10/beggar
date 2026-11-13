@@ -3,6 +3,14 @@
 The crate's versions. The specification in [`spec/`](spec/SPEC.md) is versioned on its own; each release names the
 version it conforms to.
 
+## [0.5.1] — 2026-11-13
+
+### Published on crates.io
+
+#### Changed
+- The crate's description and README say what 0.5.0 built: no longer under construction, the queries no longer to
+  come. No change to the code.
+
 ## [0.5.0] — 2026-11-10
 
 ### Slice 5 — look inside, and keep what finished

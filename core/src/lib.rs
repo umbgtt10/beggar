@@ -63,10 +63,10 @@
 //!
 //! # Why `no_std`
 //!
-//! The intended consumers run on embedded targets, so the mode is declared
-//! here at the first version rather than discovered later. A session's size
-//! follows the gaps in what has arrived, not its chunk count, and both terminal
-//! outcomes evict it.
+//! The intended consumers run on microcontrollers with no operating system,
+//! so the mode is declared here at the first version rather than discovered
+//! later. A session's size follows the gaps in what has arrived, not its chunk
+//! count, and both terminal outcomes evict it.
 
 extern crate alloc;
 
