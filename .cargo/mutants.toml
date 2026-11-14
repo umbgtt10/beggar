@@ -7,3 +7,15 @@
 # test_workspace says outright.
 examine_globs = ["crates/core/src/**/*.rs"]
 test_workspace = false
+
+# Mutants no test can catch, each with why.
+#
+# Registry::open finds a new session's place among the open ones, ordered by
+# name, as the first whose name is not below it. `<=` would put it after an
+# open session of the same name instead -- but there never is one: an adopted
+# name already open is answered before open is called (OpeningRows::adoption),
+# and a started session's name is minted fresh, its count past every name
+# this instance has given -- after a restore too, a checkpoint no
+# ShowRegistry answered being outside the specification (SPEC.md, section 2).
+# Unique names make both places the same.
+exclude_re = ["replace < with <= in Registry::open"]
