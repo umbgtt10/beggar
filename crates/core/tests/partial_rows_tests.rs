@@ -138,6 +138,27 @@ fn attribution_of_a_send_on_the_receivers_end_is_wrong_side_before_its_range() {
     );
 }
 
+// Either end alone other than the session's is a misattribution: the ends
+// are the session's as a pair.
+#[test]
+fn attribution_of_a_send_with_one_end_other_is_misattributed() {
+    // Arrange
+    let open = open();
+    let rows = PartialRows::new(NODE, &open);
+
+    // Act
+    let other_sender = rows.attribution::<()>(Side::Sending, name(2), 1, 1, 3, 2);
+    let other_receiver = rows.attribution::<()>(Side::Sending, name(2), 1, 1, NODE, 3);
+
+    // Assert
+    let misattributed = Err(Output::RecoveryRejected(Rejection::Misattributed {
+        sender: NODE,
+        receiver: 2,
+    }));
+    assert_eq!(other_sender, misattributed);
+    assert_eq!(other_receiver, misattributed);
+}
+
 #[test]
 fn attribution_of_a_send_with_other_ends_is_misattributed_before_its_side() {
     // Arrange
