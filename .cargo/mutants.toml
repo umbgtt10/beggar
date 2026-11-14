@@ -1,0 +1,9 @@
+# What cargo-mutants mutates here, for a hand run and for sentinel4rust alike:
+# beggar, the no_std recovery registry in crates/core, against its own tests
+# only. The specification's model, the validation harnesses and xtask (the
+# gates) are not mutated. From the workspace root every package is selected
+# and this glob keeps the core's files; the baseline then tests only the
+# mutated package, and each mutant runs that package's tests, which
+# test_workspace says outright.
+examine_globs = ["crates/core/src/**/*.rs"]
+test_workspace = false
