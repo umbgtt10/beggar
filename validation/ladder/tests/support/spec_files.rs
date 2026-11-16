@@ -3,6 +3,7 @@
 
 use serde_json::from_str;
 use serde_json::Value;
+use std::fs::read;
 use std::fs::read_dir;
 use std::fs::read_to_string;
 use std::path::Path;
@@ -17,8 +18,17 @@ impl SpecFiles {
         Self::read(&Self::root().join("matrix.json"))
     }
 
+    pub fn released() -> Value {
+        Self::read(&Self::root().join("released.json"))
+    }
+
     pub fn schema() -> Value {
         Self::read(&Self::root().join("schema.json"))
+    }
+
+    // A vector's file, byte for byte, or none if no vector has the name.
+    pub fn vector_bytes(name: &str) -> Option<Vec<u8>> {
+        read(Self::root().join("vectors").join(format!("{name}.json"))).ok()
     }
 
     // Every vector under its file's name, in the order of the names.

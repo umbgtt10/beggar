@@ -1,6 +1,6 @@
 # beggar — the specification
 
-**Version 0.6.0.** The four parts of this specification are versioned together: this prose, the data model in
+**Version 0.6.1.** The four parts of this specification are versioned together: this prose, the data model in
 [`schema.json`](schema.json), the decision table in [`matrix.json`](matrix.json) and the conformance vectors in
 [`vectors/`](vectors/). It is normative; the `beggar` crate is one implementation of it, and where the two disagree
 the specification is right ([`P0-ADR-SpecificationIsNormativeCrateIsReference`](../docs/ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md)).
@@ -9,7 +9,8 @@ the specification is right ([`P0-ADR-SpecificationIsNormativeCrateIsReference`](
 every call to; both ends of a transfer — `StartRecovery` and `AdoptRecovery`, `SendRecoveryPartial` and
 `ReceiveRecoveryPartial` — and `CancelRecovery`; the queries `ListRecoveries`, `ShowRecovery`, `ListMissingChunks`
 and `ShowRegistry`, the checkpoint; each with every row it has; and retention, finished sessions kept for the
-queries. 0.6.0 is 0.5.0 with the three other queries and retention.
+queries. 0.6.0 is 0.5.0 with the three other queries and retention; 0.6.1 answers every command as 0.6.0 does, and
+adds what keeps a release's vectors as released: the growth rule (§1) and `released.json` (§11).
 
 ## 1. Conventions
 
@@ -36,6 +37,12 @@ property of the set and not of how an implementation keeps it; the empty set is 
 as `(node, incarnation, count)` numerically, and retained records under one name in ascending order of the receipt
 numbers that finished them; a chunk set comes as its chunk ids in ascending order. An answer has
 exactly one form, so two implementations' logs of the same calls are identical.
+
+**Growth.** A member a later version adds to a form is omitted wherever it holds the value that keeps the earlier
+version's behaviour. Every answer this version gives is therefore given the same, character for character, by
+every later version, and every vector released here passes unchanged there. One release broke this before the rule
+was written: 0.3.0 renamed the checkpoint's `received` to `chunk_set`, and the eight vectors 0.2.0 had released were
+rewritten with it.
 
 ## 2. An instance
 
@@ -269,7 +276,11 @@ its next receipt number is one more again. A vector states nothing of an impleme
 checks state the way a caller would.
 
 **Each vector names the rows of the matrix it exercises.** Every vector is valid against the schema's `vector`; the
-matrix is valid against its `matrix`; and every row of the matrix is exercised by at least one vector.
+matrix is valid against its `matrix`; [`released.json`](released.json) is valid against its `released`; and every
+row of the matrix is exercised by at least one vector.
+
+**Released vectors are kept.** `released.json` lists every vector of every released version by its file's name, the
+version that released it and the SHA-256 digest of its bytes. A listed vector is never removed or edited.
 
 **An implementation conforms** when, created from each vector's origin with an observer that does nothing and given
 each step's command in turn, it answers each with the step's receipt, and the closing `ShowRegistry` with the final

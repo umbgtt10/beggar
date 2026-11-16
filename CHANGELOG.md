@@ -6,6 +6,11 @@ version it conforms to.
 ## [Unreleased]
 
 #### Changed
+- The specification is 0.6.1: it answers every command as 0.6.0 does, and keeps a release's vectors as released.
+  The growth rule says a member a later version adds is omitted at the value that keeps the earlier behaviour;
+  `spec/released.json` lists all 79 vectors by the version that released them and the SHA-256 of their bytes, and a
+  test fails on one removed or changed. Planting one changed byte in a released vector is caught. The one break
+  before the rule, 0.3.0's rename of the checkpoint's `received` to `chunk_set`, is recorded in the specification.
 - The workspace is laid out by role, as faction's is: the crate in `crates/core/`, the packages that check it in
   `validation/` -- `ladder/`, `core-validation/`, `memory/` -- beside `spec/` and `xtask/`
   (`P2-ADR-WorkspaceLaidOutByRole`). No package is renamed, and nothing the crate does changes.

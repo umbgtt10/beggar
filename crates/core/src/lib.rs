@@ -14,7 +14,7 @@
 //! reason of the caller's own type, recorded and never read; the queries --
 //! `ListRecoveries`, `ShowRecovery`, `ListMissingChunks`, and `ShowRegistry`,
 //! the checkpoint; and retention, finished sessions kept for the queries and
-//! for nothing else -- conformant to version 0.6.0 of the specification in the
+//! for nothing else -- conformant to version 0.6.1 of the specification in the
 //! repository's `spec/`.
 //!
 //! # Retention

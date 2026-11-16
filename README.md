@@ -17,7 +17,7 @@ again. That asymmetry is the whole mechanism, and it is the reason for the name.
 records what moved and decides nothing.
 
 **All five slices are built** (2026-11-10): an instance, created fresh or from a checkpoint; both ends of a
-transfer; cancellation for the caller's own reason; the queries; and retention, conformant to version 0.6.0 of the
+transfer; cancellation for the caller's own reason; the queries; and retention, conformant to version 0.6.1 of the
 specification in [`spec/`](spec/SPEC.md). Version 0.5.1 is on [crates.io](https://crates.io/crates/beggar).
 
 ---
@@ -197,7 +197,7 @@ The caller moves the chunks. `beggar` owns the books.
 | [`spec/`](./spec/SPEC.md) | The normative specification: a decision table of 25 rows and 79 conformance vectors, each receipt written by hand | — |
 | `crates/spec-model/` | The specification's independent model: its decision table read and interpreted, depending on nothing of the crate | 146 |
 | `crates/core/` unit tests | Each type and each row in isolation | 96 |
-| `validation/ladder/` | Conformance to the specification, of the model and then of the crate; every command in every situation over small chunk counts, against the model; properties over random command sequences, the crate against the model among them; logs replayed, resynchronising from a checkpoint | 37 |
+| `validation/ladder/` | Conformance to the specification, of the model and then of the crate; every command in every situation over small chunk counts, against the model; properties over random command sequences, the crate against the model among them; logs replayed, resynchronising from a checkpoint | 39 |
 | `validation/core-validation/` | A seeded cluster simulation: registries whose reports to one another are lost, duplicated, reordered and withheld -- pull, push, cancels, restarts under a new incarnation | 72 |
 | `validation/memory/` | A counting allocator: a positive control, then peak and residue over a hundred recoveries | 15 |
 
@@ -208,8 +208,8 @@ The caller moves the chunks. `beggar` owns the books.
 | Metric | Value |
 |---|---|
 | Core productive LOC | ~670 |
-| Specification | [`spec/`](./spec/SPEC.md) 0.6.0 — its independent model and the crate answer all 79 vectors as written |
-| Total tests | 487 |
+| Specification | [`spec/`](./spec/SPEC.md) 0.6.1 — its independent model and the crate answer all 79 vectors as written, each kept as released |
+| Total tests | 489 |
 | Code coverage (productive) | 100%, over every tier and over the conformance tier alone |
 | Crappy functions (CRAP score) | 0 |
 | Unsafe code | 0 — enforced by `#![forbid(unsafe_code)]` |

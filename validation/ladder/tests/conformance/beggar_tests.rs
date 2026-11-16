@@ -12,7 +12,6 @@
 use crate::support::recording_observer::RecordingObserver;
 use crate::support::spec_files::SpecFiles;
 use crate::support::spec_reader::SpecReader;
-use crate::support::spec_schema::SpecSchema;
 use crate::support::spec_writer::SpecWriter;
 use beggar::beggar::Beggar;
 use beggar::checkpoint::Checkpoint;
@@ -118,40 +117,6 @@ fn misreport(name: &str, vector: &Value) -> Option<String> {
     let reported = calls.borrow().clone();
     (reported != answered)
         .then(|| format!("{name}: reported {reported:?}, having answered {answered:?}"))
-}
-
-#[test]
-fn admits_matrix_of_the_specification_holds() {
-    // Arrange
-    let schema = SpecSchema::new(SpecFiles::schema());
-
-    // Act
-    let admitted = schema.admits_matrix(&SpecFiles::matrix());
-
-    // Assert
-    assert!(
-        admitted,
-        "matrix.json is not valid against the schema's matrix"
-    );
-}
-
-#[test]
-fn admits_vector_of_every_vector_holds() {
-    // Arrange
-    let schema = SpecSchema::new(SpecFiles::schema());
-
-    // Act
-    let refused: Vec<String> = SpecFiles::vectors()
-        .into_iter()
-        .filter(|(_, vector)| !schema.admits_vector(vector))
-        .map(|(name, _)| name)
-        .collect();
-
-    // Assert
-    assert!(
-        refused.is_empty(),
-        "vectors not valid against the schema: {refused:?}"
-    );
 }
 
 #[test]

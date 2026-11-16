@@ -21,6 +21,7 @@ beggar-spec-model.workspace = true
 boon.workspace = true
 proptest.workspace = true
 serde_json = { workspace = true, features = ["std"] }
+sha2.workspace = true
 
 [lib]
 path = "src/lib.rs"

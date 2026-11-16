@@ -1,0 +1,399 @@
+{
+ "vectors": [
+  {
+   "id": "01-start-started-as-sender",
+   "version": "0.2.0",
+   "sha256": "e74599000b405410db05245e0946a51e6ad57bd0154447086e24cdbb3fb1f270"
+  },
+  {
+   "id": "02-start-started-as-receiver",
+   "version": "0.2.0",
+   "sha256": "58cb365bf446527d39d2cb432f0ab7c1fa3c23c33af9dfdee4d64d6e69c3d109"
+  },
+  {
+   "id": "03-start-names-in-turn",
+   "version": "0.2.0",
+   "sha256": "9fdeaebe6ba0059ec9ec9f3eb4f9fec3ce55994201b42f83521b9bf361a58cc9"
+  },
+  {
+   "id": "04-no-chunks",
+   "version": "0.2.0",
+   "sha256": "b8bf1ee6b42e06bc04bfa36c39d6bd3b2cb4cd64e702661fb97ccdbaa64d19d7"
+  },
+  {
+   "id": "05-no-chunks-checked-first",
+   "version": "0.2.0",
+   "sha256": "fe92c038f4d2ea0e75368bafe2cc1069caf05ace2f2ac0c3f2b1a806f9c5e9c7"
+  },
+  {
+   "id": "06-self-addressed",
+   "version": "0.2.0",
+   "sha256": "840dcd7121bd056b199f985fadb563adcb94d76cef4c157b4dc83fb0da784d3c"
+  },
+  {
+   "id": "07-self-addressed-checked-before-not-a-party",
+   "version": "0.2.0",
+   "sha256": "b53b71f55a262754f908d0c3bfd6dd4870eedbad86c183aef3fae6e7f09d7bed"
+  },
+  {
+   "id": "08-not-a-party",
+   "version": "0.2.0",
+   "sha256": "d341d78d52c0d077fe69341a77a395cb822ad20463ce7fffd0769c9386481dd1"
+  },
+  {
+   "id": "09-not-a-party-checked-before-registry-full",
+   "version": "0.2.0",
+   "sha256": "b0fd02776c6ba946c82350ceb55694a6ca4308749349bd146ca2414bcab87aba"
+  },
+  {
+   "id": "10-registry-full",
+   "version": "0.2.0",
+   "sha256": "8ba1cd4b7b4a3491d3a5aec170e6be19cdb7d3c48cc473baecb9246e84ace505"
+  },
+  {
+   "id": "11-registry-full-at-a-bound-of-zero",
+   "version": "0.2.0",
+   "sha256": "76bf4b9fa5fe5bd21c3ddbf204d985554f23724f9660606633e0fcca730bca03"
+  },
+  {
+   "id": "12-receipts-count-every-call",
+   "version": "0.2.0",
+   "sha256": "b732de91fafaf1cab52358e8a9bc476e56e85540796d6fe77b206f54df7f4ab4"
+  },
+  {
+   "id": "13-show-registry-on-a-fresh-instance",
+   "version": "0.2.0",
+   "sha256": "35bcb220e683542b1f9c7010f9fb549c48465d654e1521c2ff6fb08308cff0ad"
+  },
+  {
+   "id": "14-restored-instance-carries-on",
+   "version": "0.2.0",
+   "sha256": "495d24e1049799e22c3c7885245cb9ec2a365c0ce1659ce212b8385eb2564aa2"
+  },
+  {
+   "id": "15-restored-at-its-bound",
+   "version": "0.2.0",
+   "sha256": "15ee0cfb1a698d1f72e5ffef5223c6e6700c6ee1a3e43add0b8d4be3a8e22826"
+  },
+  {
+   "id": "16-checkpoint-round-trip",
+   "version": "0.2.0",
+   "sha256": "3fe25e001b142870bc62620ac8f0694d7dc53828fb0447e06a16dca989f20b77"
+  },
+  {
+   "id": "17-partial-advanced",
+   "version": "0.3.0",
+   "sha256": "ea9254da5c839eddc2ebaebd135e8e85c57235aa0f4b850315fe86851b12930c"
+  },
+  {
+   "id": "18-partial-completed-evicts",
+   "version": "0.3.0",
+   "sha256": "e8f1c842b64c760e74369c442614bb9be49e822e9a60d153779b89cf6151ffc4"
+  },
+  {
+   "id": "19-completed-in-one-run",
+   "version": "0.3.0",
+   "sha256": "2ac7253e499cb4799fc4f08e49931dc1a9134634a7c305fe2a4cf16cd088ff7a"
+  },
+  {
+   "id": "20-completion-is-the-chunk-set-full-not-the-last-chunk",
+   "version": "0.3.0",
+   "sha256": "6ccc0c6e956894a4cd322ca8ea1c48923147c60fd16b8580b44b4ddfa0802e36"
+  },
+  {
+   "id": "21-runs-arrive-in-any-order",
+   "version": "0.3.0",
+   "sha256": "101908da6af91d95eed03a5d6658a1a466fd8ea497d25f94709b44d0ee95fee8"
+  },
+  {
+   "id": "22-partial-unaffected-when-every-chunk-is-held",
+   "version": "0.3.0",
+   "sha256": "ee6b2177397efc0e5512812c59d4b23d03e7d2b911726b7500a553a3970ad381"
+  },
+  {
+   "id": "23-a-run-partly-held-adds-what-is-new",
+   "version": "0.3.0",
+   "sha256": "ed84854c24315c9302c290a7476069365ef3a944b614dd2a7dbc66625d748f76"
+  },
+  {
+   "id": "24-empty-run",
+   "version": "0.3.0",
+   "sha256": "a2ad116c769961534ca400ed50e557058e6cd3212a2ff207c6ac0bbff6d4ef30"
+  },
+  {
+   "id": "25-empty-run-checked-first",
+   "version": "0.3.0",
+   "sha256": "560adc4e2f6a9ce61d83def23bb7614a4ef8b0aef8658c0f334e341c357bc317"
+  },
+  {
+   "id": "26-partial-not-started",
+   "version": "0.3.0",
+   "sha256": "c3fe59bdcb8ae858d5ef949bb6598e5f990342748b49ed7d94f496b77edfdb86"
+  },
+  {
+   "id": "27-not-started-after-completion",
+   "version": "0.3.0",
+   "sha256": "4ea8993985400cc0646c312e00c822eccbe3c37ff30e8909b09afc27c26fe495"
+  },
+  {
+   "id": "28-misattributed",
+   "version": "0.3.0",
+   "sha256": "2d5f31a32dec6270afd092c2e2574c325f15d3028db5d0b240d748263d175b90"
+  },
+  {
+   "id": "29-wrong-side",
+   "version": "0.3.0",
+   "sha256": "27eadf7ff13a263e49957b0ff36949c7f9902bb1b929975be25b343d168c6d53"
+  },
+  {
+   "id": "30-misattributed-checked-before-wrong-side",
+   "version": "0.3.0",
+   "sha256": "6381f5af57302bd0c5cfe3bb3d33ba11496e060e78a30820aeea8262fb89a7a0"
+  },
+  {
+   "id": "31-wrong-side-checked-before-chunk-out-of-range",
+   "version": "0.3.0",
+   "sha256": "1d33adc20608f81f2a2aa2e519a4f76c959baf296a3977601e23754f01dce943"
+  },
+  {
+   "id": "32-chunk-out-of-range",
+   "version": "0.3.0",
+   "sha256": "fd430e83b4e3333837283799a2264044bd37d7bb53566fffa6acc1f8e442bfc6"
+  },
+  {
+   "id": "33-chunk-out-of-range-checked-before-completion",
+   "version": "0.3.0",
+   "sha256": "60c2e6407717c4818ac50cfaf8cd1d632c992db22832e799f00f382b6723b593"
+  },
+  {
+   "id": "34-completion-frees-a-place-under-the-bound",
+   "version": "0.3.0",
+   "sha256": "52efe2c359adc110576a7eb2246abc67269b50696fa3adb07f4a9134e98cb6c0"
+  },
+  {
+   "id": "35-each-session-its-own-chunk-set",
+   "version": "0.3.0",
+   "sha256": "95d4e1b846b27c4d9bc09b5a00b1fcf431fb4b08cfcc8f82e50d96dfc36de264"
+  },
+  {
+   "id": "36-restored-with-chunks-carries-on",
+   "version": "0.3.0",
+   "sha256": "aa0d72539f7006f21a55232d656eec948384b9c2a7cb44e2c3c843b6baa32124"
+  },
+  {
+   "id": "37-checkpoint-round-trip-with-chunk-sets",
+   "version": "0.3.0",
+   "sha256": "8d7906354103a0e03d0c2c16e460b167d678b6df0bd1dee2b4b8bc800218ce7e"
+  },
+  {
+   "id": "38-runs-at-the-top-of-u64",
+   "version": "0.3.0",
+   "sha256": "fab24b82d59d5bd2c1caa24e2881a71c59c230aeafdf49dac481dc2e89adf536"
+  },
+  {
+   "id": "39-out-of-range-and-empty-at-the-edges-of-u64",
+   "version": "0.3.0",
+   "sha256": "9edb7488aa0938819fce328094b55f6c2202177b3ce7d07ff96165b199f2c5d2"
+  },
+  {
+   "id": "40-adopt-started",
+   "version": "0.4.0",
+   "sha256": "aa22c2e456cd583258a1f7f7252560a5c80abe3b203c6edce8a63afdea0e0fe7"
+  },
+  {
+   "id": "41-adopt-unaffected-when-repeated",
+   "version": "0.4.0",
+   "sha256": "c19d38debfe1fb2d8589bfef72f4f735576082a75855cfddb70cddf2c00e156b"
+  },
+  {
+   "id": "42-adopt-conflicted-carries-the-open-session",
+   "version": "0.4.0",
+   "sha256": "eea6db927c4b40ab7745dcacbac120a0ad7c2c59b7083859b64b78326b66757e"
+  },
+  {
+   "id": "43-adopt-registry-full",
+   "version": "0.4.0",
+   "sha256": "7373b44f84657cd9509a5c5cb744ba88553820557a9306c82b7ca9ff6461646d"
+  },
+  {
+   "id": "44-adopt-checked-for-form-first",
+   "version": "0.4.0",
+   "sha256": "387d6343c085db899e4bf14e754b2cbf1dd73b8c90e4e008bd4dd9beee3f4ea5"
+  },
+  {
+   "id": "45-own-session",
+   "version": "0.4.0",
+   "sha256": "338e8dff0c2c2d229ad74955e7bbe4793792685de371de1b5def3db466d67592"
+  },
+  {
+   "id": "46-started-and-adopted-in-the-order-of-their-names",
+   "version": "0.4.0",
+   "sha256": "33f5c027199a410be8c3fa37f9cc395b96c55ce91ef890eb5bedc3746208ad47"
+  },
+  {
+   "id": "47-receive-advanced-then-completed",
+   "version": "0.4.0",
+   "sha256": "bb747a686f94734d9f06f078ae16c288acc1f17e9798b3fe40c9b5fcd689e0cd"
+  },
+  {
+   "id": "48-each-end-on-its-own-side",
+   "version": "0.4.0",
+   "sha256": "972f53483a7bca1f16e9857e0c46c7193da155c3be638582fc1a5d8dee9f2e0a"
+  },
+  {
+   "id": "49-receive-refused-in-order",
+   "version": "0.4.0",
+   "sha256": "b8259d103470d05f1e038dda334bb3ad0d3dfb547e2f9e7ef8767d27c71eccc6"
+  },
+  {
+   "id": "50-late-duplicate-adopt-reopens",
+   "version": "0.4.0",
+   "sha256": "27ab432da7bc51f30217ea72d713914cb756e311059ac2f5601015b1092ae9c6"
+  },
+  {
+   "id": "51-two-transfers-from-one-peer",
+   "version": "0.4.0",
+   "sha256": "5728cc2f07b91b22aef9f211ef1238e0488d6173085fb8803ff10c1fc28746a2"
+  },
+  {
+   "id": "52-the-bound-counts-started-and-adopted-alike",
+   "version": "0.4.0",
+   "sha256": "e7357e90d2ff2c6e9be32c790cdb0bafe72b0c0e38a1b9c4ae7741d6921a1b55"
+  },
+  {
+   "id": "53-receiving-end-restored-carries-on",
+   "version": "0.4.0",
+   "sha256": "c8df8b1dec453770ab8deff00d1b5f3ce4741a45a0ed6c26b25f77d757b39953"
+  },
+  {
+   "id": "54-adopted-at-the-top-of-u64",
+   "version": "0.4.0",
+   "sha256": "4aab615b5192474058a8639942b83ef63ae21c00b6c31d6bebba14ec72311773"
+  },
+  {
+   "id": "55-cancel-cancelled",
+   "version": "0.5.0",
+   "sha256": "7b77cd0bb4e7f98c4e8e5673c3e417903a3c0e816c983ac5b7a78699b857e162"
+  },
+  {
+   "id": "56-cancel-unaffected-for-a-session-never-opened-here",
+   "version": "0.5.0",
+   "sha256": "d74d655e808d9a39a346cc08be26423fc0d961a47d9e1a1241d1a6d8b567d1f6"
+  },
+  {
+   "id": "57-a-completed-session-is-unaffected-by-a-cancel",
+   "version": "0.5.0",
+   "sha256": "e15625cdc43b9223670730984a1b568e3d2ac46a25ebc5c1f6724af2fbdb9bb4"
+  },
+  {
+   "id": "58-a-cancelled-session-is-unaffected-by-another-cancel",
+   "version": "0.5.0",
+   "sha256": "fd1d873b8a13fcb1207319d70747a60b2c097ff1bb51875d60bbad31f252324a"
+  },
+  {
+   "id": "59-a-cancel-wins-its-race-with-the-final-partial",
+   "version": "0.5.0",
+   "sha256": "b147b441203220ea7f01be1410781daf34bbc7e3012ff41e10492e3adf0e0097"
+  },
+  {
+   "id": "60-cancel-on-the-receiving-end",
+   "version": "0.5.0",
+   "sha256": "09bb9c6657f97dce2c45f5645f3c06b784791c27971be29a050f29b56c549dc9"
+  },
+  {
+   "id": "61-late-duplicate-adopt-reopens-a-cancelled-session",
+   "version": "0.5.0",
+   "sha256": "1ea7f81d26350ce4f4280007dd452fc83057e61044306257406bfa5c2121a5fb"
+  },
+  {
+   "id": "62-cancel-frees-a-place-under-the-bound",
+   "version": "0.5.0",
+   "sha256": "beae7ea8d7253c63602f69bf9ee865122dbe2e3e6214ec644e445eb1def0e572"
+  },
+  {
+   "id": "63-cancel-leaves-other-sessions-alone",
+   "version": "0.5.0",
+   "sha256": "714c928365e93bd590af421dd282b24c278b0ba5c65ab98c63df50f5f2869d2f"
+  },
+  {
+   "id": "64-cancel-reason-carried-at-the-top-of-u64",
+   "version": "0.5.0",
+   "sha256": "38d5419545e88ab68f14e65fce70108f09c3e44174fd500bb7f5fc67936598ed"
+  },
+  {
+   "id": "65-restored-session-cancelled",
+   "version": "0.5.0",
+   "sha256": "da63aa32ecf21a103e99b07e2982f67c43dea5ade3f7b0dda8a1fa7ba27efa92"
+  },
+  {
+   "id": "66-list-recoveries",
+   "version": "0.6.0",
+   "sha256": "0ddfcfa4108ffea939e552e265754a663a9d9ae90d02265224cfaa8fc9348ddc"
+  },
+  {
+   "id": "67-show-recovery-of-an-open-session",
+   "version": "0.6.0",
+   "sha256": "14f00714ffb97ca6496f18eefed46208a3dc676d00e51f959724ed49279ef6e2"
+  },
+  {
+   "id": "68-queries-of-a-session-never-opened",
+   "version": "0.6.0",
+   "sha256": "72141281b81889df8bc0b9122894684cde90e0e39a65c5bf118a3f27307fed3b"
+  },
+  {
+   "id": "69-list-missing-chunks-of-an-open-session",
+   "version": "0.6.0",
+   "sha256": "039ba4e88b6c5def9053833c2c6686a0645481eb756171fae00dff8d0b0f5898"
+  },
+  {
+   "id": "70-missing-chunks-of-a-session-holding-none",
+   "version": "0.6.0",
+   "sha256": "581f7f81f7a724c7ee1f049b886f882dda3f621e4d5b49ad4949893ff83af979"
+  },
+  {
+   "id": "71-retention-keeps-a-completed-session",
+   "version": "0.6.0",
+   "sha256": "3969b30003f48c6ebf340757bbde57a043fee1668963984656c0566176fb3ce3"
+  },
+  {
+   "id": "72-retention-keeps-a-cancelled-session-with-its-gaps",
+   "version": "0.6.0",
+   "sha256": "f6e5e40f4e666cae69b76e188b266f2ecb690558c8162e36c1e747d4750140eb"
+  },
+  {
+   "id": "73-retention-lets-the-earliest-finished-go",
+   "version": "0.6.0",
+   "sha256": "687870e4d9251789a7a255e8303c7f64cadbe996bf9121d6d8d4b57c488ed25d"
+  },
+  {
+   "id": "74-a-retained-session-is-not-open-to-commands",
+   "version": "0.6.0",
+   "sha256": "6bf6caec1c9ea065e91d55e99f887729c803ec70cdf18765af524af788e36132"
+  },
+  {
+   "id": "75-an-open-session-is-read-before-its-retained-namesake",
+   "version": "0.6.0",
+   "sha256": "69b069ae551e2933768a278ca438c267cd75a58386afd3910e8c406a458b75dc"
+  },
+  {
+   "id": "76-a-name-retained-twice-reads-the-later",
+   "version": "0.6.0",
+   "sha256": "a095b941f32aebbf3ccf0a2d14946daf97128fc7c0f80fa0af384fbceccc2822"
+  },
+  {
+   "id": "77-retained-restored-from-a-checkpoint",
+   "version": "0.6.0",
+   "sha256": "b9c7b37330ef58b64eb79242dea07cff36ffa65d0d3525f61fb34a246ec6d8ab"
+  },
+  {
+   "id": "78-missing-runs-at-the-top-of-u64",
+   "version": "0.6.0",
+   "sha256": "e970f202b454b0cb676f73b45baf3a40360a095c8f4af5bf1c16a3dabc1eb7c2"
+  },
+  {
+   "id": "79-missing-runs-of-a-session-holding-the-top-of-u64",
+   "version": "0.6.0",
+   "sha256": "ffc74f885a0578d8e0d0dc9e57a2f0bdac7b9522f39680e8f83f128c47265145"
+  }
+ ]
+}
