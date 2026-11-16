@@ -31,8 +31,8 @@ fn run_of_recoveries_at_a_retention_holds_after_the_last_what_it_held_once_it_ke
 }
 
 #[test]
-fn run_of_recoveries_cancelled_midway_at_a_retention_holds_after_the_last_what_it_held_once_it_kept_as_many(
-) {
+fn run_of_recoveries_cancelled_midway_at_a_retention_holds_after_the_last_what_it_held_once_it_kept_as_many()
+ {
     // Arrange
     let sequence = RecoverySequence::new(&ALLOCATOR, vec![1, 3, 5, 7, 2, 4, 6, 8], Some(5), 5);
 

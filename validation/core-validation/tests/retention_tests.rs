@@ -69,10 +69,12 @@ fn cancel_abandoned_at_retention_0_leaves_no_receiver_a_session_to_answer_for() 
     assert!(quiet.is_empty(), "{quiet:#?}");
     assert!(told.is_empty(), "{told:#?}");
     assert!(lacking(&lacked), "no receiver lacked a chunk: {lacked:?}");
-    assert!(simulation
-        .missing_chunks()
-        .iter()
-        .all(|answer| *answer == Output::RecoveryNotStarted));
+    assert!(
+        simulation
+            .missing_chunks()
+            .iter()
+            .all(|answer| *answer == Output::RecoveryNotStarted)
+    );
 }
 
 #[test]

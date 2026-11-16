@@ -89,7 +89,9 @@ fn parse_a_truncated_report_returns_a_parse_error() {
     let result = parser.parse("{\n  \"total_functions\": 1,");
 
     // Assert
-    assert!(result.is_err_and(|error| error.to_string().contains("could not parse crap4rust JSON")));
+    assert!(
+        result.is_err_and(|error| error.to_string().contains("could not parse crap4rust JSON"))
+    );
 }
 
 #[test]

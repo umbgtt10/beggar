@@ -99,5 +99,7 @@ fn run_with_the_tool_missing_returns_an_install_hint() {
     let result = gate(&runner).run();
 
     // Assert
-    assert!(result.is_err_and(|error| error.to_string().contains("cargo install cargo-stern4rust")));
+    assert!(
+        result.is_err_and(|error| error.to_string().contains("cargo install cargo-stern4rust"))
+    );
 }

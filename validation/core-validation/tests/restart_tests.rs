@@ -141,8 +141,10 @@ fn restart_of_nodes_mid_transfer_keeps_every_invariant() {
 
     // Assert
     assert!(violations.is_empty(), "{violations:#?}");
-    assert!(simulation
-        .transfers()
-        .iter()
-        .any(|transfer| transfer.interrupted));
+    assert!(
+        simulation
+            .transfers()
+            .iter()
+            .any(|transfer| transfer.interrupted)
+    );
 }

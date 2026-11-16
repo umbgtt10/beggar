@@ -3,8 +3,8 @@
 
 use alloc::string::ToString;
 use alloc::vec::Vec;
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 
 use crate::instance_state::InstanceState;
 use crate::retained::Retained;

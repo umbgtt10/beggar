@@ -9,8 +9,8 @@ use beggar_spec_model::instance_state::InstanceState;
 use beggar_spec_model::vocabulary::command_name::CommandName;
 use beggar_spec_model::vocabulary::rejection_name::RejectionName;
 use beggar_spec_model::vocabulary::speller::Speller;
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 
 const EVERY: [RejectionName; 9] = [
     RejectionName::NoChunks,

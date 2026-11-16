@@ -18,14 +18,14 @@ use beggar_core_validation::transport::fault_policy::FaultPolicy;
 use beggar_core_validation::transport::message_kind::MessageKind;
 use proptest::collection::vec;
 use proptest::option::of;
+use proptest::prelude::Just;
+use proptest::prelude::ProptestConfig;
+use proptest::prelude::Strategy;
 use proptest::prelude::any;
 use proptest::prelude::prop_assert;
 use proptest::prelude::prop_assert_eq;
 use proptest::prelude::prop_oneof;
 use proptest::prelude::proptest;
-use proptest::prelude::Just;
-use proptest::prelude::ProptestConfig;
-use proptest::prelude::Strategy;
 
 const LIMIT: u64 = 20_000;
 

@@ -8,10 +8,10 @@ use beggar::session_id::SessionId;
 use beggar_core_validation::scenario_reason::ScenarioReason;
 use proptest::collection::vec;
 use proptest::option::of;
-use proptest::prelude::any;
-use proptest::prelude::prop_oneof;
 use proptest::prelude::Just;
 use proptest::prelude::Strategy;
+use proptest::prelude::any;
+use proptest::prelude::prop_oneof;
 
 const PEER_INCARNATION: u64 = 5;
 

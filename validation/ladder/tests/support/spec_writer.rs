@@ -12,8 +12,8 @@ use beggar::retained_record::RetainedRecord;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
 use beggar_core_validation::scenario_reason::ScenarioReason;
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 use std::ops::RangeInclusive;
 
 // Beggar's answers written in the specification's JSON, so a receipt compares

@@ -48,10 +48,12 @@ fn cancel_abandoned_has_every_node_cancel_what_it_still_holds() {
     // Assert
     let violations = simulation.check();
     assert!(violations.is_empty(), "{violations:#?}");
-    assert!(simulation
-        .checkpoints()
-        .iter()
-        .all(|checkpoint| checkpoint.open.is_empty()));
+    assert!(
+        simulation
+            .checkpoints()
+            .iter()
+            .all(|checkpoint| checkpoint.open.is_empty())
+    );
 }
 
 #[test]
@@ -216,10 +218,12 @@ fn run_checked_of_a_push_completes_it_and_leaves_every_node_holding_nothing() {
     assert_eq!(transfers.len(), 1);
     assert!(transfers[0].sender_completed);
     assert_eq!(transfers[0].receiver_completions, 1);
-    assert!(simulation
-        .checkpoints()
-        .iter()
-        .all(|checkpoint| checkpoint.open.is_empty()));
+    assert!(
+        simulation
+            .checkpoints()
+            .iter()
+            .all(|checkpoint| checkpoint.open.is_empty())
+    );
 }
 
 #[test]
@@ -338,7 +342,9 @@ fn traces_of_a_simulation_hold_each_nodes_calls() {
         traces[0][0].command,
         Command::StartRecovery { .. }
     ));
-    assert!(traces[1]
-        .iter()
-        .any(|entry| matches!(entry.command, Command::AdoptRecovery { .. })));
+    assert!(
+        traces[1]
+            .iter()
+            .any(|entry| matches!(entry.command, Command::AdoptRecovery { .. }))
+    );
 }

@@ -6,8 +6,8 @@ use crate::support::states::States;
 use beggar_spec_model::answer::Answer;
 use beggar_spec_model::model::Model;
 use beggar_spec_model::spec_reader::SpecReader;
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 
 // Node 2's incarnation 3, fresh, keeping one finished session, with no bound.
 fn fresh() -> Model {

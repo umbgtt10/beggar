@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Umberto Gotti
 // SPDX-License-Identifier: MIT
 
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 
 use crate::call::Call;
 use crate::lookup::Lookup;

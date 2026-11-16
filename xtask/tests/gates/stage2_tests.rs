@@ -4,8 +4,8 @@
 use crate::gates::support::fake_gate::FakeGate;
 use xtask::gates::gate::Gate;
 use xtask::gates::gate_failure::GateFailure;
-use xtask::gates::stage2::Stage2;
 use xtask::gates::stage_failure::StageFailure;
+use xtask::gates::stage2::Stage2;
 
 #[test]
 fn run_reports_the_failing_gates_label_and_reason() {

@@ -14,8 +14,8 @@ use beggar_spec_model::answer::Answer;
 use beggar_spec_model::model::Model;
 use beggar_spec_model::rules::rule_book::RuleBook;
 use beggar_spec_model::spec_reader::SpecReader;
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 use std::collections::BTreeSet;
 
 const QUERIES: [&str; 4] = [

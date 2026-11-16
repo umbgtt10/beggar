@@ -1,8 +1,8 @@
 // Copyright (c) 2026 Umberto Gotti
 // SPDX-License-Identifier: MIT
 
-use serde_json::from_str;
 use serde_json::Value;
+use serde_json::from_str;
 use std::fs::read_to_string;
 use std::path::PathBuf;
 

@@ -35,13 +35,13 @@ use beggar::session_record::SessionRecord;
 use beggar_core_validation::scenario_reason::ScenarioReason;
 use proptest::collection::btree_set;
 use proptest::collection::vec;
+use proptest::prelude::Just;
+use proptest::prelude::ProptestConfig;
+use proptest::prelude::Strategy;
 use proptest::prelude::any;
 use proptest::prelude::prop_assert;
 use proptest::prelude::prop_assert_eq;
 use proptest::prelude::proptest;
-use proptest::prelude::Just;
-use proptest::prelude::ProptestConfig;
-use proptest::prelude::Strategy;
 use proptest::test_runner::TestCaseError;
 use serde_json::Value;
 use std::cell::RefCell;
@@ -76,9 +76,11 @@ fn holds(
         .iter()
         .map(|record| record.session_id)
         .collect();
-    prop_assert!(checkpoint
-        .bound
-        .is_none_or(|bound| names.len() as u64 <= bound));
+    prop_assert!(
+        checkpoint
+            .bound
+            .is_none_or(|bound| names.len() as u64 <= bound)
+    );
     prop_assert_eq!(checkpoint.name_count, minted);
     prop_assert_eq!(names, open.iter().copied().collect::<Vec<SessionId>>());
     prop_assert_eq!(checkpoint.next_receipt, shown_by + 1);
@@ -248,11 +250,9 @@ proptest! {
                 last,
                 ..
             } = command
-            {
-                if first <= last && cancelled.contains(session_id) {
+                && first <= last && cancelled.contains(session_id) {
                     prop_assert_eq!(&from_crate.output, &Output::RecoveryNotStarted);
                 }
-            }
         }
     }
 

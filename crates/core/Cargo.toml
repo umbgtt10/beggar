@@ -8,7 +8,7 @@
 [package]
 name = "beggar"
 version = "0.5.2"
-edition = "2021"
+edition = "2024"
 rust-version = "1.85"
 license = "MIT"
 description = "A no_std, protocol-independent recovery registry: a recovery is a collection of chunks -- log entries or a snapshot's pieces -- and beggar accounts for which have moved, at both ends of a transfer, to completion or to a cancellation for the caller's own reason; its sessions, what each still lacks, and the finished ones it retains can be queried."

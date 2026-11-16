@@ -44,10 +44,12 @@ fn cancel_abandoned_after_loss_ends_every_abandoned_session_and_settles_the_clus
     assert!(violations.is_empty(), "{violations:#?}");
     let open = invariants.settled();
     assert!(open.is_empty(), "{open:#?}");
-    assert!(simulation
-        .transfers()
-        .iter()
-        .any(|transfer| transfer.cancellations > 0));
+    assert!(
+        simulation
+            .transfers()
+            .iter()
+            .any(|transfer| transfer.cancellations > 0)
+    );
 }
 
 #[test]
@@ -222,9 +224,11 @@ fn run_checked_under_selective_loss_of_runs_answers_every_pull_and_delivers_no_c
     assert!(violations.is_empty(), "{violations:#?}");
     let transfers = simulation.transfers();
     assert_eq!(transfers.len(), 6);
-    assert!(transfers
-        .iter()
-        .all(|transfer| transfer.delivered.is_empty()));
+    assert!(
+        transfers
+            .iter()
+            .all(|transfer| transfer.delivered.is_empty())
+    );
     assert!(simulation.counts().selective > 0);
 }
 

@@ -124,6 +124,8 @@ fn applied_to_a_verbose_message_puts_the_scores_above_the_scissors() {
     // Assert
     assert_eq!(
         scored,
-        format!("Subject\n\n{BLOCK}\n# ------------------------ >8 ------------------------\n# Do not modify or remove the line above.\ndiff --git a/x b/x\n")
+        format!(
+            "Subject\n\n{BLOCK}\n# ------------------------ >8 ------------------------\n# Do not modify or remove the line above.\ndiff --git a/x b/x\n"
+        )
     );
 }

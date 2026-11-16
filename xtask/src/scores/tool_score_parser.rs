@@ -3,8 +3,8 @@
 
 use crate::scores::score_failure::ScoreFailure;
 use crate::scores::tool_score::ToolScore;
-use serde_json::from_str;
 use serde_json::Value;
+use serde_json::from_str;
 
 // A scoring tool's `--json` report read for its release and one of its
 // overall totals -- `grip_absolute_total`, `total_braintax` -- the raw sums

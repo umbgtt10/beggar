@@ -22,12 +22,12 @@ use beggar::origin::Origin;
 use beggar::session_id::SessionId;
 use beggar_core_validation::scenario_reason::ScenarioReason;
 use proptest::collection::vec;
-use proptest::prelude::prop_assert;
-use proptest::prelude::prop_assert_eq;
-use proptest::prelude::proptest;
 use proptest::prelude::Just;
 use proptest::prelude::ProptestConfig;
 use proptest::prelude::Strategy;
+use proptest::prelude::prop_assert;
+use proptest::prelude::prop_assert_eq;
+use proptest::prelude::proptest;
 use serde_json::Value;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -43,12 +43,12 @@ fn log(fresh: &Fresh, commands: Vec<Command<ScenarioReason>>) -> Vec<Value> {
     for command in commands {
         beggar.process(command);
     }
-    let lines = calls
+
+    calls
         .borrow()
         .iter()
         .map(|(command, receipt)| SpecWriter::step(command, receipt))
-        .collect();
-    lines
+        .collect()
 }
 
 proptest! {

@@ -107,13 +107,14 @@ impl ClusterInvariants {
         for checkpoint in &self.checkpoints {
             let node = checkpoint.instance.node;
             for record in &checkpoint.open {
-                if let Some(transfer) = self.transfer(record.session_id) {
-                    if node != transfer.sender && node != transfer.receiver {
-                        violations.push(format!(
-                            "node {node} holds {:?} and is neither of its ends",
-                            record.session_id
-                        ));
-                    }
+                if let Some(transfer) = self.transfer(record.session_id)
+                    && node != transfer.sender
+                    && node != transfer.receiver
+                {
+                    violations.push(format!(
+                        "node {node} holds {:?} and is neither of its ends",
+                        record.session_id
+                    ));
                 }
             }
         }

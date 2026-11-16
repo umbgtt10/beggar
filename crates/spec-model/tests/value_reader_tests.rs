@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 use beggar_spec_model::value_reader::ValueReader;
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 
 #[test]
 fn list_of_a_list_is_its_items_in_order() {
