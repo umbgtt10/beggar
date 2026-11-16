@@ -3,8 +3,8 @@
 # The metadata shape is faction's, deliberately: same licence, same edition,
 # same MSRV, same category set. These two crates are siblings -- protocol-
 # independent, driven by a host through one entry point, though faction is a
-# state machine and beggar a registry -- and the one place their manifests
-# differ is noted below.
+# state machine and beggar a registry -- and since this repository went public
+# (2026-11-13) their manifests differ in nothing but each crate's own words.
 [package]
 name = "beggar"
 version = "0.5.1"
@@ -16,13 +16,10 @@ documentation = "https://docs.rs/beggar"
 readme = "../../README.md"
 keywords = ["recovery", "consensus", "distributed", "registry", "no-std"]
 categories = ["no-std", "algorithms", "network-programming"]
+repository = "https://github.com/umbgtt10/beggar"
+homepage = "https://github.com/umbgtt10/beggar"
 autotests = false
 
-# `repository` and `homepage` are the one departure from faction's manifest, and
-# not a stylistic one: faction's repository is public, this one is private, so
-# both links would resolve to a 404 on the crates.io page. They go in when the
-# repository goes public.
-#
 # `rust-version` was inherited from faction, and measured at 0.1.0: the crate
 # builds, and its unit tier passes, on 1.85.0. Measure it again whenever the
 # crate reaches for a newer feature of the language or of `alloc`.
