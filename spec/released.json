@@ -2,43 +2,43 @@
  "vectors": [
   {
    "id": "01-start-started-as-sender",
-   "version": "0.2.0",
-   "sha256": "e74599000b405410db05245e0946a51e6ad57bd0154447086e24cdbb3fb1f270"
+   "version": "0.7.0",
+   "sha256": "b06c651012f071cb70ba4ba983e6386a1ec3d9b70db6a62fe97af3d61782f2d9"
   },
   {
    "id": "02-start-started-as-receiver",
-   "version": "0.2.0",
-   "sha256": "58cb365bf446527d39d2cb432f0ab7c1fa3c23c33af9dfdee4d64d6e69c3d109"
+   "version": "0.7.0",
+   "sha256": "1a2fc84ea70163340adf669488ae0bd8db137e137c125a59724e2118fbc2c76f"
   },
   {
    "id": "03-start-names-in-turn",
-   "version": "0.2.0",
-   "sha256": "9fdeaebe6ba0059ec9ec9f3eb4f9fec3ce55994201b42f83521b9bf361a58cc9"
+   "version": "0.7.0",
+   "sha256": "d280a90554432a11df624570413272f3a42f07225818afe68b484a27650679c0"
   },
   {
    "id": "04-no-chunks",
-   "version": "0.2.0",
-   "sha256": "b8bf1ee6b42e06bc04bfa36c39d6bd3b2cb4cd64e702661fb97ccdbaa64d19d7"
+   "version": "0.7.0",
+   "sha256": "a77a440217e330e8c2db57a1c94d40702779a38989f90f670e3f23a43c6e6ff4"
   },
   {
    "id": "05-no-chunks-checked-first",
-   "version": "0.2.0",
-   "sha256": "fe92c038f4d2ea0e75368bafe2cc1069caf05ace2f2ac0c3f2b1a806f9c5e9c7"
+   "version": "0.7.0",
+   "sha256": "a724669eb213629805dd3b2ac90a7b56a28bb2d4a44bb365d44d06116e8db0f3"
   },
   {
    "id": "06-self-addressed",
-   "version": "0.2.0",
-   "sha256": "840dcd7121bd056b199f985fadb563adcb94d76cef4c157b4dc83fb0da784d3c"
+   "version": "0.7.0",
+   "sha256": "2b03c5a4d858bfeb9b24f9473eda4a49f83fad37c063c665b9986cf045618f16"
   },
   {
    "id": "07-self-addressed-checked-before-not-a-party",
-   "version": "0.2.0",
-   "sha256": "b53b71f55a262754f908d0c3bfd6dd4870eedbad86c183aef3fae6e7f09d7bed"
+   "version": "0.7.0",
+   "sha256": "9965a5a538e6c6c4e5fcc79a2ef208e4904919028d07a282f1a2cf6ce6dc6ad6"
   },
   {
    "id": "08-not-a-party",
-   "version": "0.2.0",
-   "sha256": "d341d78d52c0d077fe69341a77a395cb822ad20463ce7fffd0769c9386481dd1"
+   "version": "0.7.0",
+   "sha256": "e5f19d2ef7fdad198eb8cf354ab2d4f5a28dae4ead679b4ec15706ede1670439"
   },
   {
    "id": "09-not-a-party-checked-before-registry-full",
@@ -47,7 +47,7 @@
   },
   {
    "id": "10-registry-full",
-   "version": "0.2.0",
+   "version": "0.3.0",
    "sha256": "8ba1cd4b7b4a3491d3a5aec170e6be19cdb7d3c48cc473baecb9246e84ace505"
   },
   {
@@ -57,8 +57,8 @@
   },
   {
    "id": "12-receipts-count-every-call",
-   "version": "0.2.0",
-   "sha256": "b732de91fafaf1cab52358e8a9bc476e56e85540796d6fe77b206f54df7f4ab4"
+   "version": "0.7.0",
+   "sha256": "15d4900927da90c70e7c356cae8b01c6eff36edeb92a4404771ef31eaf638823"
   },
   {
    "id": "13-show-registry-on-a-fresh-instance",
@@ -67,103 +67,103 @@
   },
   {
    "id": "14-restored-instance-carries-on",
-   "version": "0.2.0",
+   "version": "0.3.0",
    "sha256": "495d24e1049799e22c3c7885245cb9ec2a365c0ce1659ce212b8385eb2564aa2"
   },
   {
    "id": "15-restored-at-its-bound",
-   "version": "0.2.0",
+   "version": "0.3.0",
    "sha256": "15ee0cfb1a698d1f72e5ffef5223c6e6700c6ee1a3e43add0b8d4be3a8e22826"
   },
   {
    "id": "16-checkpoint-round-trip",
-   "version": "0.2.0",
-   "sha256": "3fe25e001b142870bc62620ac8f0694d7dc53828fb0447e06a16dca989f20b77"
+   "version": "0.7.0",
+   "sha256": "c6cdad48b13dd01770a8e8558580932ffa6a7d560faaf7d25b8c6c698d498138"
   },
   {
    "id": "17-partial-advanced",
-   "version": "0.3.0",
-   "sha256": "ea9254da5c839eddc2ebaebd135e8e85c57235aa0f4b850315fe86851b12930c"
+   "version": "0.7.0",
+   "sha256": "4eae1ec4c1817b4bc7e32cc818230ca2b01477713e8076d7d8320ecdd9182159"
   },
   {
    "id": "18-partial-completed-evicts",
-   "version": "0.3.0",
-   "sha256": "e8f1c842b64c760e74369c442614bb9be49e822e9a60d153779b89cf6151ffc4"
+   "version": "0.7.0",
+   "sha256": "27121d438aba1d803ab7d8ee699c160fd3c4c448f5ab13a2850904f995f8546a"
   },
   {
    "id": "19-completed-in-one-run",
-   "version": "0.3.0",
-   "sha256": "2ac7253e499cb4799fc4f08e49931dc1a9134634a7c305fe2a4cf16cd088ff7a"
+   "version": "0.7.0",
+   "sha256": "d6be71ff10c1972e8ae45098476855c473cdd70afc4af33a911ab2ddb8ee64ce"
   },
   {
    "id": "20-completion-is-the-chunk-set-full-not-the-last-chunk",
-   "version": "0.3.0",
-   "sha256": "6ccc0c6e956894a4cd322ca8ea1c48923147c60fd16b8580b44b4ddfa0802e36"
+   "version": "0.7.0",
+   "sha256": "58f0719250c5ab1990355b90a0c87ffc2eb6f7516855a1c50bcc0e69343509f8"
   },
   {
    "id": "21-runs-arrive-in-any-order",
-   "version": "0.3.0",
-   "sha256": "101908da6af91d95eed03a5d6658a1a466fd8ea497d25f94709b44d0ee95fee8"
+   "version": "0.7.0",
+   "sha256": "c6a573aba31070ce1fdde2698dccccc2889aeaee0bb90eb35b52882ec7653f2a"
   },
   {
    "id": "22-partial-unaffected-when-every-chunk-is-held",
-   "version": "0.3.0",
-   "sha256": "ee6b2177397efc0e5512812c59d4b23d03e7d2b911726b7500a553a3970ad381"
+   "version": "0.7.0",
+   "sha256": "8f815e36773312e7c6a6283e0077664812ad8a8bec9f52d325642d50a23d2207"
   },
   {
    "id": "23-a-run-partly-held-adds-what-is-new",
-   "version": "0.3.0",
-   "sha256": "ed84854c24315c9302c290a7476069365ef3a944b614dd2a7dbc66625d748f76"
+   "version": "0.7.0",
+   "sha256": "07efa7565a2a3b9b4f7ea03b558348890ec6d98f27dec7ca4341de63b74fefd7"
   },
   {
    "id": "24-empty-run",
-   "version": "0.3.0",
-   "sha256": "a2ad116c769961534ca400ed50e557058e6cd3212a2ff207c6ac0bbff6d4ef30"
+   "version": "0.7.0",
+   "sha256": "e8ac39570116dd2fe759aad4c7391ceec8cbae40bbb1ad7559c1d5142cdd41dc"
   },
   {
    "id": "25-empty-run-checked-first",
-   "version": "0.3.0",
-   "sha256": "560adc4e2f6a9ce61d83def23bb7614a4ef8b0aef8658c0f334e341c357bc317"
+   "version": "0.7.0",
+   "sha256": "2d203c1250bbd0167e4f6758665689677749f32470c419efe5f47cbe62c7272b"
   },
   {
    "id": "26-partial-not-started",
-   "version": "0.3.0",
-   "sha256": "c3fe59bdcb8ae858d5ef949bb6598e5f990342748b49ed7d94f496b77edfdb86"
+   "version": "0.7.0",
+   "sha256": "623be27a3858ede9038c7fcf5a7952c8348032c3389eabf463bc6365ed5c5f4b"
   },
   {
    "id": "27-not-started-after-completion",
-   "version": "0.3.0",
-   "sha256": "4ea8993985400cc0646c312e00c822eccbe3c37ff30e8909b09afc27c26fe495"
+   "version": "0.7.0",
+   "sha256": "3f57494d1e23225b8fc778d17b064b602ec199ba69caa50dd8ed7b8023eb813f"
   },
   {
    "id": "28-misattributed",
-   "version": "0.3.0",
-   "sha256": "2d5f31a32dec6270afd092c2e2574c325f15d3028db5d0b240d748263d175b90"
+   "version": "0.7.0",
+   "sha256": "aa8a7a59915243edfe87af716341f1311395e686ee0e646bc229e33aa76a76d0"
   },
   {
    "id": "29-wrong-side",
-   "version": "0.3.0",
-   "sha256": "27eadf7ff13a263e49957b0ff36949c7f9902bb1b929975be25b343d168c6d53"
+   "version": "0.7.0",
+   "sha256": "2a7e4b2f21b51694b83521d709979c3a268d8c86716c8319d58d70504a75b68a"
   },
   {
    "id": "30-misattributed-checked-before-wrong-side",
-   "version": "0.3.0",
-   "sha256": "6381f5af57302bd0c5cfe3bb3d33ba11496e060e78a30820aeea8262fb89a7a0"
+   "version": "0.7.0",
+   "sha256": "4a50d57d175046970837fa7e13ee9fc18ad558df2327fa6b8bf44edb79edfa9c"
   },
   {
    "id": "31-wrong-side-checked-before-chunk-out-of-range",
-   "version": "0.3.0",
-   "sha256": "1d33adc20608f81f2a2aa2e519a4f76c959baf296a3977601e23754f01dce943"
+   "version": "0.7.0",
+   "sha256": "b9b7eda4fe18a950dbb5ce46058f085adc02725f60ab46495b0ccf0f0775c9e0"
   },
   {
    "id": "32-chunk-out-of-range",
-   "version": "0.3.0",
-   "sha256": "fd430e83b4e3333837283799a2264044bd37d7bb53566fffa6acc1f8e442bfc6"
+   "version": "0.7.0",
+   "sha256": "e8557cbb2fd1b1cb51951058b5bafbeca22042623fc5a583cec009a59de8ffd9"
   },
   {
    "id": "33-chunk-out-of-range-checked-before-completion",
-   "version": "0.3.0",
-   "sha256": "60c2e6407717c4818ac50cfaf8cd1d632c992db22832e799f00f382b6723b593"
+   "version": "0.7.0",
+   "sha256": "46f1e6c612222a8a5d7d6a13e02bf086d0d254ba522d825273b22846e4479e7f"
   },
   {
    "id": "34-completion-frees-a-place-under-the-bound",
@@ -172,13 +172,13 @@
   },
   {
    "id": "35-each-session-its-own-chunk-set",
-   "version": "0.3.0",
-   "sha256": "95d4e1b846b27c4d9bc09b5a00b1fcf431fb4b08cfcc8f82e50d96dfc36de264"
+   "version": "0.7.0",
+   "sha256": "02056cd2a53a4aef98a9d42f8c4fc4df84dc061d740bd0890a6f5f1e27450824"
   },
   {
    "id": "36-restored-with-chunks-carries-on",
-   "version": "0.3.0",
-   "sha256": "aa0d72539f7006f21a55232d656eec948384b9c2a7cb44e2c3c843b6baa32124"
+   "version": "0.7.0",
+   "sha256": "ac7bbb660643f19c288122b95b7c7bc6269548d18632eaa3c4368a0758eb59fa"
   },
   {
    "id": "37-checkpoint-round-trip-with-chunk-sets",
@@ -187,28 +187,28 @@
   },
   {
    "id": "38-runs-at-the-top-of-u64",
-   "version": "0.3.0",
-   "sha256": "fab24b82d59d5bd2c1caa24e2881a71c59c230aeafdf49dac481dc2e89adf536"
+   "version": "0.7.0",
+   "sha256": "246b6fc5d357c5578bcc86409d86dce9f7691a7656ffdf8860df0081d1f42e14"
   },
   {
    "id": "39-out-of-range-and-empty-at-the-edges-of-u64",
-   "version": "0.3.0",
-   "sha256": "9edb7488aa0938819fce328094b55f6c2202177b3ce7d07ff96165b199f2c5d2"
+   "version": "0.7.0",
+   "sha256": "6ef3584e54b3558bf0ddce1f4593668f2cb841a631b3cdbbe11b468a3ce5798e"
   },
   {
    "id": "40-adopt-started",
-   "version": "0.4.0",
-   "sha256": "aa22c2e456cd583258a1f7f7252560a5c80abe3b203c6edce8a63afdea0e0fe7"
+   "version": "0.7.0",
+   "sha256": "5550897d7fd67ab92ce738f2764a80b3e92922b5e5ac1598c8c19685b032a846"
   },
   {
    "id": "41-adopt-unaffected-when-repeated",
-   "version": "0.4.0",
-   "sha256": "c19d38debfe1fb2d8589bfef72f4f735576082a75855cfddb70cddf2c00e156b"
+   "version": "0.7.0",
+   "sha256": "28d147bae489ddcb8a79650864980ad36727e40b67e1692a64f02feaeaaece17"
   },
   {
    "id": "42-adopt-conflicted-carries-the-open-session",
-   "version": "0.4.0",
-   "sha256": "eea6db927c4b40ab7745dcacbac120a0ad7c2c59b7083859b64b78326b66757e"
+   "version": "0.7.0",
+   "sha256": "eb24b4df614e66974cca68029f84b956481d4eca91f2ef50fc24612eabdd2d91"
   },
   {
    "id": "43-adopt-registry-full",
@@ -217,43 +217,43 @@
   },
   {
    "id": "44-adopt-checked-for-form-first",
-   "version": "0.4.0",
-   "sha256": "387d6343c085db899e4bf14e754b2cbf1dd73b8c90e4e008bd4dd9beee3f4ea5"
+   "version": "0.7.0",
+   "sha256": "36597160f188ec1ad383886f5262e954ffc4a10869135d76fcc655fb3b8fe2ba"
   },
   {
    "id": "45-own-session",
-   "version": "0.4.0",
-   "sha256": "338e8dff0c2c2d229ad74955e7bbe4793792685de371de1b5def3db466d67592"
+   "version": "0.7.0",
+   "sha256": "fdf963e5e6c9a0d5754fd881676c1d7741c971a0eb5c5fd72ade9497a6d936a3"
   },
   {
    "id": "46-started-and-adopted-in-the-order-of-their-names",
-   "version": "0.4.0",
-   "sha256": "33f5c027199a410be8c3fa37f9cc395b96c55ce91ef890eb5bedc3746208ad47"
+   "version": "0.7.0",
+   "sha256": "df1028f01207cbd42018cf6b4626f86ebd1754dbbc37bbe30ff3a8fc80cf877f"
   },
   {
    "id": "47-receive-advanced-then-completed",
-   "version": "0.4.0",
-   "sha256": "bb747a686f94734d9f06f078ae16c288acc1f17e9798b3fe40c9b5fcd689e0cd"
+   "version": "0.7.0",
+   "sha256": "f646ebbc8b1efb8688b38f92e0b76f2b2ff18656cf6df059b00dbd63c105685d"
   },
   {
    "id": "48-each-end-on-its-own-side",
-   "version": "0.4.0",
-   "sha256": "972f53483a7bca1f16e9857e0c46c7193da155c3be638582fc1a5d8dee9f2e0a"
+   "version": "0.7.0",
+   "sha256": "d0b013c1e8d5563d9528629206d860105eec3dbec34bee2470e4da0ffb40ff0e"
   },
   {
    "id": "49-receive-refused-in-order",
-   "version": "0.4.0",
-   "sha256": "b8259d103470d05f1e038dda334bb3ad0d3dfb547e2f9e7ef8767d27c71eccc6"
+   "version": "0.7.0",
+   "sha256": "469167aeb70e32807e135c5ee5894c30305de87a4bf4c6499c2463ba4f04fe5f"
   },
   {
    "id": "50-late-duplicate-adopt-reopens",
-   "version": "0.4.0",
-   "sha256": "27ab432da7bc51f30217ea72d713914cb756e311059ac2f5601015b1092ae9c6"
+   "version": "0.7.0",
+   "sha256": "815ec6c690efa1292a1d92b95a1cf4031e2b6ea33661a83063e048e87760db99"
   },
   {
    "id": "51-two-transfers-from-one-peer",
-   "version": "0.4.0",
-   "sha256": "5728cc2f07b91b22aef9f211ef1238e0488d6173085fb8803ff10c1fc28746a2"
+   "version": "0.7.0",
+   "sha256": "221bb27b4b11f708377082c2249356e5331ac3f66404109bf80dc8b740438b09"
   },
   {
    "id": "52-the-bound-counts-started-and-adopted-alike",
@@ -262,48 +262,48 @@
   },
   {
    "id": "53-receiving-end-restored-carries-on",
-   "version": "0.4.0",
-   "sha256": "c8df8b1dec453770ab8deff00d1b5f3ce4741a45a0ed6c26b25f77d757b39953"
+   "version": "0.7.0",
+   "sha256": "86721447f93be151cd7c09a5fe0fe3ba1c676c3fcf5b3ce71f76df2c7c47c09d"
   },
   {
    "id": "54-adopted-at-the-top-of-u64",
-   "version": "0.4.0",
-   "sha256": "4aab615b5192474058a8639942b83ef63ae21c00b6c31d6bebba14ec72311773"
+   "version": "0.7.0",
+   "sha256": "4e52f69faaf53c04f57646e7546c4882b5afa93e58b9358b0ecc00949ff0daef"
   },
   {
    "id": "55-cancel-cancelled",
-   "version": "0.5.0",
-   "sha256": "7b77cd0bb4e7f98c4e8e5673c3e417903a3c0e816c983ac5b7a78699b857e162"
+   "version": "0.7.0",
+   "sha256": "57192175c02ece683d561a4b9a1a76fe320123c71822aedbff4f533d833690b3"
   },
   {
    "id": "56-cancel-unaffected-for-a-session-never-opened-here",
-   "version": "0.5.0",
-   "sha256": "d74d655e808d9a39a346cc08be26423fc0d961a47d9e1a1241d1a6d8b567d1f6"
+   "version": "0.7.0",
+   "sha256": "5e9857d058a96ae049224a87da30529cb4010c0de5da88191d46dc02d412b7b1"
   },
   {
    "id": "57-a-completed-session-is-unaffected-by-a-cancel",
-   "version": "0.5.0",
-   "sha256": "e15625cdc43b9223670730984a1b568e3d2ac46a25ebc5c1f6724af2fbdb9bb4"
+   "version": "0.7.0",
+   "sha256": "04c317178b90b7e688b09bbf10a4fef910bb3b19162994681a4120e3b9bbe4fe"
   },
   {
    "id": "58-a-cancelled-session-is-unaffected-by-another-cancel",
-   "version": "0.5.0",
-   "sha256": "fd1d873b8a13fcb1207319d70747a60b2c097ff1bb51875d60bbad31f252324a"
+   "version": "0.7.0",
+   "sha256": "de4d3582b9169b1b87f6eab24f2332f80cd48a639f1da07013ae5a856841d564"
   },
   {
    "id": "59-a-cancel-wins-its-race-with-the-final-partial",
-   "version": "0.5.0",
-   "sha256": "b147b441203220ea7f01be1410781daf34bbc7e3012ff41e10492e3adf0e0097"
+   "version": "0.7.0",
+   "sha256": "105ab0ea612d5886b7d5c5d1b2398320d00a984b093cbf62539569b214ca6ce9"
   },
   {
    "id": "60-cancel-on-the-receiving-end",
-   "version": "0.5.0",
-   "sha256": "09bb9c6657f97dce2c45f5645f3c06b784791c27971be29a050f29b56c549dc9"
+   "version": "0.7.0",
+   "sha256": "73d025cc5c49cf03ad5def89ce7648d668308f71f4a5f2991bde5893660bb2c3"
   },
   {
    "id": "61-late-duplicate-adopt-reopens-a-cancelled-session",
-   "version": "0.5.0",
-   "sha256": "1ea7f81d26350ce4f4280007dd452fc83057e61044306257406bfa5c2121a5fb"
+   "version": "0.7.0",
+   "sha256": "abce9d5bfa74c3bf0c8086e951e5a914ec518c40b4dec32d91e2118f67cba0e6"
   },
   {
    "id": "62-cancel-frees-a-place-under-the-bound",
@@ -312,88 +312,88 @@
   },
   {
    "id": "63-cancel-leaves-other-sessions-alone",
-   "version": "0.5.0",
-   "sha256": "714c928365e93bd590af421dd282b24c278b0ba5c65ab98c63df50f5f2869d2f"
+   "version": "0.7.0",
+   "sha256": "ce34295de62210be1a1bfe02ecd40d8d0c21c765ddb5a97923adb0bdc9643c49"
   },
   {
    "id": "64-cancel-reason-carried-at-the-top-of-u64",
-   "version": "0.5.0",
-   "sha256": "38d5419545e88ab68f14e65fce70108f09c3e44174fd500bb7f5fc67936598ed"
+   "version": "0.7.0",
+   "sha256": "f874ad485419b19fb1b8df6304a3e3ea97699d2637cbec4fe948847661869d60"
   },
   {
    "id": "65-restored-session-cancelled",
-   "version": "0.5.0",
-   "sha256": "da63aa32ecf21a103e99b07e2982f67c43dea5ade3f7b0dda8a1fa7ba27efa92"
+   "version": "0.7.0",
+   "sha256": "c20ecd028161a97a6283f7bc8fdfb8d32c31098f0d6520cd61217c0da78464a1"
   },
   {
    "id": "66-list-recoveries",
-   "version": "0.6.0",
-   "sha256": "0ddfcfa4108ffea939e552e265754a663a9d9ae90d02265224cfaa8fc9348ddc"
+   "version": "0.7.0",
+   "sha256": "882126bc5afd1070205b86931912671f55d8d52849d5202315b7d23b2bcc6a8a"
   },
   {
    "id": "67-show-recovery-of-an-open-session",
-   "version": "0.6.0",
-   "sha256": "14f00714ffb97ca6496f18eefed46208a3dc676d00e51f959724ed49279ef6e2"
+   "version": "0.7.0",
+   "sha256": "5f67061eef7d715272a06e039493ae94cdde2da079b8b20fa33c188561637a9a"
   },
   {
    "id": "68-queries-of-a-session-never-opened",
-   "version": "0.6.0",
-   "sha256": "72141281b81889df8bc0b9122894684cde90e0e39a65c5bf118a3f27307fed3b"
+   "version": "0.7.0",
+   "sha256": "f4aa39894618696f7bee4067e6a9d2b5cf8a15753d340cdfaf020cddab243f86"
   },
   {
    "id": "69-list-missing-chunks-of-an-open-session",
-   "version": "0.6.0",
-   "sha256": "039ba4e88b6c5def9053833c2c6686a0645481eb756171fae00dff8d0b0f5898"
+   "version": "0.7.0",
+   "sha256": "c5443fecaca4cbfe8483a84d7868f6b47f275aaebb47dc9bb0286fb32e5756df"
   },
   {
    "id": "70-missing-chunks-of-a-session-holding-none",
-   "version": "0.6.0",
-   "sha256": "581f7f81f7a724c7ee1f049b886f882dda3f621e4d5b49ad4949893ff83af979"
+   "version": "0.7.0",
+   "sha256": "40f403bd8e3555f03c805b9cbf68d355c2aa0f949f2a1c0b2400de2a0403f2d5"
   },
   {
    "id": "71-retention-keeps-a-completed-session",
-   "version": "0.6.0",
-   "sha256": "3969b30003f48c6ebf340757bbde57a043fee1668963984656c0566176fb3ce3"
+   "version": "0.7.0",
+   "sha256": "6d65f5e6a947713f656b787206f95d6d020a01d2452de3025290f45b84b19460"
   },
   {
    "id": "72-retention-keeps-a-cancelled-session-with-its-gaps",
-   "version": "0.6.0",
-   "sha256": "f6e5e40f4e666cae69b76e188b266f2ecb690558c8162e36c1e747d4750140eb"
+   "version": "0.7.0",
+   "sha256": "c9ff807eae7d84b101b86be81251497648e52ab90b5e5fc8f5d10edde771d1f7"
   },
   {
    "id": "73-retention-lets-the-earliest-finished-go",
-   "version": "0.6.0",
-   "sha256": "687870e4d9251789a7a255e8303c7f64cadbe996bf9121d6d8d4b57c488ed25d"
+   "version": "0.7.0",
+   "sha256": "9bd53ea402aff8e8759e7f1799362fb82e6c8c9f9a607858114bc30b440544dc"
   },
   {
    "id": "74-a-retained-session-is-not-open-to-commands",
-   "version": "0.6.0",
-   "sha256": "6bf6caec1c9ea065e91d55e99f887729c803ec70cdf18765af524af788e36132"
+   "version": "0.7.0",
+   "sha256": "4854216fec23f3e2f8b806e39200d73a231820af017e8c080ba64935b3b88958"
   },
   {
    "id": "75-an-open-session-is-read-before-its-retained-namesake",
-   "version": "0.6.0",
-   "sha256": "69b069ae551e2933768a278ca438c267cd75a58386afd3910e8c406a458b75dc"
+   "version": "0.7.0",
+   "sha256": "78379194132660f28236130a6ceefbbec171900d5e3604cc033c7e1c59e444dd"
   },
   {
    "id": "76-a-name-retained-twice-reads-the-later",
-   "version": "0.6.0",
-   "sha256": "a095b941f32aebbf3ccf0a2d14946daf97128fc7c0f80fa0af384fbceccc2822"
+   "version": "0.7.0",
+   "sha256": "e5840a8361fe12744b88661a72f5bff188ae05fd7cc1ba0b09fb2f57a032946a"
   },
   {
    "id": "77-retained-restored-from-a-checkpoint",
-   "version": "0.6.0",
-   "sha256": "b9c7b37330ef58b64eb79242dea07cff36ffa65d0d3525f61fb34a246ec6d8ab"
+   "version": "0.7.0",
+   "sha256": "e78049d13e1ac2d0a49d04c233644906e17c50da3862c003e7f2861440d1309a"
   },
   {
    "id": "78-missing-runs-at-the-top-of-u64",
-   "version": "0.6.0",
-   "sha256": "e970f202b454b0cb676f73b45baf3a40360a095c8f4af5bf1c16a3dabc1eb7c2"
+   "version": "0.7.0",
+   "sha256": "922ef762ebb0f3abe64fed5d4c9e2a67919207e65b0c1ca906c534c0d8030263"
   },
   {
    "id": "79-missing-runs-of-a-session-holding-the-top-of-u64",
-   "version": "0.6.0",
-   "sha256": "ffc74f885a0578d8e0d0dc9e57a2f0bdac7b9522f39680e8f83f128c47265145"
+   "version": "0.7.0",
+   "sha256": "51e7e80ae9a8cd0848017329a4a65452ebea6bb234b40738fb69b1143115ae49"
   }
  ]
 }

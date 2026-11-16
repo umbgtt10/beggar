@@ -9,8 +9,7 @@
         "node": "1",
         "incarnation": "1794213776525000000"
       },
-      "retention": "0",
-      "bound": null
+      "retention": "0"
     }
   },
   "steps": [
@@ -84,7 +83,6 @@
       "incarnation": "1794213776525000000"
     },
     "retention": "0",
-    "bound": null,
     "open": [
       {
         "session_id": {

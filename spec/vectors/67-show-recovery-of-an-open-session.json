@@ -1,5 +1,5 @@
 {
-  "description": "ShowRecovery answers an open session's record, finished null, and changes nothing.",
+  "description": "ShowRecovery answers an open session's record, with no finished, and changes nothing.",
   "rows": [
     "start-started",
     "partial-advanced",
@@ -11,8 +11,7 @@
         "node": "1",
         "incarnation": "7"
       },
-      "retention": "0",
-      "bound": null
+      "retention": "0"
     }
   },
   "steps": [
@@ -88,8 +87,7 @@
                 "1",
                 "2"
               ]
-            },
-            "finished": null
+            }
           }
         }
       }
@@ -101,7 +99,6 @@
       "incarnation": "7"
     },
     "retention": "0",
-    "bound": null,
     "open": [
       {
         "session_id": {

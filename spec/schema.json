@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:beggar:spec:0.6.1:schema",
-  "title": "beggar 0.6.1 -- the data model",
+  "$id": "urn:beggar:spec:0.7.0:schema",
+  "title": "beggar 0.7.0 -- the data model",
   "description": "Every command, receipt, output, rejection and the checkpoint, and the forms of a conformance vector and of the decision table. Normative with SPEC.md.",
   "$ref": "#/$defs/vector",
   "$defs": {
@@ -82,8 +82,8 @@
       ]
     },
     "bound": {
-      "description": "How many sessions may be open at once, or null for no bound.",
-      "oneOf": [{ "$ref": "#/$defs/u64" }, { "type": "null" }]
+      "description": "How many sessions may be open at once; left out where there is no bound.",
+      "$ref": "#/$defs/u64"
     },
     "record": {
       "description": "A session's record. Its chunk set is the chunk ids the session has accounted at this end, in ascending order.",
@@ -116,7 +116,7 @@
       "description": "The whole registry, as ShowRegistry answers it and as an instance is restored from it.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["instance", "retention", "bound", "open", "retained", "name_count", "next_receipt"],
+      "required": ["instance", "retention", "open", "retained", "name_count", "next_receipt"],
       "properties": {
         "instance": { "$ref": "#/$defs/instance_id" },
         "retention": { "$ref": "#/$defs/u64" },
@@ -130,7 +130,7 @@
     "fresh": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["instance", "retention", "bound"],
+      "required": ["instance", "retention"],
       "properties": {
         "instance": { "$ref": "#/$defs/instance_id" },
         "retention": { "$ref": "#/$defs/u64" },
@@ -488,10 +488,10 @@
             "RecoveryShown": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["record", "finished"],
+              "required": ["record"],
               "properties": {
                 "record": { "$ref": "#/$defs/record" },
-                "finished": { "oneOf": [{ "$ref": "#/$defs/u64" }, { "type": "null" }] }
+                "finished": { "$ref": "#/$defs/u64" }
               }
             }
           }

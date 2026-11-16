@@ -1,6 +1,6 @@
 # beggar — the specification
 
-**Version 0.6.1.** The four parts of this specification are versioned together: this prose, the data model in
+**Version 0.7.0.** The four parts of this specification are versioned together: this prose, the data model in
 [`schema.json`](schema.json), the decision table in [`matrix.json`](matrix.json) and the conformance vectors in
 [`vectors/`](vectors/). It is normative; the `beggar` crate is one implementation of it, and where the two disagree
 the specification is right ([`P0-ADR-SpecificationIsNormativeCrateIsReference`](../docs/ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md)).
@@ -9,8 +9,9 @@ the specification is right ([`P0-ADR-SpecificationIsNormativeCrateIsReference`](
 every call to; both ends of a transfer — `StartRecovery` and `AdoptRecovery`, `SendRecoveryPartial` and
 `ReceiveRecoveryPartial` — and `CancelRecovery`; the queries `ListRecoveries`, `ShowRecovery`, `ListMissingChunks`
 and `ShowRegistry`, the checkpoint; each with every row it has; and retention, finished sessions kept for the
-queries. 0.6.0 is 0.5.0 with the three other queries and retention; 0.6.1 answers every command as 0.6.0 does, and
-adds what keeps a release's vectors as released: the growth rule (§1) and `released.json` (§11).
+queries. 0.6.0 is 0.5.0 with the three other queries and retention; 0.6.1 adds what keeps a release's vectors as
+released, the growth rule (§1) and `released.json` (§11); 0.7.0 answers every command as 0.6.1 does, and leaves an
+absent value out where 0.6.1 wrote it `null` (§1).
 
 ## 1. Conventions
 
@@ -20,6 +21,9 @@ from a nanosecond timestamp is already past it.
 
 **Every value of an enumeration is an object with exactly one member**, named for the value: `{"ShowRegistry": {}}`,
 `{"RecoveryRejected": {"RegistryFull": {"capacity": "2"}}}`. A value that carries nothing carries the empty object.
+
+**An absent value is left out**, never written `null`: a form whose member may hold nothing has no member for it
+then -- no `bound` where there is no bound, no `finished` for a session still open.
 
 **Names are the vocabulary's.** Commands are imperative and outputs past participle, so what a caller asked for
 and what happened cannot be confused.
@@ -40,9 +44,11 @@ exactly one form, so two implementations' logs of the same calls are identical.
 
 **Growth.** A member a later version adds to a form is omitted wherever it holds the value that keeps the earlier
 version's behaviour. Every answer this version gives is therefore given the same, character for character, by
-every later version, and every vector released here passes unchanged there. One release broke this before the rule
-was written: 0.3.0 renamed the checkpoint's `received` to `chunk_set`, and the eight vectors 0.2.0 had released were
-rewritten with it.
+every later version, and every vector released here passes unchanged there. Two releases rewrote released vectors:
+0.3.0, before the rule was written, renamed the checkpoint's `received` to `chunk_set`, rewriting the eight 0.2.0 had
+released; and 0.7.0, once and on purpose, left out the absent values 0.6.1 wrote `null` -- `bound` and `finished` --
+as its sibling bookkeepers' encodings do, rewriting the 68 that held one. `released.json` records each vector's bytes
+at the version that released them.
 
 ## 2. An instance
 
@@ -245,7 +251,7 @@ one if there is one, otherwise the retained one that finished last. Checked in t
 | `missing-chunks-listed` | otherwise, for `ListMissingChunks` | `MissingChunksListed { missing }` |
 | `recoveries-listed` | always, for `ListRecoveries` | `RecoveriesListed { sessions }` |
 
-**`RecoveryShown`** carries the session's record and `finished`: null for an open session, and for a retained one
+**`RecoveryShown`** carries the session's record and `finished`: none for an open session, and for a retained one
 the number of the receipt that finished it. A retained record's chunk set is full exactly when it completed.
 
 **`MissingChunksListed`** carries `missing`: the chunk ids of `1..=chunks` the session's chunk set does not hold,

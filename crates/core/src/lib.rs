@@ -13,7 +13,7 @@
 //! chunk holds, in what order chunks move, which protocol moves them and under
 //! what policy are the caller's.
 //!
-//! **All five slices are built** -- conformant to version 0.6.1 of the
+//! **All five slices are built** -- conformant to version 0.7.0 of the
 //! specification in the repository's `spec/`.
 //!
 //! # What it does

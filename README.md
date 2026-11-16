@@ -17,7 +17,7 @@ again. That asymmetry is the whole mechanism, and it is the reason for the name.
 records what moved and decides nothing.
 
 **All five slices are built** (2026-11-10): an instance, created fresh or from a checkpoint; both ends of a
-transfer; cancellation for the caller's own reason; the queries; and retention, conformant to version 0.6.1 of the
+transfer; cancellation for the caller's own reason; the queries; and retention, conformant to version 0.7.0 of the
 specification in [`spec/`](spec/SPEC.md). Version 0.5.3 is on [crates.io](https://crates.io/crates/beggar).
 
 ---
@@ -208,7 +208,7 @@ The caller moves the chunks. `beggar` owns the books.
 | Metric | Value |
 |---|---|
 | Core productive LOC | ~670 |
-| Specification | [`spec/`](./spec/SPEC.md) 0.6.1 — its independent model and the crate answer all 79 vectors as written, each kept as released |
+| Specification | [`spec/`](./spec/SPEC.md) 0.7.0 — its independent model and the crate answer all 79 vectors as written, each kept as released |
 | Total tests | 490 |
 | Code coverage (productive) | 100%, over every tier and over the conformance tier alone |
 | Crappy functions (CRAP score) | 0 |

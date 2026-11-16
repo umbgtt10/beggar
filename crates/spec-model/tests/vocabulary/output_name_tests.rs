@@ -213,7 +213,7 @@ fn encoded_of_an_open_session_shown_is_its_record_unfinished() {
     // Assert
     assert_eq!(
         encoded,
-        json!({"RecoveryShown": {"record": peers_record("1", &["2"]), "finished": null}})
+        json!({"RecoveryShown": {"record": peers_record("1", &["2"])}})
     );
 }
 

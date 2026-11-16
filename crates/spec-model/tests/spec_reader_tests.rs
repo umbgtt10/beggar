@@ -186,7 +186,6 @@ fn origin_of_a_fresh_instance_holds_nothing_and_numbers_its_first_receipt_1() {
     let value = json!({"Fresh": {
         "instance": {"node": "2", "incarnation": "18446744073709551615"},
         "retention": "0",
-        "bound": null,
     }});
 
     // Act

@@ -16,7 +16,6 @@ fn fresh() -> Model {
         SpecReader::origin(&json!({"Fresh": {
             "instance": {"node": "2", "incarnation": "3"},
             "retention": "1",
-            "bound": null,
         }})),
     )
 }
@@ -78,7 +77,6 @@ fn process_numbers_a_refusal_as_any_other_call_and_changes_nothing_else() {
                 json!({"RegistryShown": {
                     "instance": {"node": "2", "incarnation": "3"},
                     "retention": "1",
-                    "bound": null,
                     "open": [],
                     "retained": [],
                     "name_count": "0",

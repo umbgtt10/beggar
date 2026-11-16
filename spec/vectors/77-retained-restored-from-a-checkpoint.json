@@ -13,7 +13,6 @@
         "incarnation": "3"
       },
       "retention": "2",
-      "bound": null,
       "open": [
         {
           "session_id": {
@@ -189,7 +188,6 @@
       "incarnation": "3"
     },
     "retention": "2",
-    "bound": null,
     "open": [],
     "retained": [
       {

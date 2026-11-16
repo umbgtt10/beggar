@@ -86,10 +86,11 @@ impl OutputName {
             OutputName::RecoveriesListed => json!({"sessions": View::names(call.before)}),
             OutputName::RecoveryShown => {
                 let reading = Lookup::read(call.before, named).expect("a session to read");
-                json!({
-                    "record": View::record(reading.session),
-                    "finished": reading.finished.map(View::number),
-                })
+                let mut shown = json!({"record": View::record(reading.session)});
+                if let Some(finished) = reading.finished {
+                    shown["finished"] = View::number(finished);
+                }
+                shown
             }
             OutputName::MissingChunksListed => {
                 let reading = Lookup::read(call.before, named).expect("a session to read");

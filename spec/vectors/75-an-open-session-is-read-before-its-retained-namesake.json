@@ -13,8 +13,7 @@
         "node": "2",
         "incarnation": "3"
       },
-      "retention": "3",
-      "bound": null
+      "retention": "3"
     }
   },
   "steps": [
@@ -141,8 +140,7 @@
               "chunk_set": [
                 "1"
               ]
-            },
-            "finished": null
+            }
           }
         }
       }
@@ -178,7 +176,6 @@
       "incarnation": "3"
     },
     "retention": "3",
-    "bound": null,
     "open": [
       {
         "session_id": {

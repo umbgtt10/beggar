@@ -5,6 +5,13 @@ version it conforms to.
 
 ## [Unreleased]
 
+#### Changed
+- The specification is 0.7.0: it answers every command as 0.6.1 does, and leaves an absent value out where 0.6.1
+  wrote it `null` -- `bound` where there is no bound, `finished` for a session still open -- as faction's and
+  cartel's encodings do. The 68 vectors that held one are rewritten, once and on purpose, and `spec/released.json`
+  records each vector's bytes at the version that released them; the specification records the break beside 0.3.0's.
+  The crate's types are unchanged: `bound` and `finished` were and are `Option<u64>`.
+
 ## [0.5.3] — 2026-11-16
 
 ### Published on crates.io

@@ -13,8 +13,7 @@
         "node": "1",
         "incarnation": "7"
       },
-      "retention": "5",
-      "bound": null
+      "retention": "5"
     }
   },
   "steps": [
@@ -121,7 +120,6 @@
       "incarnation": "7"
     },
     "retention": "5",
-    "bound": null,
     "open": [],
     "retained": [
       {

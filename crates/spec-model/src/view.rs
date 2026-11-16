@@ -25,13 +25,12 @@ impl View {
         open.sort_by_key(|session| session.name);
         let mut retained: Vec<&Retained> = state.retained.iter().collect();
         retained.sort_by_key(|kept| (kept.session.name, kept.finished));
-        json!({
+        let mut checkpoint = json!({
             "instance": {
                 "node": Self::number(state.node),
                 "incarnation": Self::number(state.incarnation),
             },
             "retention": Self::number(state.retention),
-            "bound": state.bound.map(Self::number),
             "open": open.into_iter().map(Self::record).collect::<Vec<Value>>(),
             "retained": retained
                 .into_iter()
@@ -42,7 +41,11 @@ impl View {
                 .collect::<Vec<Value>>(),
             "name_count": Self::number(state.name_count),
             "next_receipt": Self::number(state.next_receipt),
-        })
+        });
+        if let Some(bound) = state.bound {
+            checkpoint["bound"] = Self::number(bound);
+        }
+        checkpoint
     }
 
     // The names of the open sessions (§9).

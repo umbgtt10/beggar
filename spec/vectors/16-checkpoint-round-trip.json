@@ -10,7 +10,6 @@
         "incarnation": "1794213776525000000"
       },
       "retention": "3",
-      "bound": null,
       "open": [
         {
           "session_id": {
@@ -54,7 +53,6 @@
               "incarnation": "1794213776525000000"
             },
             "retention": "3",
-            "bound": null,
             "open": [
               {
                 "session_id": {
@@ -93,7 +91,6 @@
       "incarnation": "1794213776525000000"
     },
     "retention": "3",
-    "bound": null,
     "open": [
       {
         "session_id": {

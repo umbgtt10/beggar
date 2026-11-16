@@ -12,8 +12,7 @@
         "node": "2",
         "incarnation": "3"
       },
-      "retention": "0",
-      "bound": null
+      "retention": "0"
     }
   },
   "steps": [
@@ -165,7 +164,6 @@
       "incarnation": "3"
     },
     "retention": "0",
-    "bound": null,
     "open": [
       {
         "session_id": {

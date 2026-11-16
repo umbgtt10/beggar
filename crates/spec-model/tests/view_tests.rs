@@ -58,7 +58,7 @@ fn checkpoint_of_a_state_lists_its_records_in_canonical_order() {
 }
 
 #[test]
-fn checkpoint_of_a_state_with_no_bound_writes_it_null() {
+fn checkpoint_of_a_state_with_no_bound_leaves_it_out() {
     // Arrange
     let state = InstanceState {
         bound: None,
@@ -69,7 +69,7 @@ fn checkpoint_of_a_state_with_no_bound_writes_it_null() {
     let checkpoint = View::checkpoint(&state);
 
     // Assert
-    assert_eq!(checkpoint["bound"], json!(null));
+    assert_eq!(checkpoint.get("bound"), None);
 }
 
 #[test]

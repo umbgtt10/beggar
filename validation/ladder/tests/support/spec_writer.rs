@@ -22,15 +22,18 @@ pub struct SpecWriter;
 
 impl SpecWriter {
     pub fn checkpoint(checkpoint: &Checkpoint) -> Value {
-        json!({
-            "instance": Self::instance(&checkpoint.instance),
-            "retention": Self::number(checkpoint.retention),
-            "bound": checkpoint.bound.map_or(Value::Null, Self::number),
-            "open": Self::records(&checkpoint.open),
-            "retained": Self::retained(&checkpoint.retained),
-            "name_count": Self::number(checkpoint.name_count),
-            "next_receipt": Self::number(checkpoint.next_receipt),
-        })
+        Self::with_present(
+            json!({
+                "instance": Self::instance(&checkpoint.instance),
+                "retention": Self::number(checkpoint.retention),
+                "open": Self::records(&checkpoint.open),
+                "retained": Self::retained(&checkpoint.retained),
+                "name_count": Self::number(checkpoint.name_count),
+                "next_receipt": Self::number(checkpoint.next_receipt),
+            }),
+            "bound",
+            checkpoint.bound,
+        )
     }
 
     pub fn command(command: &Command<ScenarioReason>) -> Value {
@@ -99,11 +102,14 @@ impl SpecWriter {
     // An instance's origin, fresh or a checkpoint, as a vector states it.
     pub fn origin(origin: &Origin) -> Value {
         match origin {
-            Origin::Fresh(fresh) => json!({ "Fresh": {
-                "instance": Self::instance(&fresh.instance),
-                "retention": Self::number(fresh.retention),
-                "bound": fresh.bound.map_or(Value::Null, Self::number),
-            } }),
+            Origin::Fresh(fresh) => json!({ "Fresh": Self::with_present(
+                json!({
+                    "instance": Self::instance(&fresh.instance),
+                    "retention": Self::number(fresh.retention),
+                }),
+                "bound",
+                fresh.bound,
+            ) }),
             Origin::Checkpoint(checkpoint) => json!({ "Checkpoint": Self::checkpoint(checkpoint) }),
         }
     }
@@ -163,10 +169,13 @@ impl SpecWriter {
             Output::RecoveriesListed { sessions } => json!({ "RecoveriesListed": {
                 "sessions": sessions.iter().map(Self::session_id).collect::<Vec<Value>>(),
             } }),
-            Output::RecoveryShown { record, finished } => json!({ "RecoveryShown": {
-                "record": Self::record(record),
-                "finished": finished.map_or(Value::Null, Self::number),
-            } }),
+            Output::RecoveryShown { record, finished } => {
+                json!({ "RecoveryShown": Self::with_present(
+                json!({ "record": Self::record(record) }),
+                "finished",
+                *finished,
+            ) })
+            }
             Output::MissingChunksListed { missing } => json!({ "MissingChunksListed": {
                 "missing": missing.iter().map(Self::run).collect::<Vec<Value>>(),
             } }),
@@ -253,5 +262,14 @@ impl SpecWriter {
             "incarnation": Self::number(session_id.incarnation),
             "count": Self::number(session_id.count),
         })
+    }
+
+    // An object with a member for a value only where there is one: an absent
+    // value is left out, never written null (§1).
+    fn with_present(mut object: Value, name: &str, value: Option<u64>) -> Value {
+        if let Some(value) = value {
+            object[name] = Self::number(value);
+        }
+        object
     }
 }
