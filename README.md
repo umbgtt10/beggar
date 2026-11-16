@@ -232,7 +232,7 @@ The caller moves the chunks. `beggar` owns the books.
 - **Retention governs queries, never emission** — what is kept changes what a query answers, and nothing else.
 - **One struct per file**, and **no `&mut` parameters** — prefer return values over in-place mutation.
 
-Each principle is recorded as an Architecture Decision Record — seventeen, in [docs/ADRs/](./docs/ADRs/README.md).
+Each principle is recorded as an Architecture Decision Record — eighteen, in [docs/ADRs/](./docs/ADRs/README.md).
 
 ---
 
