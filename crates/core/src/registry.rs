@@ -3,11 +3,11 @@
 
 use crate::checkpoint::Checkpoint;
 use crate::chunk_set::ChunkSet;
-use crate::opening_rows::OpeningRows;
 use crate::output::Output;
-use crate::partial_rows::PartialRows;
-use crate::query_rows::QueryRows;
 use crate::retained_record::RetainedRecord;
+use crate::rows::opening_rows::OpeningRows;
+use crate::rows::partial_rows::PartialRows;
+use crate::rows::query_rows::QueryRows;
 use crate::session_id::SessionId;
 use crate::session_record::SessionRecord;
 

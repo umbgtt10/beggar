@@ -3,8 +3,8 @@
 
 use beggar::chunk_set::ChunkSet;
 use beggar::output::Output;
-use beggar::partial_rows::PartialRows;
 use beggar::rejection::Rejection;
+use beggar::rows::partial_rows::PartialRows;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
 use beggar::side::Side;

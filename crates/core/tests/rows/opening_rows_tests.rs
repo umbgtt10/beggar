@@ -3,9 +3,9 @@
 
 use beggar::chunk_set::ChunkSet;
 use beggar::instance_id::InstanceId;
-use beggar::opening_rows::OpeningRows;
 use beggar::output::Output;
 use beggar::rejection::Rejection;
+use beggar::rows::opening_rows::OpeningRows;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
 

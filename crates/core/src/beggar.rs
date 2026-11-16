@@ -25,6 +25,7 @@ pub struct Beggar<R> {
 }
 
 impl<R: Clone> Beggar<R> {
+    #[must_use]
     pub fn new(origin: Origin, observer: Box<dyn Observer<R>>) -> Self {
         let state = match origin {
             Origin::Fresh(fresh) => Checkpoint {
@@ -44,6 +45,7 @@ impl<R: Clone> Beggar<R> {
         }
     }
 
+    #[must_use]
     pub fn process(&mut self, command: Command<R>) -> Receipt<R> {
         let number = self.registry.count_call();
         let output = match &command {

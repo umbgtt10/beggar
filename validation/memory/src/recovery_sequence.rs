@@ -60,7 +60,7 @@ impl<'a> RecoverySequence<'a> {
         let mut after_full = skeleton;
         let mut peak_while_filling = skeleton;
         for count in 1..=recoveries {
-            beggar.process(Command::StartRecovery {
+            let _ = beggar.process(Command::StartRecovery {
                 chunks: self.order.len() as u64,
                 sender: NODE,
                 receiver: PEER,
@@ -68,13 +68,13 @@ impl<'a> RecoverySequence<'a> {
             held_at_worst = held_at_worst.max(self.counter.live());
             for (sent, id) in self.order.iter().enumerate() {
                 if self.cancel_after == Some(sent) {
-                    beggar.process(Command::CancelRecovery {
+                    let _ = beggar.process(Command::CancelRecovery {
                         session_id: Self::session_id(count),
                         reason: (),
                     });
                     break;
                 }
-                beggar.process(Self::send(count, *id));
+                let _ = beggar.process(Self::send(count, *id));
                 held_at_worst = held_at_worst.max(self.counter.live());
             }
             if count == self.retention.max(1) {

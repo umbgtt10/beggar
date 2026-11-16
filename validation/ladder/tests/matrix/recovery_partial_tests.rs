@@ -74,7 +74,7 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
         Beggar::new(Origin::Fresh(fresh.clone()), Box::new(NoOpObserver));
     let mut model = ModelSide::new(&Origin::Fresh(fresh.clone()));
     for command in setup(situation) {
-        crate_side.process(command.clone());
+        let _ = crate_side.process(command.clone());
         model.process(&command);
     }
     if restored {

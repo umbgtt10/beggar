@@ -150,7 +150,7 @@ proptest! {
         // Arrange
         let mut original: Beggar<ScenarioReason> = Beggar::new(Origin::Fresh(fresh), Box::new(NoOpObserver));
         for command in before {
-            original.process(command);
+            let _ = original.process(command);
         }
         let checkpoint = match original.process(Command::ShowRegistry).output {
             Output::RegistryShown(checkpoint) => checkpoint,
@@ -419,10 +419,10 @@ proptest! {
         );
         let peers = SessionId { node: 2, incarnation: 5, count: 1 };
         let (session_id, sender, receiver) = if receiving {
-            beggar.process(Command::AdoptRecovery { session_id: peers, chunks, sender: 2, receiver: 1 });
+            let _ = beggar.process(Command::AdoptRecovery { session_id: peers, chunks, sender: 2, receiver: 1 });
             (peers, 2, 1)
         } else {
-            beggar.process(Command::StartRecovery { chunks, sender: 1, receiver: 2 });
+            let _ = beggar.process(Command::StartRecovery { chunks, sender: 1, receiver: 2 });
             (SessionId { node: 1, incarnation: 7, count: 1 }, 1, 2)
         };
         let runs: Vec<(u64, u64)> = runs

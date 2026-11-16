@@ -164,10 +164,10 @@ else {
 
 // Node 2 adopts the session under that name, with the count node 1 stated.
 let mut receiver = fresh(2);
-receiver.process(Command::AdoptRecovery { session_id, chunks: 10, sender: 1, receiver: 2 });
+let _ = receiver.process(Command::AdoptRecovery { session_id, chunks: 10, sender: 1, receiver: 2 });
 
 // Chunks 1 to 6 move; each end records the run on its own side.
-sender.process(Command::SendRecoveryPartial { session_id, first: 1, last: 6, sender: 1, receiver: 2 });
+let _ = sender.process(Command::SendRecoveryPartial { session_id, first: 1, last: 6, sender: 1, receiver: 2 });
 let receipt =
     receiver.process(Command::ReceiveRecoveryPartial { session_id, first: 1, last: 6, sender: 1, receiver: 2 });
 assert_eq!(receipt.output, Output::RecoveryAdvanced { held: 6, chunks: 10 });
@@ -196,7 +196,7 @@ The caller moves the chunks. `beggar` owns the books.
 |---|---|---|
 | [`spec/`](./spec/SPEC.md) | The normative specification: a decision table of 25 rows and 79 conformance vectors, each receipt written by hand | — |
 | `crates/spec-model/` | The specification's independent model: its decision table read and interpreted, depending on nothing of the crate | 146 |
-| `crates/core/` unit tests | Each type and each row in isolation, and the front page's example | 97 |
+| `crates/core/` unit tests | Each type and each row in isolation, and the front page's and the README's examples | 98 |
 | `validation/ladder/` | Conformance to the specification, of the model and then of the crate; every command in every situation over small chunk counts, against the model; properties over random command sequences, the crate against the model among them; logs replayed, resynchronising from a checkpoint | 39 |
 | `validation/core-validation/` | A seeded cluster simulation: registries whose reports to one another are lost, duplicated, reordered and withheld -- pull, push, cancels, restarts under a new incarnation | 72 |
 | `validation/memory/` | A counting allocator: a positive control, then peak and residue over a hundred recoveries | 15 |
@@ -209,7 +209,7 @@ The caller moves the chunks. `beggar` owns the books.
 |---|---|
 | Core productive LOC | ~670 |
 | Specification | [`spec/`](./spec/SPEC.md) 0.7.0 — its independent model and the crate answer all 79 vectors as written, each kept as released |
-| Total tests | 490 |
+| Total tests | 491 |
 | Code coverage (productive) | 100%, over every tier and over the conformance tier alone |
 | Crappy functions (CRAP score) | 0 |
 | Unsafe code | 0 — enforced by `#![forbid(unsafe_code)]` |

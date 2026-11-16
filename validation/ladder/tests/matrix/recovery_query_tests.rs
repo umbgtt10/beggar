@@ -91,7 +91,7 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
     let mut crate_side: Beggar<ScenarioReason> =
         Beggar::new(situation.origin.clone(), Box::new(NoOpObserver));
     for command in &situation.history {
-        crate_side.process(command.clone());
+        let _ = crate_side.process(command.clone());
         model.process(command);
     }
     if restored {

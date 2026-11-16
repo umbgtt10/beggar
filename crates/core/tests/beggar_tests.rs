@@ -156,9 +156,9 @@ fn new_from_a_checkpoint_carries_on_from_its_next_receipt_and_its_next_name() {
 fn process_of_a_cancel_at_a_retention_keeps_the_session_as_it_stood_finished_by_its_receipt() {
     // Arrange
     let mut beggar = retaining(1);
-    beggar.process(start(4, 1, 2));
-    beggar.process(send(1, 2, 3, 1, 2));
-    beggar.process(Command::CancelRecovery {
+    let _ = beggar.process(start(4, 1, 2));
+    let _ = beggar.process(send(1, 2, 3, 1, 2));
+    let _ = beggar.process(Command::CancelRecovery {
         session_id: name(1),
         reason: (),
     });
@@ -191,7 +191,7 @@ fn process_of_a_cancel_of_an_open_session_answers_cancelled_with_its_reason_and_
         }),
         Box::new(NoOpObserver),
     );
-    beggar.process(Command::StartRecovery {
+    let _ = beggar.process(Command::StartRecovery {
         chunks: 4,
         sender: 1,
         receiver: 2,
@@ -230,9 +230,9 @@ fn process_of_a_cancel_of_no_open_session_answers_unaffected() {
 fn process_of_a_completed_session_at_a_retention_shows_it_finished_by_the_receipt_completing_it() {
     // Arrange
     let mut beggar = retaining(1);
-    beggar.process(start(2, 1, 2));
-    beggar.process(send(1, 1, 1, 1, 2));
-    beggar.process(send(1, 2, 2, 1, 2));
+    let _ = beggar.process(start(2, 1, 2));
+    let _ = beggar.process(send(1, 1, 1, 1, 2));
+    let _ = beggar.process(send(1, 2, 2, 1, 2));
     let mut expected = record(1, 2, 1, 2);
     expected.chunk_set.add(1, 2);
 
@@ -273,8 +273,8 @@ fn process_of_a_completed_session_at_a_retention_shows_it_finished_by_the_receip
 fn process_of_a_partial_after_an_accepted_cancel_answers_not_started() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(start(4, 1, 2));
-    beggar.process(Command::CancelRecovery {
+    let _ = beggar.process(start(4, 1, 2));
+    let _ = beggar.process(Command::CancelRecovery {
         session_id: name(1),
         reason: (),
     });
@@ -290,8 +290,8 @@ fn process_of_a_partial_after_an_accepted_cancel_answers_not_started() {
 fn process_of_a_partial_already_held_answers_unaffected() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(start(6, 1, 2));
-    beggar.process(send(1, 2, 4, 1, 2));
+    let _ = beggar.process(start(6, 1, 2));
+    let _ = beggar.process(send(1, 2, 4, 1, 2));
 
     // Act
     let receipt = beggar.process(send(1, 3, 4, 1, 2));
@@ -305,7 +305,7 @@ fn process_of_a_partial_already_held_answers_unaffected() {
 fn process_of_a_partial_beyond_the_chunks_answers_chunk_out_of_range_and_adds_nothing() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(start(4, 1, 2));
+    let _ = beggar.process(start(4, 1, 2));
 
     // Act
     let receipt = beggar.process(send(1, 3, 5, 1, 2));
@@ -326,8 +326,8 @@ fn process_of_a_partial_beyond_the_chunks_answers_chunk_out_of_range_and_adds_no
 fn process_of_a_partial_filling_the_set_completes_and_evicts_the_session() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(start(4, 1, 2));
-    beggar.process(send(1, 3, 4, 1, 2));
+    let _ = beggar.process(start(4, 1, 2));
+    let _ = beggar.process(send(1, 3, 4, 1, 2));
 
     // Act
     let receipt = beggar.process(send(1, 1, 2, 1, 2));
@@ -343,7 +343,7 @@ fn process_of_a_partial_filling_the_set_completes_and_evicts_the_session() {
 fn process_of_a_partial_for_no_open_session_answers_not_started() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(start(4, 1, 2));
+    let _ = beggar.process(start(4, 1, 2));
 
     // Act
     let receipt = beggar.process(send(2, 1, 1, 1, 2));
@@ -356,7 +356,7 @@ fn process_of_a_partial_for_no_open_session_answers_not_started() {
 fn process_of_a_partial_on_the_receivers_end_answers_wrong_side() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(start(4, 2, 1));
+    let _ = beggar.process(start(4, 2, 1));
 
     // Act
     let receipt = beggar.process(send(1, 1, 2, 2, 1));
@@ -372,8 +372,8 @@ fn process_of_a_partial_on_the_receivers_end_answers_wrong_side() {
 fn process_of_a_partial_to_a_retained_session_answers_not_started() {
     // Arrange
     let mut beggar = retaining(5);
-    beggar.process(start(2, 1, 2));
-    beggar.process(send(1, 1, 2, 1, 2));
+    let _ = beggar.process(start(2, 1, 2));
+    let _ = beggar.process(send(1, 1, 2, 1, 2));
 
     // Act
     let receipt = beggar.process(send(1, 1, 1, 1, 2));
@@ -386,7 +386,7 @@ fn process_of_a_partial_to_a_retained_session_answers_not_started() {
 fn process_of_a_partial_with_new_chunks_advances_carrying_held_and_chunks() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(start(8, 1, 2));
+    let _ = beggar.process(start(8, 1, 2));
 
     // Act
     let receipt = beggar.process(send(1, 1, 3, 1, 2));
@@ -403,7 +403,7 @@ fn process_of_a_partial_with_new_chunks_advances_carrying_held_and_chunks() {
 fn process_of_a_partial_with_other_ends_answers_misattributed_carrying_the_sessions() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(start(4, 1, 2));
+    let _ = beggar.process(start(4, 1, 2));
 
     // Act
     let receipt = beggar.process(send(1, 1, 1, 2, 1));
@@ -422,9 +422,9 @@ fn process_of_a_partial_with_other_ends_answers_misattributed_carrying_the_sessi
 fn process_of_a_query_changes_nothing_but_the_receipt_number() {
     // Arrange
     let mut beggar = retaining(2);
-    beggar.process(start(4, 1, 2));
-    beggar.process(start(1, 1, 3));
-    beggar.process(send(2, 1, 1, 1, 3));
+    let _ = beggar.process(start(4, 1, 2));
+    let _ = beggar.process(start(1, 1, 3));
+    let _ = beggar.process(send(2, 1, 1, 1, 3));
     let before = shown(&mut beggar);
 
     // Act
@@ -440,7 +440,7 @@ fn process_of_a_query_changes_nothing_but_the_receipt_number() {
             session_id: name(1),
         },
     ] {
-        beggar.process(query);
+        let _ = beggar.process(query);
     }
 
     // Assert
@@ -459,7 +459,7 @@ fn process_of_a_query_changes_nothing_but_the_receipt_number() {
 fn process_of_a_query_of_a_session_never_opened_answers_not_started() {
     // Arrange
     let mut beggar = retaining(1);
-    beggar.process(start(4, 1, 2));
+    let _ = beggar.process(start(4, 1, 2));
 
     // Act
     let outputs = [
@@ -486,7 +486,7 @@ fn process_of_a_query_of_a_session_never_opened_answers_not_started() {
 fn process_of_a_receive_filling_the_set_completes_and_evicts_the_session() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(adopt(peers(1), 2, 2, 1));
+    let _ = beggar.process(adopt(peers(1), 2, 2, 1));
 
     // Act
     let receipt = beggar.process(receive(peers(1), 1, 2, 2, 1));
@@ -500,7 +500,7 @@ fn process_of_a_receive_filling_the_set_completes_and_evicts_the_session() {
 fn process_of_a_receive_on_the_senders_end_answers_wrong_side() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(start(4, 1, 2));
+    let _ = beggar.process(start(4, 1, 2));
 
     // Act
     let receipt = beggar.process(receive(name(1), 1, 1, 1, 2));
@@ -516,7 +516,7 @@ fn process_of_a_receive_on_the_senders_end_answers_wrong_side() {
 fn process_of_a_start_at_the_bound_answers_registry_full_carrying_the_bound() {
     // Arrange
     let mut beggar = fresh(Some(1));
-    beggar.process(start(8, 1, 2));
+    let _ = beggar.process(start(8, 1, 2));
 
     // Act
     let receipt = beggar.process(start(5, 1, 3));
@@ -616,7 +616,7 @@ fn process_of_an_adopt_of_its_own_name_answers_own_session() {
 fn process_of_an_adopt_on_other_terms_answers_conflicted_carrying_the_open_sessions() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(adopt(peers(1), 4, 2, 1));
+    let _ = beggar.process(adopt(peers(1), 4, 2, 1));
 
     // Act
     let receipt = beggar.process(adopt(peers(1), 5, 2, 1));
@@ -665,10 +665,10 @@ fn process_of_an_adopt_opens_the_peers_session_under_its_name_minting_nothing() 
 fn process_of_an_adopt_then_a_start_shows_the_records_in_the_order_of_their_names() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(adopt(peers(1), 4, 2, 1));
+    let _ = beggar.process(adopt(peers(1), 4, 2, 1));
 
     // Act
-    beggar.process(start(4, 1, 2));
+    let _ = beggar.process(start(4, 1, 2));
 
     // Assert
     let names: Vec<SessionId> = shown(&mut beggar)
@@ -743,9 +743,9 @@ fn process_of_every_call_reports_it_and_its_receipt_to_the_observer() {
 fn process_of_list_missing_chunks_answers_the_chunks_not_held_as_maximal_runs() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(start(10, 1, 2));
-    beggar.process(send(1, 3, 4, 1, 2));
-    beggar.process(send(1, 7, 7, 1, 2));
+    let _ = beggar.process(start(10, 1, 2));
+    let _ = beggar.process(send(1, 3, 4, 1, 2));
+    let _ = beggar.process(send(1, 7, 7, 1, 2));
 
     // Act
     let receipt = beggar.process(Command::ListMissingChunks {
@@ -768,10 +768,10 @@ fn process_of_list_missing_chunks_answers_the_chunks_not_held_as_maximal_runs() 
 fn process_of_list_recoveries_answers_the_names_of_the_open_sessions_in_order() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(adopt(peers(1), 3, 2, 1));
-    beggar.process(start(4, 1, 2));
-    beggar.process(start(1, 1, 2));
-    beggar.process(send(2, 1, 1, 1, 2));
+    let _ = beggar.process(adopt(peers(1), 3, 2, 1));
+    let _ = beggar.process(start(4, 1, 2));
+    let _ = beggar.process(start(1, 1, 2));
+    let _ = beggar.process(send(2, 1, 1, 1, 2));
 
     // Act
     let receipt = beggar.process(Command::ListRecoveries);
@@ -789,8 +789,8 @@ fn process_of_list_recoveries_answers_the_names_of_the_open_sessions_in_order() 
 fn process_of_show_recovery_of_an_open_session_answers_its_record_unfinished() {
     // Arrange
     let mut beggar = fresh(None);
-    beggar.process(start(4, 1, 2));
-    beggar.process(send(1, 2, 2, 1, 2));
+    let _ = beggar.process(start(4, 1, 2));
+    let _ = beggar.process(send(1, 2, 2, 1, 2));
     let mut expected = record(1, 4, 1, 2);
     expected.chunk_set.add(2, 2);
 

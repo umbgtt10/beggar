@@ -49,7 +49,7 @@ fn answers(situation: &Situation, restored: bool) -> Answers {
     let mut model = ModelSide::new(&Origin::Fresh(fresh.clone()));
     for _ in 0..situation.opened {
         let open_one = start(1, INSTANCE.node, 2);
-        crate_side.process(open_one.clone());
+        let _ = crate_side.process(open_one.clone());
         model.process(&open_one);
     }
     if restored {

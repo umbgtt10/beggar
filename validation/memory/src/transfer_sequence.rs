@@ -75,12 +75,12 @@ impl<'a> TransferSequence<'a> {
                 incarnation: INCARNATION,
                 count,
             };
-            nodes[sender].process(Command::StartRecovery {
+            let _ = nodes[sender].process(Command::StartRecovery {
                 chunks,
                 sender: SENDER,
                 receiver: RECEIVER,
             });
-            nodes[receiver].process(Command::AdoptRecovery {
+            let _ = nodes[receiver].process(Command::AdoptRecovery {
                 session_id,
                 chunks,
                 sender: SENDER,
@@ -90,21 +90,21 @@ impl<'a> TransferSequence<'a> {
             for (moved, id) in self.order.iter().enumerate() {
                 if self.cancel_after == Some(moved) {
                     for end in [receiver, sender] {
-                        nodes[end].process(Command::CancelRecovery {
+                        let _ = nodes[end].process(Command::CancelRecovery {
                             session_id,
                             reason: (),
                         });
                     }
                     break;
                 }
-                nodes[sender].process(Command::SendRecoveryPartial {
+                let _ = nodes[sender].process(Command::SendRecoveryPartial {
                     session_id,
                     first: *id,
                     last: *id,
                     sender: SENDER,
                     receiver: RECEIVER,
                 });
-                nodes[receiver].process(Command::ReceiveRecoveryPartial {
+                let _ = nodes[receiver].process(Command::ReceiveRecoveryPartial {
                     session_id,
                     first: *id,
                     last: *id,

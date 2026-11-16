@@ -3,8 +3,8 @@
 
 use beggar::chunk_set::ChunkSet;
 use beggar::output::Output;
-use beggar::query_rows::QueryRows;
 use beggar::retained_record::RetainedRecord;
+use beggar::rows::query_rows::QueryRows;
 use beggar::session_id::SessionId;
 use beggar::session_record::SessionRecord;
 

@@ -41,7 +41,7 @@ fn log(fresh: &Fresh, commands: Vec<Command<ScenarioReason>>) -> Vec<Value> {
         Box::new(RecordingObserver::new(Rc::clone(&calls))),
     );
     for command in commands {
-        beggar.process(command);
+        let _ = beggar.process(command);
     }
 
     calls

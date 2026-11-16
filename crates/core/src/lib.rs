@@ -80,10 +80,10 @@
 //!
 //! // Node 2 adopts the session under that name, with the count node 1 stated.
 //! let mut receiver = fresh(2);
-//! receiver.process(Command::AdoptRecovery { session_id, chunks: 10, sender: 1, receiver: 2 });
+//! let _ = receiver.process(Command::AdoptRecovery { session_id, chunks: 10, sender: 1, receiver: 2 });
 //!
 //! // Chunks 1 to 6 move; each end records the run on its own side.
-//! sender.process(Command::SendRecoveryPartial { session_id, first: 1, last: 6, sender: 1, receiver: 2 });
+//! let _ = sender.process(Command::SendRecoveryPartial { session_id, first: 1, last: 6, sender: 1, receiver: 2 });
 //! let receipt =
 //!     receiver.process(Command::ReceiveRecoveryPartial { session_id, first: 1, last: 6, sender: 1, receiver: 2 });
 //! assert_eq!(receipt.output, Output::RecoveryAdvanced { held: 6, chunks: 10 });
@@ -138,15 +138,16 @@ pub mod fresh;
 pub mod instance_id;
 pub mod no_op_observer;
 pub mod observer;
-pub mod opening_rows;
 pub mod origin;
 pub mod output;
-pub mod partial_rows;
-pub mod query_rows;
 pub mod receipt;
 pub mod registry;
 pub mod rejection;
 pub mod retained_record;
+pub mod rows;
 pub mod session_id;
 pub mod session_record;
 pub mod side;
+
+#[cfg(doctest)]
+pub mod readme_doctests;
