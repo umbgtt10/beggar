@@ -5,6 +5,16 @@ version it conforms to.
 
 ## [Unreleased]
 
+#### Added
+- The conformance tier checks that no public name of the crate and no name of the schema holds a word the
+  vocabulary leaves out, as cartel's does: cartel's list, widened by what recovery moves unseen -- `snapshot`,
+  `payload`, `bytes` -- and `quorum` (`docs/DESIGN.md` §4).
+
+#### Changed
+- The row objects move into `rows/`, the README's examples run as doctests, and `Beggar::new` and `Beggar::process`
+  are `#[must_use]`, as the siblings' are. `beggar::opening_rows` and its two siblings are now under
+  `beggar::rows::`.
+
 #### Changed
 - The specification is 0.7.0: it answers every command as 0.6.1 does, and leaves an absent value out where 0.6.1
   wrote it `null` -- `bound` where there is no bound, `finished` for a session still open -- as faction's and

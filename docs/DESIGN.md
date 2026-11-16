@@ -200,6 +200,21 @@ logged tuple. No tag exists merely to tell two commands apart. Apply this when t
 **Terminals are `RecoveryCompleted` and `RecoveryCancelled`, and only those.** `RecoveryConflicted` and
 `RecoveryRejected` terminate nothing: an open session survives, and the *new* command is refused.
 
+### Words left out
+
+No public name of the crate and no name of the specification's schema holds one of these words; the ladder's
+conformance tier checks both, as cartel's does, from the same list widened by what recovery moves unseen.
+
+| left out | why | beggar says |
+|---|---|---|
+| term, height, slot, view, epoch | each is one protocol's | session |
+| leader, candidate, proposer, validator | roles | sender, receiver |
+| prepare, commit, prevote | phases' names | -- |
+| block, log, entry, index, snapshot, payload, bytes | what is moved, the caller's | chunk, chunk id |
+| majority, supermajority, quorum | a protocol's counting | -- |
+| certificate, signature, proof | evidence, the protocol's | -- |
+| elected, prepared, committed, decided, value | what a protocol decides | -- |
+
 ## 5. Semantics
 
 **Completion is set cardinality, not last index.** Chunks arrive in any order; anything keyed on
