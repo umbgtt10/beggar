@@ -12,6 +12,17 @@ order, under what policy or which protocol. No bits or bytes in beggar.
 `docs/ADRs/` holds the foundations and `docs/DESIGN.md` the how; both are
 authoritative. Read them before changing anything.
 
+## Boundary Rule
+
+This repository is **SELF-CONTAINED**.
+
+The LLM **SHALL NOT cross its boundaries without asking**.
+
+That means:
+- do not inspect, edit, or rely on files outside `beggar/` unless the user explicitly asks
+- do not pull assumptions from sibling repositories or crates
+- do not propose cross-repository changes by default
+
 ## Quality Gates
 
 ### Mandatory after every change
@@ -119,6 +130,44 @@ Tests are written first and seen failing before any implementation.
 ### No re-export shims
 
 Every `use` points directly to the module where the symbol is defined.
+
+### The specification comes first
+
+The specification in `spec/` is normative and the crate is one implementation of it
+(`docs/ADRs/P0-ADR-SpecificationIsNormativeCrateIsReference.md`). A change of behaviour
+changes the specification first -- the prose, the schema, the decision table's rows, a
+vector for every row it adds or changes, and its version -- then the crate. Vectors are
+written by hand and checked against the specification's model before the crate runs them;
+never export them from the crate.
+
+The model is `crates/spec-model/` (`beggar-spec-model`,
+`docs/ADRs/P1-ADR-IndependentModelOfTheSpecification.md`): `no_std`, free of unsafe code,
+and held to every gate the library is held to. It is written from `spec/SPEC.md` and
+`spec/matrix.json`, never from `crates/core/`, and depends on nothing of `beggar` --
+`deny.toml` refuses it -- so the two meet only in the specification's encoding, in the
+ladder. What it owns is what the table cannot say, in `rules/rule_book.rs`: each row's
+situation and change; a name the vocabulary gains is in `vocabulary/`.
+
+### Additive releases
+
+A release only adds: commands, outputs, rejections, origins, construction parameters,
+checkpoint fields. It never changes what an earlier release answers: every vector of an
+earlier release passes unchanged (`docs/IMPLEMENTATION-PLAN.md`, *Every slice*).
+
+## Orthogonality, trait surface and cognitive complexity
+
+**When changing productive code, always maximize orthogonality and testable surface through traits, and minimize cognitive complexity.**
+
+Specifically:
+- prefer extracting behavior behind traits so individual pieces can be tested and swapped independently
+- prefer small, focused methods with a single responsibility over large methods with many branches
+- prefer named structs with methods over free functions operating on external state
+- when `crap4rust` or a reviewer flags a function as too complex, reduce it by extracting internal structs with methods and adding integration coverage — not by extracting standalone helper functions
+- never increase cognitive complexity to pass a test; find the root cause and fix it there
+- when introducing a new protocol dependency seam, place the contract in `traits/`, place the protocol-facing state/data model parallel to the protocol, and place the concrete implementation in its own dedicated implementation area
+- make constructors depend on traits, not directly on concrete implementations
+- ALL dependencies are injected through the SINGLE constructor and stored in the struct
+- apply the same split recursively to nested dependencies: trait first, state/data model second, concrete implementation third
 
 ## User coding standards
 
