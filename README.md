@@ -18,7 +18,7 @@ records what moved and decides nothing.
 
 **All five slices are built** (2026-11-10): an instance, created fresh or from a checkpoint; both ends of a
 transfer; cancellation for the caller's own reason; the queries; and retention, conformant to version 0.6.1 of the
-specification in [`spec/`](spec/SPEC.md). Version 0.5.2 is on [crates.io](https://crates.io/crates/beggar).
+specification in [`spec/`](spec/SPEC.md). Version 0.5.3 is on [crates.io](https://crates.io/crates/beggar).
 
 ---
 
@@ -214,7 +214,7 @@ The caller moves the chunks. `beggar` owns the books.
 | Crappy functions (CRAP score) | 0 |
 | Unsafe code | 0 — enforced by `#![forbid(unsafe_code)]` |
 | `no_std` | Verified on `thumbv7em-none-eabihf` |
-| Published | [crates.io](https://crates.io/crates/beggar) 0.5.2 |
+| Published | [crates.io](https://crates.io/crates/beggar) 0.5.3 |
 
 ---
 

@@ -5,6 +5,16 @@ version it conforms to.
 
 ## [Unreleased]
 
+## [0.5.3] — 2026-11-16
+
+### Published on crates.io
+
+A patch release: nothing the crate does changes. Conforms to the specification's version 0.6.1.
+
+#### Changed
+- Edition 2024, as the three bookkeepers now are; `rust-version` stays 1.85. rustfmt's 2024 style reflows the
+  source. A crate's edition is its own, so no caller is touched.
+
 ## [0.5.2] — 2026-11-16
 
 ### Published on crates.io
