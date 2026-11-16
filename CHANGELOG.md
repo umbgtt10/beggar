@@ -5,6 +5,15 @@ version it conforms to.
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-11-16
+
+### Published on crates.io
+
+A minor release: what aligns beggar with faction and cartel and changes its public surface. Conforms to the
+specification's version 0.7.0, which answers every command as 0.6.1 does and leaves an absent value out where 0.6.1
+wrote it `null`. The crate's types are unchanged but for the row modules' paths, now under `beggar::rows::`, and
+`#[must_use]` on `Beggar::new` and `Beggar::process`: a caller that discards a receipt binds it.
+
 #### Added
 - The conformance tier checks that no public name of the crate and no name of the schema holds a word the
   vocabulary leaves out, as cartel's does: cartel's list, widened by what recovery moves unseen -- `snapshot`,
