@@ -5,7 +5,19 @@ version it conforms to.
 
 ## [Unreleased]
 
+## [0.5.2] — 2026-11-16
+
+### Published on crates.io
+
+A patch release: nothing the crate does changes. Conforms to the specification's version 0.6.1, which answers every
+command as 0.6.0 does and keeps its 79 vectors as released.
+
 #### Changed
+- The README and the crate's front page follow the outline the three bookkeepers now share -- what it does, why,
+  how it works, a quick start, validation, project status, design principles, non-goals, gates, roadmap, workspace,
+  siblings -- the quick start run as a doctest on the front page. The agent rules carry the boundary rule, the
+  specification first, additive releases and the orthogonality rules faction's state, and `P0-ADR-NoStdZeroUnsafe`
+  is written down as faction's and cartel's are; the three ADR indexes share one table of the common principles.
 - The specification is 0.6.1: it answers every command as 0.6.0 does, and keeps a release's vectors as released.
   The growth rule says a member a later version adds is omitted at the value that keeps the earlier behaviour;
   `spec/released.json` lists all 79 vectors by the version that released them and the SHA-256 of their bytes, and a
