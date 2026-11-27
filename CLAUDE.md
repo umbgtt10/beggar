@@ -48,10 +48,8 @@ commit scoring are its, with their tests. `xtask/` keeps only `src/main.rs` --
 which gates stage 2 runs, in what order, and beggar's constants, passed to
 serge4rust's constructors: packages, thresholds, the baseline and its floor,
 the words the coverage failure names, the library the scoring reads. A gate
-that needs changing is changed in serge4rust, not here. Until serge4rust 0.2.0
-is on crates.io, the workspace takes it by path, `../serge4rust/crates/core`:
-a clone builds the xtask only beside a serge4rust checkout, the one place this
-repository reaches outside itself, and only until then. stern runs over `beggar`, `beggar-core-validation`,
+that needs changing is changed in serge4rust, released, and taken here from
+crates.io (`serge4rust = "0.2"`), never patched in place. stern runs over `beggar`, `beggar-core-validation`,
 `beggar-ladder`, `beggar-memory`, `beggar-spec-model` **and** `xtask`; the rest
 over the library, `beggar` and `beggar-spec-model`. dry4rust scans `crates/`,
 what `dry4rust.toml` leaves in, as faction's does.

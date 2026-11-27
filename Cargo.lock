@@ -571,6 +571,8 @@ dependencies = [
 [[package]]
 name = "serge4rust"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a14733a53b9e99e70cbd2b886a41daa61ec4883abda9a8441527f22e6e50092"
 dependencies = [
  "serde",
  "serde_json",

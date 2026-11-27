@@ -258,9 +258,8 @@ just stage2   # house rules, duplication, CRAP, coverage, mirrored tests, file r
 
 Both gates must pass before any commit lands. Stage 2's gates are
 [`serge4rust`](https://github.com/umbgtt10/serge4rust)'s, the house's quality gates as a library; `xtask/src/main.rs`
-holds only which of them run, in what order, and with what settings. Until serge4rust 0.2.0 is on crates.io the
-xtask takes it by path, from a `serge4rust` checkout beside this one. They drive these tools, each installed once
-from crates.io:
+holds only which of them run, in what order, and with what settings, and takes serge4rust from crates.io. They
+drive these tools, each installed once from crates.io:
 
 | Tool | Used by | Install |
 |---|---|---|

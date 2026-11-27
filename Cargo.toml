@@ -33,8 +33,7 @@ beggar-spec-model = { path = "crates/spec-model" }
 boon = "0.6"
 proptest = { version = "1", default-features = false, features = ["std"] }
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
-# The gates, taken by xtask from serge4rust. By path, and only until serge4rust
-# 0.2.0 is on crates.io: then `serge4rust = "0.2"`, and the sibling checkout it
-# needs goes away.
-serge4rust = { path = "../serge4rust/crates/core" }
+# The gates, taken by xtask from serge4rust, the house's quality gates as a
+# library, from crates.io.
+serge4rust = "0.2"
 sha2 = "0.10"
