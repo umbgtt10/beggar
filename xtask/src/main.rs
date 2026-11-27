@@ -1,6 +1,19 @@
 // Copyright (c) 2026 Umberto Gotti
 // SPDX-License-Identifier: MIT
 
+use serge4rust::crap::crap_report_parser::CrapReportParser;
+use serge4rust::gates::coverage_gate::CoverageGate;
+use serge4rust::gates::crap_gate::CrapGate;
+use serge4rust::gates::deny_gate::DenyGate;
+use serge4rust::gates::dry_gate::DryGate;
+use serge4rust::gates::gate::Gate;
+use serge4rust::gates::iceberg_gate::IcebergGate;
+use serge4rust::gates::stage::Stage;
+use serge4rust::gates::stern_gate::SternGate;
+use serge4rust::gates::twin_gate::TwinGate;
+use serge4rust::process::system_command_runner::SystemCommandRunner;
+use serge4rust::scores::library_scorer::LibraryScorer;
+use serge4rust::scores::message_scoring::MessageScoring;
 use std::env::args;
 use std::env::temp_dir;
 use std::fs::read_to_string;
@@ -10,21 +23,9 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::process::id;
-use xtask::crap::crap_report_parser::CrapReportParser;
-use xtask::gates::coverage_gate::CoverageGate;
-use xtask::gates::crap_gate::CrapGate;
-use xtask::gates::deny_gate::DenyGate;
-use xtask::gates::dry_gate::DryGate;
-use xtask::gates::gate::Gate;
-use xtask::gates::iceberg_gate::IcebergGate;
-use xtask::gates::stage2::Stage2;
-use xtask::gates::stern_gate::SternGate;
-use xtask::gates::twin_gate::TwinGate;
-use xtask::process::system_command_runner::SystemCommandRunner;
-use xtask::scores::library_scorer::LibraryScorer;
-use xtask::scores::message_scoring::MessageScoring;
 
 const CONFORMANCE_TIER: &str = "conformance";
+const COVERAGE_REASON: &str = "every line is one the specification asks for";
 const CORE_PACKAGE: &str = "beggar";
 const CORE_VALIDATION_PACKAGE: &str = "beggar-core-validation";
 const LADDER_PACKAGE: &str = "beggar-ladder";
@@ -35,6 +36,10 @@ const CRAP_THRESHOLD: &str = "15";
 const ICEBERG_THRESHOLD: &str = "5";
 const DRY_BASELINE: &str = "dry4rust-baseline.json";
 const DRY_MIN_NODES: &str = "10";
+const DENY_FETCH_ATTEMPTS: usize = 3;
+const LIBRARY_CORE: &str = "core";
+const LIBRARY_DIRECTORY: &str = "crates";
+const LIBRARY_SPEC_MODEL: &str = "spec-model";
 
 // Reading the real process argv and wiring the concrete runner are the two
 // things no test can reach, so they are all this binary does.
@@ -55,13 +60,20 @@ fn main() -> ExitCode {
     }
 }
 
-// The library's crates scored as staged, for the commit-msg hook in .githooks/:
-// given the message's file, the scores are written into it, above its
-// trailers; given none, they are printed.
+// The library's crates under crates/ -- core, the one beggar publishes, and
+// the specification's model, spec-model -- scored as staged, for the
+// commit-msg hook in .githooks/: given the message's file, the scores are
+// written into it, above its trailers; given none, they are printed.
 fn grip_braintax() -> Result<(), String> {
     let scratch = temp_dir().join(format!("xtask-grip-braintax-{}", id()));
     let runner = SystemCommandRunner::new();
-    let scored = LibraryScorer::new(&runner, scratch.to_string_lossy().into_owned()).score();
+    let scored = LibraryScorer::new(
+        &runner,
+        scratch.to_string_lossy().into_owned(),
+        String::from(LIBRARY_DIRECTORY),
+        vec![String::from(LIBRARY_CORE), String::from(LIBRARY_SPEC_MODEL)],
+    )
+    .score();
     let _ = remove_dir_all(&scratch);
     let block = scored.map_err(|failure| failure.to_string())?.render();
     let Some(path) = args().nth(2) else {
@@ -125,23 +137,33 @@ fn run_stage2() -> ExitCode {
     // The library's lines over every tier, then over the conformance tier
     // alone: the vectors must reach every line by themselves, or the crate
     // holds something the specification does not ask for, and the model
-    // something it does not say. The ladder runs the scenario tiers, so it is
-    // measured with them, the library's lines the ones that count.
+    // something it does not say (P1-ADR-NoLineTheSpecificationDoesNotAskFor).
+    // The ladder runs the scenario tiers, so it is measured with them, the
+    // library's lines the ones that count.
     let measured = vec![
         String::from(CORE_PACKAGE),
         String::from(SPEC_MODEL_PACKAGE),
         String::from(LADDER_PACKAGE),
     ];
-    let coverage = CoverageGate::new(&runner, manifest_path.clone(), measured.clone(), None);
+    let coverage = CoverageGate::new(
+        &runner,
+        manifest_path.clone(),
+        measured.clone(),
+        None,
+        String::from(CORE_PACKAGE),
+        Some(String::from(COVERAGE_REASON)),
+    );
     let conformance_coverage = CoverageGate::new(
         &runner,
         manifest_path.clone(),
         measured,
         Some(String::from(CONFORMANCE_TIER)),
+        String::from(CORE_PACKAGE),
+        Some(String::from(COVERAGE_REASON)),
     );
     let twin = TwinGate::new(&runner, manifest_path.clone(), library.clone());
     // Last in stage 2: its advisories change without the code changing (see DenyGate).
-    let deny = DenyGate::new(&runner, manifest_path.clone());
+    let deny = DenyGate::new(&runner, manifest_path.clone(), DENY_FETCH_ATTEMPTS);
     let iceberg = IcebergGate::new(
         &runner,
         manifest_path,
@@ -160,7 +182,7 @@ fn run_stage2() -> ExitCode {
         &deny,
     ];
 
-    match Stage2::new(gates).run() {
+    match Stage::new(gates).run() {
         Ok(()) => {
             println!("\nbeggar Stage 2 passed!");
             ExitCode::SUCCESS

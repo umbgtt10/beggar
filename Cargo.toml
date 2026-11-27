@@ -27,6 +27,9 @@ beggar-core-validation = { path = "validation/core-validation" }
 beggar-spec-model = { path = "crates/spec-model" }
 boon = "0.6"
 proptest = { version = "1", default-features = false, features = ["std"] }
-serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
+# The gates, taken by xtask from serge4rust. By path, and only until serge4rust
+# 0.2.0 is on crates.io: then `serge4rust = "0.2"`, and the sibling checkout it
+# needs goes away.
+serge4rust = { path = "../serge4rust/crates/core" }
 sha2 = "0.10"
