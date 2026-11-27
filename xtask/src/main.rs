@@ -12,17 +12,12 @@ use serge4rust::gates::stage::Stage;
 use serge4rust::gates::stern_gate::SternGate;
 use serge4rust::gates::twin_gate::TwinGate;
 use serge4rust::process::system_command_runner::SystemCommandRunner;
-use serge4rust::scores::library_scorer::LibraryScorer;
-use serge4rust::scores::message_scoring::MessageScoring;
+use serge4rust::scores::hook_failure::HookFailure;
+use serge4rust::scores::scoring_hook::ScoringHook;
 use std::env::args;
-use std::env::temp_dir;
-use std::fs::read_to_string;
-use std::fs::remove_dir_all;
-use std::fs::write;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process::ExitCode;
-use std::process::id;
 
 const CONFORMANCE_TIER: &str = "conformance";
 const COVERAGE_REASON: &str = "every line is one the specification asks for";
@@ -64,26 +59,14 @@ fn main() -> ExitCode {
 // the specification's model, spec-model -- scored as staged, for the
 // commit-msg hook in .githooks/: given the message's file, the scores are
 // written into it, above its trailers; given none, they are printed.
-fn grip_braintax() -> Result<(), String> {
-    let scratch = temp_dir().join(format!("xtask-grip-braintax-{}", id()));
+fn grip_braintax() -> Result<(), HookFailure> {
     let runner = SystemCommandRunner::new();
-    let scored = LibraryScorer::new(
+    ScoringHook::new(
         &runner,
-        scratch.to_string_lossy().into_owned(),
         String::from(LIBRARY_DIRECTORY),
         vec![String::from(LIBRARY_CORE), String::from(LIBRARY_SPEC_MODEL)],
     )
-    .score();
-    let _ = remove_dir_all(&scratch);
-    let block = scored.map_err(|failure| failure.to_string())?.render();
-    let Some(path) = args().nth(2) else {
-        println!("{block}");
-        return Ok(());
-    };
-    let message =
-        read_to_string(&path).map_err(|error| format!("could not read {path}: {error}"))?;
-    write(&path, MessageScoring::new(block).applied_to(&message))
-        .map_err(|error| format!("could not write {path}: {error}"))
+    .run(args().nth(2))
 }
 
 fn run_stage2() -> ExitCode {
