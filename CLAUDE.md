@@ -39,13 +39,29 @@ The `no_std` check builds the crate and the specification's model for
 `thumbv7em-none-eabihf`, a target with no std at all, which
 `rust-toolchain.toml` installs.
 
-Stage 2 is `cargo xtask stage2`, ported from etheram-core's: stern4rust, then
-dry4rust against `dry4rust-baseline.json`, crap4rust, the coverage gate twice,
-twin4rust, iceberg4rust and cargo-deny, in that order, for the reasons
-etheram-core records. stern runs over `beggar`, `beggar-core-validation`,
+Stage 2 is `cargo xtask stage2`: stern4rust, then dry4rust against
+`dry4rust-baseline.json`, crap4rust, the coverage gate twice, twin4rust,
+iceberg4rust and cargo-deny, in that order, for the reasons etheram-core
+records. The gates come from `serge4rust`, the house's gates as a library:
+the gate trait, the sequence, the command runner, a gate per tool and the
+commit scoring are its, with their tests. `xtask/` keeps only `src/main.rs` --
+which gates stage 2 runs, in what order, and beggar's constants, passed to
+serge4rust's constructors: packages, thresholds, the baseline and its floor,
+the words the coverage failure names, the library the scoring reads. A gate
+that needs changing is changed in serge4rust, released, and taken here from
+crates.io (`serge4rust = "0.2"`), never patched in place. stern runs over `beggar`, `beggar-core-validation`,
 `beggar-ladder`, `beggar-memory`, `beggar-spec-model` **and** `xtask`; the rest
 over the library, `beggar` and `beggar-spec-model`. dry4rust scans `crates/`,
 what `dry4rust.toml` leaves in, as faction's does.
+
+`just ripe` runs `cargo ripe4rust plan`: every upgrade the workspace could
+take, judged ripe, worth asking about or not yet, against the gates
+`[workspace.metadata.ripe4rust]` declares in `Cargo.toml` -- `just stage1`,
+then `just stage2`, in the order they validate a change. It prints the plan and
+applies nothing; applying an upgrade is a change of its own, on the owner's
+word.
+
+`cargo install cargo-ripe4rust`
 
 The tests climb a ladder of seven tiers — `docs/ADRs/P2-ADR-TestingLadder.md`.
 The coverage gate, `cargo llvm-cov` over `beggar`, `beggar-spec-model` and
@@ -68,8 +84,9 @@ it `beggar`: the two meet only in the specification's encoding, in the ladder.
 Every commit message carries the grip and braintax of the library's crates,
 `core` and `spec-model` under `crates/`, and their ratio, scored as the commit stages them, as
 faction's does. `.githooks/commit-msg` runs `cargo xtask grip-braintax` on the
-message's file, which writes the scores in as a paragraph of their own above the
-trailers: each crate's `grip_absolute_total` over its `total_braintax` and their
+message's file, which writes the scores in -- serge4rust's scoring, told the
+library is `core` and `spec-model` under `crates/` -- as a paragraph of their
+own above the trailers: each crate's `grip_absolute_total` over its `total_braintax` and their
 ratio, then the sums and theirs, under a title naming the releases of
 `cargo-grip4rust` and `cargo-braintax4rust` -- scores of different releases do
 not compare. The files under them that the index holds are exported into a
@@ -91,7 +108,7 @@ A workspace laid out by role, as faction's is
 the specification's independent model -- `validation/` every package
 that checks it -- `validation/ladder/` the testing ladder's scenario tiers,
 `validation/core-validation/` its cluster simulation, `validation/memory/` its
-memory tier -- and `xtask/` runs the gates. A crate at the repository root would
+memory tier -- and `xtask/` runs the gates, serge4rust's. A crate at the repository root would
 put `xtask/tests/**` inside its package directory, and stern would read them as
 the crate's.
 

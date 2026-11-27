@@ -21,12 +21,19 @@ resolver = "2"
 edition = "2024"
 license = "MIT"
 
+# What validates a change, for cargo-ripe4rust (`just ripe`): the commands it
+# runs, in this order, to judge an upgrade ripe rather than asked about.
+[workspace.metadata.ripe4rust]
+gates = ["just stage1", "just stage2"]
+
 [workspace.dependencies]
 beggar = { path = "crates/core" }
 beggar-core-validation = { path = "validation/core-validation" }
 beggar-spec-model = { path = "crates/spec-model" }
 boon = "0.6"
 proptest = { version = "1", default-features = false, features = ["std"] }
-serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
+# The gates, taken by xtask from serge4rust, the house's quality gates as a
+# library, from crates.io.
+serge4rust = "0.2"
 sha2 = "0.10"

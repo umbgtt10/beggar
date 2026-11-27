@@ -2,7 +2,8 @@
 #
 # The same file as the *4rust tools' and slotgate's: the licences below are
 # the union of what their dependency trees carry, nothing allowed in advance;
-# beggar's own tree needs fewer: it has no dependencies, and xtask's are serde's.
+# beggar's own tree needs fewer: it has no dependencies, and xtask's are
+# serge4rust's, which are serde's.
 
 [advisories]
 # cargo-deny's defaults: vulnerabilities, unsound and unmaintained crates and
