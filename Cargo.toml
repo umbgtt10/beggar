@@ -36,4 +36,4 @@ serde_json = { version = "1", default-features = false, features = ["alloc"] }
 # The gates, taken by xtask from serge4rust, the house's quality gates as a
 # library, from crates.io.
 serge4rust = "0.2"
-sha2 = "0.10"
+sha2 = "0.11.2"
