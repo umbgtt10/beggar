@@ -39,3 +39,9 @@ stage1:
 # in that order: see xtask/src/main.rs.
 stage2:
     cargo xtask stage2
+
+# The upgrades the workspace could take, each judged by cargo-ripe4rust ripe,
+# worth asking about, or not yet, against the gates Cargo.toml declares for it:
+# stage1, then stage2. It prints the plan and applies nothing.
+ripe:
+    cargo ripe4rust plan

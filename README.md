@@ -272,6 +272,7 @@ from crates.io:
 | [`cargo-twin4rust`](https://crates.io/crates/cargo-twin4rust) | Stage 2 requires a mirrored test file for every source file | `cargo install cargo-twin4rust` |
 | [`cargo-iceberg4rust`](https://crates.io/crates/cargo-iceberg4rust) | Stage 2 bounds each file's private implementation risk | `cargo install cargo-iceberg4rust` |
 | [`cargo-deny`](https://crates.io/crates/cargo-deny) | Stage 2 checks advisories, licences and sources | `cargo install --locked cargo-deny` |
+| [`cargo-ripe4rust`](https://crates.io/crates/cargo-ripe4rust) | `just ripe` plans the upgrades the workspace could take, judged against the two stages; it applies nothing | `cargo install cargo-ripe4rust` |
 
 ---
 
