@@ -17,7 +17,6 @@ readme = "../../README.md"
 keywords = ["recovery", "consensus", "distributed", "registry", "no-std"]
 categories = ["no-std", "algorithms", "network-programming"]
 repository = "https://github.com/umbgtt10/beggar"
-homepage = "https://github.com/umbgtt10/beggar"
 autotests = false
 
 # `rust-version` was inherited from faction, and measured at 0.1.0: the crate

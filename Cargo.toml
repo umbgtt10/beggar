@@ -1,11 +1,11 @@
-# A virtual workspace rather than a package at the root: `core/` is the crate and
-# `xtask/` runs the gates.
+# A virtual workspace rather than a package at the root: the crates under
+# `crates/`, what checks them under `validation/`, and `xtask/` running the gates.
 #
 # The split is not cosmetic, and etheram-core paid for learning it: while a crate
 # sits at the repository root its package directory *is* the repository root, so
-# `cargo stern4rust` walks `xtask/tests/**` and reports its test functions as
-# living in the crate's source tree. `--package` does not narrow it, because the
-# scope is the directory.
+# `cargo stern4rust` walks `validation/**` and `xtask/**` and reports their code
+# as living in the crate's source tree. `--package` does not narrow it, because
+# the scope is the directory.
 [workspace]
 members = [
     "crates/core",
