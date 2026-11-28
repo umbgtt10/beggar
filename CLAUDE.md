@@ -40,7 +40,8 @@ The `no_std` check builds the crate and the specification's model for
 `rust-toolchain.toml` installs.
 
 Stage 2 is `cargo xtask stage2`: stern4rust, then dry4rust against
-`dry4rust-baseline.json`, crap4rust, the coverage gate twice, twin4rust,
+`dry4rust-baseline.json`, crap4rust, the coverage gate twice -- the second on
+the build the first left --, twin4rust,
 iceberg4rust and cargo-deny, in that order, for the reasons etheram-core
 records. The gates come from `serge4rust`, the house's gates as a library:
 the gate trait, the sequence, the command runner, a gate per tool and the
@@ -49,7 +50,7 @@ which gates stage 2 runs, in what order, and beggar's constants, passed to
 serge4rust's constructors: packages, thresholds, the baseline and its floor,
 the words the coverage failure names, the library the scoring reads. A gate
 that needs changing is changed in serge4rust, released, and taken here from
-crates.io (`serge4rust = "0.3.0"`), never patched in place. stern runs over `beggar`, `beggar-core-validation`,
+crates.io (`serge4rust = "0.3.1"`), never patched in place. stern runs over `beggar`, `beggar-core-validation`,
 `beggar-ladder`, `beggar-memory`, `beggar-spec-model` **and** `xtask`; the rest
 over the library, `beggar` and `beggar-spec-model`. dry4rust scans `crates/`,
 what `dry4rust.toml` leaves in, as faction's does.

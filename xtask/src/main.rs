@@ -122,7 +122,9 @@ fn run_stage2() -> ExitCode {
     // holds something the specification does not ask for, and the model
     // something it does not say (P1-ADR-NoLineTheSpecificationDoesNotAskFor).
     // The ladder runs the scenario tiers, so it is measured with them, the
-    // library's lines the ones that count.
+    // library's lines the ones that count. The second measures on the build
+    // the first left: the same compiler made it, once the first had cleared
+    // what another left.
     let measured = vec![
         String::from(CORE_PACKAGE),
         String::from(SPEC_MODEL_PACKAGE),
@@ -136,7 +138,7 @@ fn run_stage2() -> ExitCode {
         String::from(CORE_PACKAGE),
         Some(String::from(COVERAGE_REASON)),
     );
-    let conformance_coverage = CoverageGate::new(
+    let conformance_coverage = CoverageGate::reusing_build(
         &runner,
         manifest_path.clone(),
         measured,

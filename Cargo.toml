@@ -35,5 +35,5 @@ proptest = { version = "1", default-features = false, features = ["std"] }
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
 # The gates, taken by xtask from serge4rust, the house's quality gates as a
 # library, from crates.io.
-serge4rust = "0.3.0"
+serge4rust = "0.3.1"
 sha2 = "0.11.2"

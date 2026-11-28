@@ -4,9 +4,9 @@ version = 4
 
 [[package]]
 name = "ahash"
-version = "0.8.14"
+version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54dae3d1d7b8956f3506c4e999a74e77f932a59153ccf38ab8cf96db74bb9dc0"
+checksum = "3019c0b8d883a8a17df3129e417ef463c087807d245e8881a31d583dee1c0519"
 dependencies = [
  "cfg-if",
  "getrandom",
@@ -573,9 +573,9 @@ dependencies = [
 
 [[package]]
 name = "serge4rust"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c78919cd5062cafc02146201cbadd5e10a7d6eec9286d511d02a336718dc21b0"
+checksum = "4bb1420370e82ecf1da08122325822a3e4500e21bf4972ccd9e5b67e02a202e4"
 dependencies = [
  "serde",
  "serde_json",
