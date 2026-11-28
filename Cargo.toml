@@ -25,6 +25,9 @@ license = "MIT"
 # runs, in this order, to judge an upgrade ripe rather than asked about.
 [workspace.metadata.ripe4rust]
 gates = ["just stage1", "just stage2"]
+# The crates published to crates.io, whose public API a breaking upgrade can
+# reach: ripe4rust asks such an upgrade rather than judging it ripe.
+published = ["beggar"]
 
 [workspace.dependencies]
 beggar = { path = "crates/core" }
@@ -35,5 +38,5 @@ proptest = { version = "1", default-features = false, features = ["std"] }
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
 # The gates, taken by xtask from serge4rust, the house's quality gates as a
 # library, from crates.io.
-serge4rust = "0.3.1"
+serge4rust = "0.3.3"
 sha2 = "0.11.2"
